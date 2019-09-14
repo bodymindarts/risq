@@ -1,15 +1,16 @@
 SafeSocks 0
 HiddenServiceStatistics 0
-ControlPort auto
+ControlPort 9051
+HashedControlPassword 16:91365C26662717AB600DD2CE2336D15ED8A0930950BB8FE068C1A61544
 CookieAuthentication 1
 AvoidDiskWrites 1
+RunAsDaemon 1
 SOCKSPort 9050
 
-DataDirectory .tor
-PidFile .tor/pid
+DataDirectory ((TOR_ROOT))
+PidFile ((TOR_ROOT))/pid
 
 ## obfs4proxy configuration
 ClientTransportPlugin obfs2,obfs3,obfs4,scramblesuit exec PluggableTransports/obfs4proxy
-
 ## meek configuration
 ClientTransportPlugin meek exec PluggableTransports/meek-client

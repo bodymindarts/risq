@@ -8,4 +8,4 @@ test-all:
 	cargo test
 
 run-tor:
-	tor --DataDirectory .tor -f .torrc
+	scripts/run-tor

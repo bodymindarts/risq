@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 socks = "0.3.2"
+bufstream = "0.1.3"
+futures = "0.1.29"
