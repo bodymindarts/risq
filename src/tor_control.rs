@@ -1,27 +1,3 @@
-// Copyright 2016 Mazdak Farrokhzad.
-//
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. This file may not be copied, modified, or distributed
-// except according to those terms.
-
-//! # tor_control
-//!
-//! Client interface to the [Tor Control Protocol], hence referenced as TorCP.
-//!
-//! The `tor_control` module contains the [`TorControl`] struct used to connect
-//! to TorCP, and various types for error handling, and implementations of
-//! `std` traits for error handling.
-//!
-//! [`TorControl`]: struct.TorControl.html
-//! [Tor Control Protocol]: https://gitweb.torproject.org/torspec.git/tree/control-spec.txt
-
-//============================================================================//
-// Imports + Features                                                         //
-//============================================================================//
-
-// Standard Library:
 use std::iter;
 
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Write};
@@ -248,56 +224,6 @@ impl Error for TCError {
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
             TCError::IoError(ref e) => Some(e),
-            _ => None,
-        }
-    }
-}
-
-//============================================================================//
-// Errors / TCAsyncError:                                                     //
-//============================================================================//
-
-#[derive(Debug)]
-pub enum TCAsyncError {
-    IoError(io::Error),
-    UnknownResponse,
-    TorError(TCErrorKind),
-    PoisonError,
-    RecvError(RecvError),
-}
-
-impl_err_statused!(TCAsyncError);
-
-impl<'a, T> From<PEOptReader<'a, T>> for TCAsyncError {
-    fn from(_: PEOptReader<'a, T>) -> Self {
-        TCAsyncError::PoisonError
-    }
-}
-
-impl From<RecvError> for TCAsyncError {
-    fn from(err: RecvError) -> Self {
-        use TCAsyncError::*;
-        RecvError(err)
-    }
-}
-
-impl Error for TCAsyncError {
-    fn description(&self) -> &str {
-        use TCAsyncError::*;
-        match *self {
-            IoError(ref e) => e.description(),
-            UnknownResponse => description_unknown(),
-            TorError(ref kind) => description_kind(kind),
-            PoisonError => "TCAsync: got poisoned.",
-            RecvError(ref e) => e.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn Error> {
-        use TCAsyncError::*;
-        match *self {
-            IoError(ref e) => Some(e),
-            RecvError(ref e) => Some(e),
             _ => None,
         }
     }
@@ -837,8 +763,6 @@ impl<T: Read + Write> TCNoAuth<T> {
     }
 }
 
-impl<T: Read + Write> TorControl for TCNoAuth<T> {}
-
 //============================================================================//
 // TCAuth:                                                                    //
 //============================================================================//
@@ -917,70 +841,6 @@ where
     write_end::<W, Err>(writer)
 }
 
-impl<T: Read + Write + TryClone + Debug> TCAuth<T> {
-    /// 3.4. SETEVENTS Request the server to inform the client about interesting
-    /// events. See the TorCP documentation for specifics.
-    ///
-    /// Each event to subscribe to should be an element in the iterator.
-    /// A thread is spawned inside the function which handles the async events
-    /// and sends them to you by a returned receiver. This thread will run until
-    /// you call this again with no events to subscribe to. In that case, no
-    /// receiver is returned.
-    pub fn setevents<Es>(
-        self,
-        extended: bool,
-        events: Es,
-    ) -> Result<(TCAsync<T>, TCEvents<T>), TCError>
-    where
-        Es: IntoIterator,
-        Es::Item: AsRef<[u8]>,
-    {
-        let mut stream = self.0;
-        setevents_common::<Es, TCError, BufStream<T>>(&mut stream, extended, events)?;
-        read_ok_sync::<BufStream<T>, TCError>(&mut stream)?;
-
-        // Since we already flushed out the data, this should never happen:
-        let reader = stream.into_inner().unwrap();
-        let writer = reader.try_clone()?;
-
-        // Channel for communication between Async & Sync:
-        let (sync_tx, sync_rx) = channel();
-
-        let reader = Arc::new(Mutex::new(Some(BufReader::new(reader))));
-
-        Ok((
-            TCAsync {
-                writer: BufWriter::new(writer),
-                sync_rx: sync_rx,
-                reader: reader.clone(),
-            },
-            TCEvents {
-                reader: reader,
-                sync_tx: sync_tx,
-            },
-        ))
-    }
-}
-
-impl<T: Read + Write + TryClone + Debug> TCAsync<T> {
-    /// 3.4. SETEVENTS Request the server to inform the client about interesting
-    /// events. See the TorCP documentation for specifics.
-    ///
-    /// Each event to subscribe to should be an element in the iterator.
-    /// A thread is spawned inside the function which handles the async events
-    /// and sends them to you by a returned receiver. This thread will run until
-    /// you call this again with no events to subscribe to. In that case, no
-    /// receiver is returned.
-    pub fn setevents<Es>(&mut self, extended: bool, events: Es) -> Result<(), TCAsyncError>
-    where
-        Es: IntoIterator,
-        Es::Item: AsRef<[u8]>,
-    {
-        setevents_common::<Es, TCAsyncError, BufWriter<T>>(&mut self.writer, extended, events)?;
-        self.read_ok()
-    }
-}
-
 impl<T: Read + Write> Stream for TCEvents<T> {
     type Item = String;
     type Error = TCEventsError;
@@ -1002,80 +862,3 @@ impl<T: Read + Write> Stream for TCEvents<T> {
         }
     }
 }
-
-impl<T: Read + Write> TCAsync<T> {
-    pub fn stopevents(mut self) -> Result<TCAuth<T>, TCAsyncError> {
-        try_wend!(BufWriter<T>, TCAsyncError, self.writer(), b"SETEVENTS");
-        self.read_ok()?;
-
-        let reader = {
-            // We're going to steal back the reader:
-            // Since this is the place that ever modifies this, this is fine.
-            std::mem::replace(self.reader.lock()?.deref_mut(), None)
-                .unwrap()
-                .into_inner()
-        };
-
-        Ok(TCAuth(BufStream::new(reader)))
-    }
-}
-
-//============================================================================//
-// TCAsync:                                                                   //
-//============================================================================//
-
-pub struct TCAsync<T: Read + Write> {
-    writer: BufWriter<T>,
-    sync_rx: Receiver<AsyncNotify>,
-    reader: StealableReader<T>,
-}
-
-impl<T: Read + Write> IsAuth for TCAsync<T> {
-    fn is_auth(&self) -> bool {
-        true
-    }
-}
-
-impl<T: Read + Write> IsAsync for TCAsync<T> {
-    fn is_async(&self) -> bool {
-        true
-    }
-}
-
-impl<T: Read + Write> TorLimited for TCAsync<T> {
-    type Writer = BufWriter<T>;
-    type Error = TCAsyncError;
-
-    fn into_writer(self) -> Self::Writer {
-        self.writer
-    }
-
-    fn writer(&mut self) -> &mut Self::Writer {
-        &mut self.writer
-    }
-
-    fn read_ok(&mut self) -> Result<(), Self::Error> {
-        let (status, end, _) = self.sync_rx.recv()?;
-        handle_code::<Self::Error>(status)?;
-        if end {
-            Ok(())
-        } else {
-            Err(Self::Error::unknown_error())
-        }
-    }
-
-    fn read_lines(&mut self) -> Result<Vec<String>, Self::Error> {
-        let mut rls = Vec::with_capacity(1);
-        loop {
-            let (status, end, msg) = self.sync_rx.recv()?;
-            handle_code::<Self::Error>(status)?;
-            rls.push(msg.trim_end().to_owned());
-            if end {
-                break;
-            }
-        }
-        Ok(rls)
-    }
-}
-
-impl<T: Read + Write> TorControl for TCAsync<T> {}
