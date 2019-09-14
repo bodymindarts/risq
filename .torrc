@@ -1,0 +1,15 @@
+SafeSocks 0
+HiddenServiceStatistics 0
+ControlPort auto
+CookieAuthentication 1
+AvoidDiskWrites 1
+SOCKSPort 9050
+
+DataDirectory .tor
+PidFile .tor/pid
+
+## obfs4proxy configuration
+ClientTransportPlugin obfs2,obfs3,obfs4,scramblesuit exec PluggableTransports/obfs4proxy
+
+## meek configuration
+ClientTransportPlugin meek exec PluggableTransports/meek-client
