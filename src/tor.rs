@@ -1,6 +1,12 @@
-use hex::encode;
+use bitcoin_hashes as hashes;
+use bitcoin_hashes::Hash;
+use hashes::hex::{FromHex, ToHex};
+use hashes::hmac::{Hmac, HmacEngine};
+use hashes::sha256;
+use hashes::HashEngine;
 use rand::Rng;
 use std::convert::TryFrom;
+use std::str::FromStr;
 
 use socks::Socks5Stream;
 use socks::ToTargetAddr;
@@ -37,6 +43,8 @@ impl Write for TorStream {
 const PROTOCOL_INFO_VERSION: i32 = 1;
 const COOKIE_LENGTH: usize = 32;
 const NONCE_LENGTH: usize = 32;
+static SERVER_KEY: &[u8; 56] = b"Tor safe cookie authentication server-to-controller hash";
+static CONTROLLER_KEY: &[u8; 56] = b"Tor safe cookie authentication controller-to-server hash";
 
 #[derive(Debug)]
 pub enum TCErrorKind {
@@ -60,6 +68,7 @@ pub enum TCError {
     IoError(io::Error),
     UnknownResponse,
     CannotReadAuthCookie,
+    AuthenticationError,
     TorError(TCErrorKind),
 }
 
@@ -107,12 +116,10 @@ pub struct ProtocolInfo {
 impl TorControl {
     pub fn connect<A: ToSocketAddrs>(addr: A) -> TCResult<Self> {
         let mut tc = TorControl(BufStream::new(TcpStream::connect(addr)?));
-        println!("{:?}", tc.protocol_info());
-        println!("{:?}", tc.authenticate());
-        Ok(tc)
+        tc.authenticate()
     }
 
-    pub fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
+    fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
         send_command(
             &mut self.0,
             format!("PROTOCOLINFO {}", PROTOCOL_INFO_VERSION).into(),
@@ -139,24 +146,60 @@ impl TorControl {
         })
     }
 
-    fn authenticate(&mut self) -> TCResult<String> {
-        let random_bytes = rand::thread_rng().gen::<[u8; NONCE_LENGTH]>();
+    fn authenticate(mut self) -> TCResult<Self> {
+        let auth_cookie = self.get_auth_cookie()?;
+
+        let client_nonce = rand::thread_rng().gen::<[u8; NONCE_LENGTH]>();
         send_command(
             &mut self.0,
-            format!("AUTHCHALLENGE SAFECOOKIE {}", hex::encode(random_bytes)),
+            format!("AUTHCHALLENGE SAFECOOKIE {}", <[u8]>::to_hex(&client_nonce)),
         )?;
-        Ok(read_lines(&mut self.0)?.join(" "))
-        // clientNonce := make([]byte, nonceLen)
-        // if _, err := rand.Read(clientNonce); err != nil {
-        // return fmt.Errorf("unable to generate client nonce: %v", err)
-        // }
-        // cmd := fmt.Sprintf("AUTHCHALLENGE SAFECOOKIE %x", clientNonce)_, reply, err := c.sendCommand(cmd)if err != nil {return err
-        // }
+        let response = read_lines(&mut self.0)?.join(" ");
+
+        let mut serverhash = "";
+        let mut servernonce = "";
+        for section in response.split(" ") {
+            let split: Vec<&str> = section.split("=").collect();
+            if split.len() == 2 {
+                match split[0] {
+                    "SERVERHASH" => serverhash = split[1],
+                    "SERVERNONCE" => servernonce = split[1],
+                    _ => (),
+                }
+            }
+        }
+        let decoded_server_hash = FromStr::from_str(serverhash)
+            .expect("Could not decode serverhash during Authentication");
+        let decoded_server_nonce: Vec<u8> = FromHex::from_hex(servernonce)
+            .expect("Could not decode servernonce during Authentication");
+
+        let mut message = Vec::new();
+        message.extend(auth_cookie);
+        message.extend(&client_nonce);
+        message.extend(decoded_server_nonce);
+
+        let mut server_engine = HmacEngine::<sha256::Hash>::new(SERVER_KEY);
+        server_engine.input(&message);
+        let computed_server_hash = Hmac::<sha256::Hash>::from_engine(server_engine);
+        if computed_server_hash.ne(&decoded_server_hash) {
+            return Err(TCError::AuthenticationError);
+        }
+
+        let mut client_engine = HmacEngine::<sha256::Hash>::new(CONTROLLER_KEY);
+        client_engine.input(&message);
+        send_command(
+            &mut self.0,
+            format!(
+                "AUTHENTICATE {}",
+                Hmac::<sha256::Hash>::from_engine(client_engine)
+            ),
+        )?;
+
+        read_lines(&mut self.0).map(|_| self)
     }
 
     fn get_auth_cookie(&mut self) -> TCResult<Vec<u8>> {
         let info = self.protocol_info()?;
-        println!("Ainfo is here {:?}", info);
         let mut file_content = Vec::new();
         let length = File::open(info.cookiefile)?.read_to_end(&mut file_content)?;
         if length != COOKIE_LENGTH {
@@ -170,7 +213,6 @@ impl TorControl {
 pub trait AuthenticatedTorControl {}
 
 fn send_command<W: Write>(writer: &mut W, command: String) -> Result<(), io::Error> {
-    println!("sending command: '{}'", command);
     write!(writer, "{}\r\n", command)?;
     writer.flush()
 }
