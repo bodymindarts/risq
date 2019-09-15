@@ -12,14 +12,17 @@ use socks::Socks5Stream;
 use socks::ToTargetAddr;
 use std::fs::File;
 use std::io::{self, BufRead, Read, Write};
-use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+use std::net::{TcpStream, ToSocketAddrs};
 
 use bufstream::BufStream;
 
 pub struct TorStream(TcpStream);
 
 impl TorStream {
-    pub fn connect(tor_proxy: SocketAddr, destination: impl ToTargetAddr) -> io::Result<TorStream> {
+    pub fn connect(
+        tor_proxy: impl ToSocketAddrs,
+        destination: impl ToTargetAddr,
+    ) -> io::Result<TorStream> {
         Socks5Stream::connect(tor_proxy, destination).map(|stream| TorStream(stream.into_inner()))
     }
 }
@@ -114,9 +117,8 @@ pub struct ProtocolInfo {
 }
 
 impl TorControl {
-    pub fn connect<A: ToSocketAddrs>(addr: A) -> TCResult<Self> {
-        let mut tc = TorControl(BufStream::new(TcpStream::connect(addr)?));
-        tc.authenticate()
+    pub fn connect(addr: impl ToSocketAddrs) -> TCResult<Self> {
+        TorControl(BufStream::new(TcpStream::connect(addr)?)).authenticate()
     }
 
     fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
@@ -212,7 +214,7 @@ impl TorControl {
 
 pub trait AuthenticatedTorControl {}
 
-fn send_command<W: Write>(writer: &mut W, command: String) -> Result<(), io::Error> {
+fn send_command(writer: &mut impl Write, command: String) -> Result<(), io::Error> {
     write!(writer, "{}\r\n", command)?;
     writer.flush()
 }
@@ -232,8 +234,8 @@ fn parse_status(line: &str) -> TCResult<u32> {
     (&line[0..3]).parse().map_err(|_| TCError::UnknownResponse)
 }
 
-fn parse_line<'b, R: BufRead>(
-    stream: &mut R,
+fn parse_line<'b>(
+    stream: &mut impl BufRead,
     buf: &'b mut String,
 ) -> TCResult<(u32, bool, &'b str)> {
     // Read a line and make sure we have at least 3 (status) + 1 (sep) bytes.
@@ -245,7 +247,7 @@ fn parse_line<'b, R: BufRead>(
     let is_last_line = is_last_line(&buf_s)?;
     Ok((status, is_last_line, msg))
 }
-fn read_lines<R: BufRead>(read: &mut R) -> TCResult<Vec<String>> {
+fn read_lines(read: &mut impl BufRead) -> TCResult<Vec<String>> {
     let mut rls: Vec<String> = Vec::with_capacity(1);
     let mut buf = String::new();
     loop {
@@ -276,14 +278,13 @@ fn handle_code(status: u32) -> TCResult<()> {
 #[cfg(test)]
 mod tests {
 
-    use super::TorStream;
+    use super::{TCResult, TorControl, TorStream};
     use std::io::{Read, Write};
     use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 
     #[test]
     fn check_clear_web() -> std::io::Result<()> {
-        let address = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 9050));
-        let mut stream = TorStream::connect(address, "www.example.com:80")?;
+        let mut stream = TorStream::connect("localhost:9050", "www.example.com:80")?;
 
         stream
             .write_all(b"GET / HTTP/1.1\r\nConnection: Close\r\nHost: www.example.com\r\n\r\n")
@@ -300,9 +301,8 @@ mod tests {
 
     #[test]
     fn check_hidden_service() -> std::io::Result<()> {
-        let address = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 9050));
         let mut stream = TorStream::connect(
-            address,
+            "localhost:9050",
             (
                 "p53lf57qovyuvwsc6xnrppyply3vtqm7l6pcobkmyqsiofyeznfu5uqd.onion",
                 80,
@@ -320,5 +320,10 @@ mod tests {
 
         assert!(buf.starts_with("HTTP/1.1 302"));
         Ok(())
+    }
+
+    #[test]
+    fn check_torcontroll_auth() -> TCResult<()> {
+        TorControl::connect("127.0.0.1:9051").map(|_| ())
     }
 }
