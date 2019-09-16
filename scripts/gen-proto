@@ -1,0 +1,8 @@
+#!/bin/bash
+
+REPO_ROOT_DIR="$(dirname $( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd ))"
+
+# Running the generator code on each build is slow!
+cp ${REPO_ROOT_DIR}/gen-proto.rs ${REPO_ROOT_DIR}/build.rs
+cargo build
+rm ${REPO_ROOT_DIR}/build.rs

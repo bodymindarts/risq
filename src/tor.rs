@@ -169,7 +169,7 @@ impl TorControl {
         })
     }
 
-    pub fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
+    fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
         send_command(
             &mut self.0,
             format!("PROTOCOLINFO {}", PROTOCOL_INFO_VERSION),

@@ -1,4 +1,5 @@
 mod api;
+mod bisq;
 mod tor;
 
 use std::process::exit;
@@ -22,12 +23,11 @@ fn main() -> () {
         .expect("Could not start api");
 
     println!("{:?}", res);
-    let mut stream = TorStream::connect("localhost:9050", (res.onion_service.as_str(), res.port))
-        .expect("Could not connect to stream");
-    stream
-        .write_all(b"HELLO WORLD")
-        .expect("Failed to send request");
 
     api_thread.join().expect("Could not join api_thread");
+    let mock = bisq::messages::MockPayload {
+        message_version: "1".to_string(),
+        message: "asht".to_string(),
+    };
     exit(0);
 }

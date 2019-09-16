@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "Downloading common/src/main/proto/pb.proto from bisq github"
+REPO_ROOT_DIR="$(dirname $( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd ))"
+curl -s https://raw.githubusercontent.com/bisq-network/bisq/master/common/src/main/proto/pb.proto | sed 's#\(.*java\)#// \1#' > ${REPO_ROOT_DIR}/proto/bisq.proto

@@ -1,3 +1,6 @@
+generate-protocols:
+	scripts/gen-proto
+
 build:
 	cargo build
 
