@@ -6,6 +6,7 @@ use hashes::sha256;
 use hashes::HashEngine;
 use rand::Rng;
 use std::convert::TryFrom;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use socks::Socks5Stream;
@@ -114,7 +115,7 @@ pub struct TorControl(BufStream<TcpStream>);
 pub struct AddOnionConfig {
     pub virtual_port: u16,
     pub target_port: u16,
-    pub private_key_path: String,
+    pub private_key_path: PathBuf,
 }
 
 #[derive(Debug)]
@@ -125,9 +126,9 @@ pub struct OnionAddr {
 
 #[derive(Debug)]
 struct ProtocolInfo {
-    pub cookiefile: String,
-    pub auth_methods: Vec<String>,
-    pub tor_version: String,
+    cookiefile: String,
+    auth_methods: Vec<String>,
+    tor_version: String,
 }
 
 impl TorControl {
@@ -168,7 +169,7 @@ impl TorControl {
         })
     }
 
-    fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
+    pub fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
         send_command(
             &mut self.0,
             format!("PROTOCOLINFO {}", PROTOCOL_INFO_VERSION),
