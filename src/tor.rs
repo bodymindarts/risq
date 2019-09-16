@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 use socks::Socks5Stream;
 use socks::ToTargetAddr;
+use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
@@ -110,7 +111,20 @@ type TCResult<T> = Result<T, TCError>;
 pub struct TorControl(BufStream<TcpStream>);
 
 #[derive(Debug)]
-pub struct ProtocolInfo {
+pub struct AddOnionConfig {
+    pub virtual_port: u16,
+    pub target_port: u16,
+    pub private_key_path: String,
+}
+
+#[derive(Debug)]
+pub struct OnionAddr {
+    pub port: u16,
+    pub onion_service: String,
+}
+
+#[derive(Debug)]
+struct ProtocolInfo {
     pub cookiefile: String,
     pub auth_methods: Vec<String>,
     pub tor_version: String,
@@ -121,10 +135,43 @@ impl TorControl {
         TorControl(BufStream::new(TcpStream::connect(addr)?)).authenticate()
     }
 
+    pub fn add_v2_onion(&mut self, conf: AddOnionConfig) -> TCResult<OnionAddr> {
+        let key_param = match fs::read_to_string(&conf.private_key_path) {
+            Ok(key) => key,
+            _ => "NEW:RSA1024".into(),
+        };
+        let port_param = format!("Port={},{}", conf.virtual_port, conf.target_port);
+        send_command(
+            &mut self.0,
+            format!("ADD_ONION {} {}", key_param, port_param),
+        )?;
+        let response = read_lines(&mut self.0)?.join(" ");
+        let mut service_id = "";
+        let mut private_key = "";
+        for section in response.split(" ") {
+            let split: Vec<&str> = section.split("=").collect();
+            if split.len() == 2 {
+                match split[0] {
+                    "ServiceID" => service_id = split[1],
+                    "PrivateKey" => private_key = split[1],
+                    _ => (),
+                }
+            }
+        }
+        if private_key != "" {
+            let mut key_file = File::create(conf.private_key_path)?;
+            key_file.write_all(private_key.as_bytes())?
+        }
+        Ok(OnionAddr {
+            port: conf.virtual_port,
+            onion_service: service_id.to_owned() + ".onion",
+        })
+    }
+
     fn protocol_info(&mut self) -> TCResult<ProtocolInfo> {
         send_command(
             &mut self.0,
-            format!("PROTOCOLINFO {}", PROTOCOL_INFO_VERSION).into(),
+            format!("PROTOCOLINFO {}", PROTOCOL_INFO_VERSION),
         )?;
         let response = read_lines(&mut self.0)?.join(" ");
         let mut cookiefile = "";
