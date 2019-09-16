@@ -1,3 +1,3 @@
-pub mod messages {
+pub mod message {
     include!("generated/io.bisq.protobuffer.rs");
 }

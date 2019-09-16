@@ -25,7 +25,7 @@ fn main() -> () {
     println!("{:?}", res);
 
     api_thread.join().expect("Could not join api_thread");
-    let mock = bisq::messages::MockPayload {
+    let mock = bisq::message::MockPayload {
         message_version: "1".to_string(),
         message: "asht".to_string(),
     };
