@@ -1,20 +1,20 @@
 use bitcoin_hashes as hashes;
-use bitcoin_hashes::Hash;
-use hashes::hex::{FromHex, ToHex};
-use hashes::hmac::{Hmac, HmacEngine};
-use hashes::sha256;
-use hashes::HashEngine;
+use hashes::{
+    hex::{FromHex, ToHex},
+    hmac::{Hmac, HmacEngine},
+    sha256, Hash, HashEngine,
+};
 use rand::Rng;
-use std::convert::TryFrom;
-use std::path::PathBuf;
-use std::str::FromStr;
+use std::{
+    convert::TryFrom,
+    fs::{self, File},
+    io::{self, BufRead, Read, Write},
+    net::{TcpStream, ToSocketAddrs},
+    path::PathBuf,
+    str::FromStr,
+};
 
-use socks::Socks5Stream;
-use socks::ToTargetAddr;
-use std::fs;
-use std::fs::File;
-use std::io::{self, BufRead, Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
+use socks::{Socks5Stream, ToTargetAddr};
 
 use bufstream::BufStream;
 
