@@ -6,22 +6,40 @@ mod tor;
 use std::{error::Error, io::Write, net::SocketAddr, process::exit};
 
 use futures::{
-    future::{ok, Future},
+    future::{ok, result, Future},
     stream::Stream,
     sync::oneshot,
 };
 
 use actix::Arbiter;
 use bisq::{message::*, BaseCurrencyNetwork};
-use tokio::net::{TcpListener, TcpStream};
+use tokio::{
+    io::{read_exact, AsyncRead},
+    net::{TcpListener, TcpStream},
+};
 
 use prost::Message;
 
 use env_logger;
 #[macro_use]
 extern crate log;
-fn process_socket(socket: TcpStream) -> impl Future<Item = (), Error = ()> {
-    ok::<(), ()>(())
+fn process_socket(mut socket: TcpStream) -> impl Future<Item = (), Error = ()> {
+    let mut read_size = vec![0];
+    read_exact(socket, read_size)
+        .and_then(|(socket, next_size)| {
+            info!("size: {:?}", next_size[0]);
+            let mut msg_bytes = vec![0; next_size[0].into()];
+            read_exact(socket, msg_bytes)
+        })
+        .map_err(|e| error!("error reading from socket {:?}", e))
+        .and_then(|(socket, msg_bytes)| {
+            info!("msg_bytes received {:?}", msg_bytes);
+            result(
+                NetworkEnvelope::decode(&msg_bytes)
+                    .map(|msg| info!("message received {:?}", msg))
+                    .map_err(|e| error!("error decoding msg from socket {:?}", e)),
+            )
+        })
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -43,8 +61,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         .expect("Could not encode ping");
     let send_task = start_up_listen
         .map_err(|e| error!("error: {:?}", e))
-        .and_then(|_| {
+        .and_then(move |_| {
             debug!("listener has started");
+            info!("Sending ping {:?}", ping);
             TcpStream::connect(&"127.0.0.1:4444".parse::<SocketAddr>().expect("bla"))
                 .and_then(move |mut stream| {
                     info!("Sending msg {:?}", serialized);
