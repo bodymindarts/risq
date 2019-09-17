@@ -6,8 +6,9 @@ mod tor;
 use std::{error::Error, io::Write, net::SocketAddr, process::exit};
 
 use futures::{
-    future::{lazy, ok, Future},
+    future::{ok, Future},
     stream::Stream,
+    sync::oneshot,
 };
 
 use actix::Arbiter;
@@ -35,11 +36,32 @@ fn main() -> Result<(), Box<dyn Error>> {
             last_round_trip_time: 0,
         })),
     };
+
+    let (start_up_notify, start_up_listen) = oneshot::channel();
     let mut serialized = Vec::with_capacity(ping.encoded_len() + 1);
     ping.encode_length_delimited(&mut serialized)
         .expect("Could not encode ping");
+    let send_task = start_up_listen
+        .map_err(|e| error!("error: {:?}", e))
+        .and_then(|_| {
+            debug!("listener has started");
+            TcpStream::connect(&"127.0.0.1:4444".parse::<SocketAddr>().expect("bla"))
+                .and_then(move |mut stream| {
+                    info!("Sending msg {:?}", serialized);
+                    stream.write(&serialized)?;
+                    stream.flush()
+                })
+                .and_then(|_| Ok(()))
+                .map_err(|e| error!("error: {:?}", e))
+        });
+    Arbiter::spawn(send_task);
+
     let addr = "127.0.0.1:4444".parse::<SocketAddr>()?;
-    let listener = TcpListener::bind(&addr)?;
+    let listener = TcpListener::bind(&addr).and_then(|l| {
+        debug!("listener is notifying");
+        start_up_notify.send(());
+        Ok(l)
+    })?;
     let server = listener
         .incoming()
         .map_err(|e| error!("{}", e))
@@ -50,16 +72,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         });
 
     Arbiter::spawn(server);
-
-    let send_task = TcpStream::connect(&"127.0.0.1:4444".parse::<SocketAddr>().expect("bla"))
-        .and_then(move |mut stream| {
-            info!("Sending msg {:?}", serialized);
-            stream.write(&serialized)?;
-            stream.flush()
-        })
-        .and_then(|_| Ok(()))
-        .map_err(|e| error!("error: {:?}", e));
-    Arbiter::spawn(send_task);
 
     sys.run()?;
     //let addr = "127.0.0.1:8080".parse::<SocketAddr>()?;
