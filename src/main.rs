@@ -38,6 +38,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut serialized = Vec::with_capacity(ping.encoded_len() + 1);
     ping.encode_length_delimited(&mut serialized)
         .expect("Could not encode ping");
+    let addr = "127.0.0.1:4444".parse::<SocketAddr>()?;
+    let listener = TcpListener::bind(&addr)?;
+    let server = listener
+        .incoming()
+        .map_err(|e| error!("{}", e))
+        .for_each(|socket| {
+            info!("spawning incoming {:?}", socket);
+            Arbiter::spawn(process_socket(socket));
+            ok(())
+        });
+
+    Arbiter::spawn(server);
 
     let send_task = TcpStream::connect(&"127.0.0.1:4444".parse::<SocketAddr>().expect("bla"))
         .and_then(move |mut stream| {
@@ -48,14 +60,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .and_then(|_| Ok(()))
         .map_err(|e| error!("error: {:?}", e));
     Arbiter::spawn(send_task);
-
-    let addr = "127.0.0.1:4444".parse::<SocketAddr>()?;
-    let listener = TcpListener::bind(&addr)?;
-    let server = listener.incoming().for_each(|socket| {
-        info!("spawning incoming {:?}", socket);
-        Arbiter::spawn(process_socket(socket));
-        ok(())
-    });
 
     sys.run()?;
     //let addr = "127.0.0.1:8080".parse::<SocketAddr>()?;
