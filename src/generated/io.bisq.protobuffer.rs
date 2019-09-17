@@ -13,7 +13,7 @@
 pub struct NetworkEnvelope {
     #[prost(int32, tag="1")]
     pub message_version: i32,
-    #[prost(oneof="network_envelope::Message", tags="2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43")]
+    #[prost(oneof="network_envelope::Message", tags="2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45")]
     pub message: ::std::option::Option<network_envelope::Message>,
 }
 pub mod network_envelope {
@@ -64,7 +64,7 @@ pub mod network_envelope {
         #[prost(message, tag="23")]
         PeerOpenedDisputeMessage(super::PeerOpenedDisputeMessage),
         #[prost(message, tag="24")]
-        DisputeCommunicationMessage(super::DisputeCommunicationMessage),
+        ChatMessage(super::ChatMessage),
         #[prost(message, tag="25")]
         DisputeResultMessage(super::DisputeResultMessage),
         #[prost(message, tag="26")]
@@ -103,6 +103,10 @@ pub mod network_envelope {
         GetBlindVoteStateHashesResponse(super::GetBlindVoteStateHashesResponse),
         #[prost(message, tag="43")]
         BundleOfEnvelopes(super::BundleOfEnvelopes),
+        #[prost(message, tag="44")]
+        MediatedPayoutTxSignatureMessage(super::MediatedPayoutTxSignatureMessage),
+        #[prost(message, tag="45")]
+        MediatedPayoutTxPublishedMessage(super::MediatedPayoutTxPublishedMessage),
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -208,6 +212,8 @@ pub struct OfferAvailabilityResponse {
     pub uid: std::string::String,
     #[prost(message, optional, tag="5")]
     pub arbitrator: ::std::option::Option<NodeAddress>,
+    #[prost(message, optional, tag="6")]
+    pub mediator: ::std::option::Option<NodeAddress>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RefreshOfferMessage {
@@ -414,8 +420,28 @@ pub struct PayoutTxPublishedMessage {
     #[prost(string, tag="4")]
     pub uid: std::string::String,
 }
-// dispute
-
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MediatedPayoutTxPublishedMessage {
+    #[prost(string, tag="1")]
+    pub trade_id: std::string::String,
+    #[prost(bytes, tag="2")]
+    pub payout_tx: std::vec::Vec<u8>,
+    #[prost(message, optional, tag="3")]
+    pub sender_node_address: ::std::option::Option<NodeAddress>,
+    #[prost(string, tag="4")]
+    pub uid: std::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MediatedPayoutTxSignatureMessage {
+    #[prost(string, tag="1")]
+    pub uid: std::string::String,
+    #[prost(bytes, tag="2")]
+    pub tx_signature: std::vec::Vec<u8>,
+    #[prost(string, tag="3")]
+    pub trade_id: std::string::String,
+    #[prost(message, optional, tag="4")]
+    pub sender_node_address: ::std::option::Option<NodeAddress>,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OpenNewDisputeMessage {
     #[prost(message, optional, tag="1")]
@@ -424,6 +450,8 @@ pub struct OpenNewDisputeMessage {
     pub sender_node_address: ::std::option::Option<NodeAddress>,
     #[prost(string, tag="3")]
     pub uid: std::string::String,
+    #[prost(enumeration="SupportType", tag="4")]
+    pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PeerOpenedDisputeMessage {
@@ -433,9 +461,11 @@ pub struct PeerOpenedDisputeMessage {
     pub sender_node_address: ::std::option::Option<NodeAddress>,
     #[prost(string, tag="3")]
     pub uid: std::string::String,
+    #[prost(enumeration="SupportType", tag="4")]
+    pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DisputeCommunicationMessage {
+pub struct ChatMessage {
     #[prost(int64, tag="1")]
     pub date: i64,
     #[prost(string, tag="2")]
@@ -464,19 +494,10 @@ pub struct DisputeCommunicationMessage {
     pub acknowledged: bool,
     #[prost(string, tag="14")]
     pub ack_error: std::string::String,
-    #[prost(enumeration="dispute_communication_message::Type", tag="15")]
+    #[prost(enumeration="SupportType", tag="15")]
     pub r#type: i32,
     #[prost(bool, tag="16")]
     pub was_displayed: bool,
-}
-pub mod dispute_communication_message {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-    #[repr(i32)]
-    pub enum Type {
-        Mediation = 0,
-        Arbitration = 1,
-        Trade = 2,
-    }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DisputeResultMessage {
@@ -486,6 +507,8 @@ pub struct DisputeResultMessage {
     pub dispute_result: ::std::option::Option<DisputeResult>,
     #[prost(message, optional, tag="3")]
     pub sender_node_address: ::std::option::Option<NodeAddress>,
+    #[prost(enumeration="SupportType", tag="4")]
+    pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PeerPublishedDisputePayoutTxMessage {
@@ -497,6 +520,8 @@ pub struct PeerPublishedDisputePayoutTxMessage {
     pub trade_id: std::string::String,
     #[prost(message, optional, tag="4")]
     pub sender_node_address: ::std::option::Option<NodeAddress>,
+    #[prost(enumeration="SupportType", tag="5")]
+    pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PrivateNotificationMessage {
@@ -846,6 +871,8 @@ pub struct Filter {
     pub disable_dao_below_version: std::string::String,
     #[prost(string, tag="16")]
     pub disable_trade_below_version: std::string::String,
+    #[prost(string, repeated, tag="17")]
+    pub mediators: ::std::vec::Vec<std::string::String>,
 }
 /// not used anymore from v0.6 on. But leave it for receiving TradeStatistics objects from older
 /// versions and convert it to TradeStatistics2 objects.
@@ -956,8 +983,10 @@ pub struct OfferPayload {
     pub base_currency_code: std::string::String,
     #[prost(string, tag="12")]
     pub counter_currency_code: std::string::String,
+    /// not used anymore but still required as old clients check for nonNull
     #[prost(message, repeated, tag="13")]
     pub arbitrator_node_addresses: ::std::vec::Vec<NodeAddress>,
+    /// not used anymore but still required as old clients check for nonNull
     #[prost(message, repeated, tag="14")]
     pub mediator_node_addresses: ::std::vec::Vec<NodeAddress>,
     #[prost(string, tag="15")]
@@ -1083,11 +1112,11 @@ pub struct Dispute {
     #[prost(string, tag="17")]
     pub taker_contract_signature: std::string::String,
     #[prost(message, optional, tag="18")]
-    pub arbitrator_pub_key_ring: ::std::option::Option<PubKeyRing>,
+    pub agent_pub_key_ring: ::std::option::Option<PubKeyRing>,
     #[prost(bool, tag="19")]
     pub is_support_ticket: bool,
     #[prost(message, repeated, tag="20")]
-    pub dispute_communication_messages: ::std::vec::Vec<DisputeCommunicationMessage>,
+    pub chat_message: ::std::vec::Vec<ChatMessage>,
     #[prost(bool, tag="21")]
     pub is_closed: bool,
     #[prost(message, optional, tag="22")]
@@ -1121,7 +1150,7 @@ pub struct DisputeResult {
     #[prost(string, tag="8")]
     pub summary_notes: std::string::String,
     #[prost(message, optional, tag="9")]
-    pub dispute_communication_message: ::std::option::Option<DisputeCommunicationMessage>,
+    pub chat_message: ::std::option::Option<ChatMessage>,
     #[prost(bytes, tag="10")]
     pub arbitrator_signature: std::vec::Vec<u8>,
     #[prost(int64, tag="11")]
@@ -1582,7 +1611,7 @@ pub struct AdvancedCashAccountPayload {
 /// Those are persisted to disc
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PersistableEnvelope {
-    #[prost(oneof="persistable_envelope::Message", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28")]
+    #[prost(oneof="persistable_envelope::Message", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29")]
     pub message: ::std::option::Option<persistable_envelope::Message>,
 }
 pub mod persistable_envelope {
@@ -1604,7 +1633,7 @@ pub mod persistable_envelope {
         #[prost(message, tag="7")]
         TradeStatisticsList(super::TradeStatisticsList),
         #[prost(message, tag="8")]
-        DisputeList(super::DisputeList),
+        ArbitrationDisputeList(super::ArbitrationDisputeList),
         #[prost(message, tag="9")]
         PreferencesPayload(super::PreferencesPayload),
         #[prost(message, tag="10")]
@@ -1649,6 +1678,8 @@ pub mod persistable_envelope {
         UnconfirmedBsqChangeOutputList(super::UnconfirmedBsqChangeOutputList),
         #[prost(message, tag="28")]
         SignedWitnessStore(super::SignedWitnessStore),
+        #[prost(message, tag="29")]
+        MediationDisputeList(super::MediationDisputeList),
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1795,6 +1826,8 @@ pub struct OpenOffer {
     pub state: i32,
     #[prost(message, optional, tag="3")]
     pub arbitrator_node_address: ::std::option::Option<NodeAddress>,
+    #[prost(message, optional, tag="4")]
+    pub mediator_node_address: ::std::option::Option<NodeAddress>,
 }
 pub mod open_offer {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -1887,7 +1920,9 @@ pub struct Trade {
     #[prost(string, tag="28")]
     pub counter_currency_tx_id: std::string::String,
     #[prost(message, repeated, tag="29")]
-    pub communication_messages: ::std::vec::Vec<DisputeCommunicationMessage>,
+    pub chat_message: ::std::vec::Vec<ChatMessage>,
+    #[prost(enumeration="MediationResultState", tag="30")]
+    pub mediation_result_state: i32,
 }
 pub mod trade {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -1943,9 +1978,15 @@ pub mod trade {
     pub enum DisputeState {
         PbErrorDisputeState = 0,
         NoDispute = 1,
+        /// arbitration  We use the enum name for resolving enums so it cannot be renamed
         DisputeRequested = 2,
+        /// arbitration  We use the enum name for resolving enums so it cannot be renamed
         DisputeStartedByPeer = 3,
+        /// arbitration  We use the enum name for resolving enums so it cannot be renamed
         DisputeClosed = 4,
+        MediationRequested = 5,
+        MediationStartedByPeer = 6,
+        MediationClosed = 7,
     }
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
@@ -2012,6 +2053,12 @@ pub struct ProcessModel {
     pub temp_trading_peer_node_address: ::std::option::Option<NodeAddress>,
     #[prost(string, tag="17")]
     pub payment_started_message_state: std::string::String,
+    #[prost(bytes, tag="18")]
+    pub mediated_payout_tx_signature: std::vec::Vec<u8>,
+    #[prost(int64, tag="19")]
+    pub buyer_payout_amount_from_mediation: i64,
+    #[prost(int64, tag="20")]
+    pub seller_payout_amount_from_mediation: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TradingPeer {
@@ -2043,13 +2090,20 @@ pub struct TradingPeer {
     pub account_age_witness_signature: std::vec::Vec<u8>,
     #[prost(int64, tag="14")]
     pub current_date: i64,
+    #[prost(bytes, tag="15")]
+    pub mediated_payout_tx_signature: std::vec::Vec<u8>,
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Dispute
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DisputeList {
+pub struct ArbitrationDisputeList {
+    #[prost(message, repeated, tag="1")]
+    pub dispute: ::std::vec::Vec<Dispute>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MediationDisputeList {
     #[prost(message, repeated, tag="1")]
     pub dispute: ::std::vec::Vec<Dispute>,
 }
@@ -2887,6 +2941,15 @@ pub struct MockPayload {
     #[prost(string, tag="2")]
     pub message: std::string::String,
 }
+// dispute
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SupportType {
+    Arbitration = 0,
+    Mediation = 1,
+    Trade = 2,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum AvailabilityResult {
@@ -2899,6 +2962,27 @@ pub enum AvailabilityResult {
     NoArbitrators = 6,
     NoMediators = 7,
     UserIgnored = 8,
+    MissingMandatoryCapability = 9,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum MediationResultState {
+    PbErrorMediationResult = 0,
+    UndefinedMediationResult = 1,
+    MediationResultAccepted = 2,
+    MediationResultRejected = 3,
+    SigMsgSent = 4,
+    SigMsgArrived = 5,
+    SigMsgInMailbox = 6,
+    SigMsgSendFailed = 7,
+    ReceivedSigMsg = 8,
+    PayoutTxPublished = 9,
+    PayoutTxPublishedMsgSent = 10,
+    PayoutTxPublishedMsgArrived = 11,
+    PayoutTxPublishedMsgInMailbox = 12,
+    PayoutTxPublishedMsgSendFailed = 13,
+    ReceivedPayoutTxPublishedMsg = 14,
+    PayoutTxSeenInNetwork = 15,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
