@@ -5,10 +5,13 @@ build:
 	cargo build
 
 run: build
-	target/debug/risq
+	RUST_LOG=debug target/debug/risq
 
-test-all:
-	cargo test
+check:
+	cargo watch -x check
+
+test:
+	cargo watch -x test
 
 run-tor:
 	scripts/run-tor
