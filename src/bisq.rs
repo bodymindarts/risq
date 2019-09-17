@@ -7,17 +7,23 @@ pub enum BaseCurrencyNetwork {
     BtcRegtest,
 }
 
-impl BaseCurrencyNetwork {
-    pub fn get_message_version(&self) -> i32 {
-        let base_currency_network = match self {
+pub mod message {
+    use super::*;
+    type MessageVersion = i32;
+    pub struct MessageFactory(MessageVersion);
+    fn message_version(network: &BaseCurrencyNetwork) -> MessageVersion {
+        let base_currency_network = match network {
             BaseCurrencyNetwork::BtcMainnet => 0,
             BaseCurrencyNetwork::BtcTestnet => 1,
             BaseCurrencyNetwork::BtcRegtest => 2,
         };
         base_currency_network + 10 * P2P_NETWORK_VERSION
     }
-}
+    impl MessageFactory {
+        pub fn new(network: &BaseCurrencyNetwork) {
+            MessageFactory(message_version(network));
+        }
+    }
 
-pub mod message {
     include!("generated/io.bisq.protobuffer.rs");
 }

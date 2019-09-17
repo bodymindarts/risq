@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let network = BaseCurrencyNetwork::BtcRegtest;
     let ping = NetworkEnvelope {
-        message_version: network.get_message_version(),
+        message_version: 1,
         message: Some(network_envelope::Message::Ping(Ping {
             nonce: 1,
             last_round_trip_time: 0,
