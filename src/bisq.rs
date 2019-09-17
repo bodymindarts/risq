@@ -9,7 +9,7 @@ pub enum BaseCurrencyNetwork {
 
 impl BaseCurrencyNetwork {
     pub fn get_message_version(&self) -> i32 {
-        let base_currency_network = match (self) {
+        let base_currency_network = match self {
             BaseCurrencyNetwork::BtcMainnet => 0,
             BaseCurrencyNetwork::BtcTestnet => 1,
             BaseCurrencyNetwork::BtcRegtest => 2,

@@ -14,7 +14,7 @@ use futures::{
 use actix::Arbiter;
 use bisq::{message::*, BaseCurrencyNetwork};
 use tokio::{
-    io::{read_exact, AsyncRead},
+    io::read_exact,
     net::{TcpListener, TcpStream},
 };
 
@@ -23,16 +23,16 @@ use prost::Message;
 use env_logger;
 #[macro_use]
 extern crate log;
-fn process_socket(mut socket: TcpStream) -> impl Future<Item = (), Error = ()> {
-    let mut read_size = vec![0];
+fn process_socket(socket: TcpStream) -> impl Future<Item = (), Error = ()> {
+    let read_size = vec![0];
     read_exact(socket, read_size)
         .and_then(|(socket, next_size)| {
             info!("size: {:?}", next_size[0]);
-            let mut msg_bytes = vec![0; next_size[0].into()];
+            let msg_bytes = vec![0; next_size[0].into()];
             read_exact(socket, msg_bytes)
         })
         .map_err(|e| error!("error reading from socket {:?}", e))
-        .and_then(|(socket, msg_bytes)| {
+        .and_then(|(_socket, msg_bytes)| {
             info!("msg_bytes received {:?}", msg_bytes);
             result(
                 NetworkEnvelope::decode(&msg_bytes)
@@ -92,46 +92,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Arbiter::spawn(server);
 
+    api::listen(7477)?;
+
     sys.run()?;
-    //let addr = "127.0.0.1:8080".parse::<SocketAddr>()?;
-    //let listener = TcpListener::bind(&addr)?;
-    ////
-    //// accept connections and process them
-    //tokio::run(
-    //    listener
-    //        .incoming()
-    //        .map_err(|e| {
-    //            eprintln!(
-    //                "failed to accept socket; error =
-    //{:?}",
-    //                e
-    //            )
-    //        })
-    //        .for_each(|socket| {
-    //            process_socket(socket);
-    //            Ok(())
-    //        }),
-    //);
-    // listener.incoming()
-    //         .map_err(|e| eprintln!("failed to accept socket; error = {:?}", e))
-    //                 .for_each(|socket| {
-    //                                 process_socket(socket);
-    //                                             Ok(())
-    //                                                         })
-    // let api_thread = thread::spawn(move || api::listen(4444).expect("Failed to start api"));
-    // let mut tc = tor::TorControl::connect("127.0.0.1:9051").unwrap();
 
-    // let res = tc
-    //     .add_v2_onion(AddOnionConfig {
-    //         virtual_port: 4000,
-    //         target_port: 4444,
-    //         private_key_path: "/Users/jcarter/projects/bodymindarts/risq/.risq/risq_service_key"
-    //             .into(),
-    //     })
-    //     .expect("Could not start api");
-
-    // println!("{:?}", res);
-
-    // api_thread.join().expect("Could not join api_thread");
     exit(0);
 }
