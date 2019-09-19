@@ -192,25 +192,22 @@ pub(super) mod connection {
             let config = ConnectionConfig {
                 message_version: network.into(),
             };
-            // let ping = Message::Ping(Ping {
-            //     nonce: 0,
-            //     last_round_trip_time: 0,
-            // });
             let addr = "127.0.0.1:7477";
             let connection = Connection::new(addr, config);
             let (tx, rx) = oneshot::channel();
-            let incoming_connection = TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())?
-                .incoming()
-                .into_future()
-                .map(|(tcp, _)| {
-                    tokio::spawn(
+            tokio::spawn(
+                TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())?
+                    .incoming()
+                    .into_future()
+                    .map_err(|e| println!("err"))
+                    .and_then(move |(tcp, _)| {
                         Connection::from_tcp_stream(tcp.unwrap(), network.into())
                             .extract_message_stream()
                             .into_future()
-                            .and_then(|(msg, _)| ok(tx.send(msg).unwrap()))
-                            .map_err(|e| println!("err")),
-                    )
-                });
+                            .map(|(msg, _)| tx.send(msg).unwrap())
+                            .map_err(|e| println!("err"))
+                    }),
+            );
             Ok(())
         }
     }
