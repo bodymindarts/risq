@@ -198,18 +198,18 @@ pub(super) mod connection {
             // });
             let addr = "127.0.0.1:7477";
             let connection = Connection::new(addr, config);
+            let (tx, rx) = oneshot::channel();
             let incoming_connection = TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())?
                 .incoming()
-                .and_then(|stream| ok(Connection::from_tcp_stream(stream, network.into())))
-                .map(|mut conn| {
-                    let (tx, rx) = oneshot::channel();
-                    tokio::spawn(lazy(move || {
-                        conn.extract_message_stream()
-                            .take(1)
+                .into_future()
+                .map(|(tcp, _)| {
+                    tokio::spawn(
+                        Connection::from_tcp_stream(tcp.unwrap(), network.into())
+                            .extract_message_stream()
                             .into_future()
                             .and_then(|(msg, _)| ok(tx.send(msg).unwrap()))
-                            .map_err(|e| println!("err"))
-                    }));
+                            .map_err(|e| println!("err")),
+                    )
                 });
             Ok(())
         }
