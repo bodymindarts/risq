@@ -1,15 +1,17 @@
 pub(super) mod connection {
-    use crate::bisq::proto::{network_envelope, MessageVersion, NetworkEnvelope};
+    use crate::bisq::proto::{network_envelope, MessageVersion, NetworkEnvelope, Ping};
     use crate::error::{Error, ReceiveErrorKind};
     #[macro_use]
-    use futures::{try_ready, future, Async, Future, Stream};
+    use futures::{sync::oneshot, try_ready, future, Async, Future, Stream};
     use prost::Message;
     use std::{
+        collections::VecDeque,
         io::{self, Write},
+        mem,
         net::ToSocketAddrs,
     };
     use tokio::{
-        io::{AsyncRead, ReadHalf},
+        io::{AsyncRead, ReadHalf, WriteHalf},
         net::TcpStream,
     };
 
@@ -17,7 +19,8 @@ pub(super) mod connection {
         pub message_version: MessageVersion,
     }
     pub struct Connection {
-        tcp: TcpStream,
+        writer: WriteHalf<TcpStream>,
+        reader: Option<MessageStream>,
         conf: ConnectionConfig,
     }
     impl Connection {
@@ -32,13 +35,23 @@ pub(super) mod connection {
             )
             .and_then(|addr| {
                 TcpStream::connect(&addr)
-                    .map(|tcp| Connection { tcp, conf })
+                    .map(|tcp| {
+                        let (reader, writer) = tcp.split();
+                        let reader = Some(MessageStream::new(reader));
+                        Connection {
+                            writer,
+                            reader,
+                            conf,
+                        }
+                    })
                     .map_err(|err| err.into())
             })
         }
         pub fn from_tcp_stream(stream: TcpStream, message_version: MessageVersion) -> Connection {
+            let (reader, writer) = stream.split();
             Connection {
-                tcp: stream,
+                writer,
+                reader: Some(MessageStream::new(reader)),
                 conf: ConnectionConfig { message_version },
             }
         }
@@ -50,32 +63,31 @@ pub(super) mod connection {
             let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
             envelope
                 .encode_length_delimited(&mut serialized)
-                .map_err(|err| error!("Could not serialize message {:?}; Error {}", envelope, err))
                 .expect("Could not encode message");
-            self.tcp.write(&serialized);
-            self.tcp.flush();
+            self.writer.write(&serialized);
+            self.writer.flush();
             ()
         }
-        // pub fn next_msg(self) -> impl Future<Item = (), Error = ()> {
-        // let read_size = vec![0];
-        // read_exact(self.tcp, read_size)
-        //     .and_then(|(socket, next_size)| {
-        //         info!("size: {:?}", next_size[0]);
-        //         let msg_bytes = vec![0; next_size[0].into()];
-        //         read_exact(socket, msg_bytes)
-        //     })
-        //     .map_err(|e| error!("error reading from socket {:?}", e))
-        //     .and_then(|(_socket, msg_bytes)| {
-        //         info!("msg_bytes received {:?}", msg_bytes);
-        //         future::result(
-        //             NetworkEnvelope::decode(&msg_bytes)
-        //                 .map(|msg| info!("message received {:?}", msg))
-        //                 .map_err(|e| error!("error decoding msg from socket {:?}", e)),
-        //         )
-        //     })
+        pub fn extract_message_stream(
+            &mut self,
+        ) -> impl Stream<Item = network_envelope::Message, Error = Error> {
+            mem::replace(&mut self.reader, None).expect("Reader already removed")
+        }
+
+        // pub fn get_next(
+        //     &mut self,
+        // ) -> impl Future<Item = Option<network_envelope::Message>, Error = Error> {
+        //     let (tx, rx) = oneshot::channel();
+        //     // self.reader.and_then(|res| tx.send(res));
+        //     let ping = network_envelope::Message::Ping(Ping {
+        //         nonce: 0,
+        //         last_round_trip_time: 0,
+        //     });
+        //     tx.send(Some(ping));
+        //     rx.map_err(|e| e.into())
         // }
     }
-    enum OutStreamState {
+    enum MessageStreamState {
         MessageInProgress {
             size: usize,
             pos: usize,
@@ -84,35 +96,60 @@ pub(super) mod connection {
         BetweenMessages,
         Empty,
     }
-    struct OutStream {
+    struct MessageStream {
         reader: ReadHalf<TcpStream>,
-        state: OutStreamState,
+        state: MessageStreamState,
+        buffer: VecDeque<NetworkEnvelope>,
     }
-    impl Stream for OutStream {
+    impl MessageStream {
+        fn new(reader: ReadHalf<TcpStream>) -> MessageStream {
+            MessageStream {
+                reader,
+                state: MessageStreamState::BetweenMessages,
+                buffer: VecDeque::new(),
+            }
+        }
+        fn next_from_buffer(&mut self) -> Option<network_envelope::Message> {
+            let msg = self.buffer.pop_front()?.message;
+            match msg {
+                Some(network_envelope::Message::BundleOfEnvelopes(msg)) => {
+                    msg.envelopes
+                        .into_iter()
+                        .rev()
+                        .for_each(|envelope| self.buffer.push_front(envelope));
+                    self.next_from_buffer()
+                }
+                None => self.next_from_buffer(),
+                _ => msg,
+            }
+        }
+    }
+    impl Stream for MessageStream {
         type Item = network_envelope::Message;
         type Error = Error;
 
         fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-            let ping = network_envelope::Message::Ping(crate::bisq::proto::Ping {
-                nonce: 0,
-                last_round_trip_time: 0,
-            });
-            if let OutStreamState::BetweenMessages = self.state {
-                let mut read_size = vec![0];
-                let _ = try_ready!(self.reader.poll_read(&mut read_size));
-                let size = read_size[0].into();
-                self.state = OutStreamState::MessageInProgress {
-                    size,
-                    pos: 0,
-                    buf: vec![0; size],
-                };
-            }
-            let res = match (&mut self.state) {
-                (OutStreamState::MessageInProgress {
+            let next_read = match self.state {
+                MessageStreamState::Empty => panic!("Stream is already finished"),
+                MessageStreamState::BetweenMessages => {
+                    if let Some(msg) = self.next_from_buffer() {
+                        return Ok(Async::Ready(Some(msg)));
+                    }
+                    let mut read_size = vec![0];
+                    let _ = try_ready!(self.reader.poll_read(&mut read_size));
+                    let size = read_size[0].into();
+                    self.state = MessageStreamState::MessageInProgress {
+                        size,
+                        pos: 0,
+                        buf: vec![0; size],
+                    };
+                    return self.poll();
+                }
+                MessageStreamState::MessageInProgress {
                     ref mut size,
                     ref mut pos,
                     ref mut buf,
-                }) => {
+                } => {
                     while *pos < *size {
                         let n = try_ready!(self.reader.poll_read(&mut buf[*pos..]));
                         *pos += n;
@@ -125,27 +162,10 @@ pub(super) mod connection {
                     }
                     NetworkEnvelope::decode(&*buf)?
                 }
-                OutStreamState::Empty => panic!("Stream is already finished"),
-                _ => return Ok(Async::NotReady),
             };
-            // let next_state = match self.state {
-            //     OutStreamState::BetweenMessages => {
-            //         let mut read_size = vec![0];
-            //         let _ = try_ready!(self.reader.poll_read(&mut read_size));
-            //         let size = read_size[0].into()
-            //         OutStreamState::MessageInProgress {
-            //             size ,
-            //                 pos: 0,
-            //                 buf: vec![0;size],
-            //         }
-            //     }
-            //     OutStreamState::MessageInProgress => Ok(Async::Ready(Some(ping))),
-            //     State::Empty => panic!("poll a ReadExact after it's done")
-            // }
-            match res.message {
-                Some(message) => Ok(Async::Ready(Some(message))),
-                None => Ok(Async::NotReady),
-            }
+            self.buffer.push_back(next_read);
+            self.state = MessageStreamState::BetweenMessages;
+            self.poll()
         }
     }
 
@@ -157,7 +177,12 @@ pub(super) mod connection {
             BaseCurrencyNetwork,
         };
         use crate::error::Error;
-        use futures::{future::ok, stream::Stream};
+        use futures::{
+            future::{lazy, ok},
+            stream::Stream,
+            sync::oneshot,
+            Future,
+        };
         use std::net::SocketAddr;
         use tokio::net::TcpListener;
 
@@ -167,17 +192,24 @@ pub(super) mod connection {
             let config = ConnectionConfig {
                 message_version: network.into(),
             };
+            // let ping = Message::Ping(Ping {
+            //     nonce: 0,
+            //     last_round_trip_time: 0,
+            // });
             let addr = "127.0.0.1:7477";
             let connection = Connection::new(addr, config);
-
-            TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())?
+            let incoming_connection = TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())?
                 .incoming()
-                .and_then(|stream| {
-                    let ping = Message::Ping(Ping {
-                        nonce: 0,
-                        last_round_trip_time: 0,
-                    });
-                    ok(Connection::from_tcp_stream(stream, network.into()).send_sync(ping))
+                .and_then(|stream| ok(Connection::from_tcp_stream(stream, network.into())))
+                .map(|mut conn| {
+                    let (tx, rx) = oneshot::channel();
+                    tokio::spawn(lazy(move || {
+                        conn.extract_message_stream()
+                            .take(1)
+                            .into_future()
+                            .and_then(|(msg, _)| ok(tx.send(msg).unwrap()))
+                            .map_err(|e| println!("err"))
+                    }));
                 });
             Ok(())
         }

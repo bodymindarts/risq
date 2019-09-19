@@ -1,3 +1,4 @@
+use futures::sync::oneshot;
 use prost::DecodeError;
 use std::{io, result};
 
@@ -6,6 +7,7 @@ pub enum Error {
     ToSocketError,
     IoError(io::Error),
     Decode(DecodeError),
+    OneshotCanceled,
 }
 
 #[derive(Debug)]
@@ -24,5 +26,10 @@ impl From<io::Error> for Error {
 impl From<DecodeError> for Error {
     fn from(err: DecodeError) -> Self {
         Error::Decode(err)
+    }
+}
+impl From<oneshot::Canceled> for Error {
+    fn from(err: oneshot::Canceled) -> Self {
+        Error::OneshotCanceled
     }
 }
