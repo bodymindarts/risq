@@ -16,7 +16,7 @@ use std::process;
 
 // use actix::{Actor, Arbiter};
 // use bisq::{
-//     proto::{self, NetworkEnvelope},
+//     message::{self, NetworkEnvelope},
 //     BaseCurrencyNetwork,
 // };
 // use tokio::{
@@ -54,7 +54,7 @@ fn main() -> () {
     // let sys = actix::System::new("risq");
 
     // let network = BaseCurrencyNetwork::BtcRegtest;
-    // let msgs = proto::MessageFactory::new(&network);
+    // let msgs = message::MessageFactory::new(&network);
 
     // let (start_up_notify, start_up_listen) = oneshot::channel();
     // TcpStream::connect(&"127.0.0.1:2002".parse::<SocketAddr>().expect("bla"))

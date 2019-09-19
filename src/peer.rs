@@ -1,15 +1,9 @@
 pub(super) mod connection {
-    use crate::bisq::proto::{network_envelope, MessageVersion, NetworkEnvelope, Ping};
-    use crate::error::{Error, ReceiveErrorKind};
-    #[macro_use]
-    use futures::{try_ready, future, Async, Future, Stream};
+    use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
+    use crate::error::Error;
+    use futures::{future, try_ready, Async, Future, Stream};
     use prost::Message;
-    use std::{
-        collections::VecDeque,
-        io::{self, Write},
-        mem,
-        net::ToSocketAddrs,
-    };
+    use std::{collections::VecDeque, io, net::ToSocketAddrs};
     use tokio::{
         io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
         net::TcpStream,
@@ -19,7 +13,7 @@ pub(super) mod connection {
     pub struct ConnectionConfig {
         pub message_version: MessageVersion,
     }
-    pub struct Connection {
+    struct Connection {
         writer: WriteHalf<TcpStream>,
         reader: Option<MessageStream>,
         conf: ConnectionConfig,
@@ -58,11 +52,11 @@ pub(super) mod connection {
         }
         pub fn send(
             self,
-            msg: network_envelope::Message,
+            msg: impl Into<network_envelope::Message>,
         ) -> impl Future<Item = Connection, Error = Error> {
             let envelope = NetworkEnvelope {
                 message_version: self.conf.message_version.into(),
-                message: Some(msg),
+                message: Some(msg.into()),
             };
             let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
             envelope
@@ -82,10 +76,10 @@ pub(super) mod connection {
                 })
                 .map_err(|err| err.into())
         }
-        pub fn extract_message_stream(
+        pub fn take_message_stream(
             &mut self,
         ) -> impl Stream<Item = network_envelope::Message, Error = Error> {
-            mem::replace(&mut self.reader, None).expect("Reader already removed")
+            self.reader.take().expect("Reader already removed")
         }
 
         // pub fn get_next(
@@ -168,10 +162,9 @@ pub(super) mod connection {
                         let n = try_ready!(self.reader.poll_read(&mut buf[*pos..]));
                         *pos += n;
                         if n == 0 {
-                            return Err(Error::IoError(io::Error::new(
-                                io::ErrorKind::UnexpectedEof,
-                                "early eof",
-                            )));
+                            return Err(
+                                io::Error::new(io::ErrorKind::UnexpectedEof, "early eof").into()
+                            );
                         }
                     }
                     NetworkEnvelope::decode(&*buf)?
@@ -187,7 +180,7 @@ pub(super) mod connection {
     mod test {
         use super::{Connection, ConnectionConfig};
         use crate::bisq::{
-            proto::{network_envelope::Message, Ping},
+            message::{network_envelope::Message, Ping},
             BaseCurrencyNetwork,
         };
         use crate::error::Error;
@@ -201,7 +194,7 @@ pub(super) mod connection {
         use tokio::net::TcpListener;
 
         #[test]
-        fn send_and_receive() -> Result<(), Error> {
+        fn basic_send_and_receive() {
             let network = BaseCurrencyNetwork::BtcRegtest;
             let config = ConnectionConfig {
                 message_version: network.into(),
@@ -209,14 +202,14 @@ pub(super) mod connection {
             let addr = "127.0.0.1:7477";
             let connection = Connection::new(addr, config.clone());
             let (tx, rx) = oneshot::channel();
-            let ping = Message::Ping(Ping {
+            let ping = Ping {
                 nonce: 0,
                 last_round_trip_time: 0,
-            });
-            let ping2 = Message::Ping(Ping {
+            };
+            let ping2 = Ping {
                 nonce: 0,
                 last_round_trip_time: 0,
-            });
+            };
             let receiver = TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())
                 .unwrap()
                 .incoming()
@@ -224,7 +217,7 @@ pub(super) mod connection {
                 .map_err(|e| println!("err"))
                 .and_then(move |(tcp, _)| {
                     Connection::from_tcp_stream(tcp.unwrap(), network.into())
-                        .extract_message_stream()
+                        .take_message_stream()
                         .into_future()
                         .map(|(msg, _)| tx.send(msg.unwrap()).unwrap())
                         .map_err(|e| println!("err"))
@@ -237,12 +230,11 @@ pub(super) mod connection {
                 tokio::spawn(sender);
                 rx.then(move |msg| {
                     ok(match msg {
-                        Ok(msg) => assert!(msg == ping2),
+                        Ok(msg) => assert!(msg == ping2.into()),
                         Err(_) => assert!(false),
                     })
                 })
             }));
-            Ok(())
         }
     }
 }

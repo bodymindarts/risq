@@ -8,7 +8,7 @@ pub enum BaseCurrencyNetwork {
     BtcRegtest,
 }
 
-pub mod proto {
+pub mod message {
     use super::*;
 
     #[derive(Debug, Clone, Copy)]
@@ -29,27 +29,18 @@ pub mod proto {
         }
     }
 
-    // pub struct MessageFactory(MessageVersion);
-    // impl MessageFactory {
-    //     pub fn new(network: &BaseCurrencyNetwork) -> MessageFactory {
-    //         MessageFactory(message_version(network))
-    //     }
-
-    //     pub fn preliminary_get_data_request(&self) -> NetworkEnvelope {
-    //         NetworkEnvelope {
-    //             message_version: (&(self.0)).into(),
-    //             message: Some(network_envelope::Message::PreliminaryGetDataRequest(
-    //                 PreliminaryGetDataRequest {
-    //                     nonce: rand::thread_rng().gen::<i32>(),
-    //                     excluded_keys: Vec::new(),
-    //                     supported_capabilities: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    //                 },
-    //             )),
-    //         }
-    //     }
-    // }
-
     include!("generated/io.bisq.protobuffer.rs");
+    include!("generated/for_all_messages.rs");
+    macro_rules! into_message {
+        ($caml:ident,$snake:ident) => {
+            impl From<$caml> for network_envelope::Message {
+                fn from(msg: $caml) -> network_envelope::Message {
+                    network_envelope::Message::$caml(msg)
+                }
+            }
+        };
+    }
+    for_all_messages!(into_message);
 }
 
 mod capabilities {

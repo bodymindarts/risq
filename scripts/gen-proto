@@ -9,3 +9,30 @@ curl -s https://raw.githubusercontent.com/bisq-network/bisq/master/common/src/ma
 cp ${REPO_ROOT_DIR}/gen-proto.rs ${REPO_ROOT_DIR}/build.rs
 cargo build
 rm ${REPO_ROOT_DIR}/build.rs
+
+TMPDIR=$(mktemp -d -t gen-proto.XXXXXX)
+trap "rm -rf ${TMPDIR}" INT TERM QUIT EXIT
+cat src/generated/io.bisq.protobuffer.rs | \
+  sed -n '/^    pub enum Message {$/,$p' | \
+  sed '1,/^    }$/!d' | \
+  egrep -v '{|}|prost' | \
+  sed 's/        \([A-Za-z]*\)(.*/\1/' \
+  > ${TMPDIR}/message_names
+
+function to_snake_case() {
+  echo $1 | \
+    perl -pe 's/([a-z0-9])([A-Z])/$1_\L$2/g' | \
+    perl -pe 's/([A-Z])/\L\1/g'
+}
+
+cat <<EOF > ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+macro_rules! for_all_messages {
+    (\$m:ident) => {
+EOF
+cat ${TMPDIR}/message_names | while read camlName; do
+  echo "        \$m!($camlName,$(to_snake_case $camlName));"
+done >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+    };
+}
+EOF
