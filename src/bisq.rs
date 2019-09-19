@@ -9,6 +9,9 @@ pub enum BaseCurrencyNetwork {
 }
 
 pub mod message {
+    include!("generated/io.bisq.protobuffer.rs");
+    include!("generated/for_all_messages.rs");
+
     use super::*;
 
     #[derive(Debug, Clone, Copy)]
@@ -29,10 +32,20 @@ pub mod message {
         }
     }
 
-    include!("generated/io.bisq.protobuffer.rs");
-    include!("generated/for_all_messages.rs");
+    macro_rules! listener_method {
+        ($caml:ident, $snake:ident) => {
+            fn $snake(&mut self, _msg: $caml) -> () {}
+        };
+    }
+    pub trait Listener {
+        fn accept(&mut self, msg: network_envelope::Message) -> () {
+            match_message!(msg, self);
+        }
+        for_all_messages!(listener_method);
+    }
+
     macro_rules! into_message {
-        ($caml:ident,$snake:ident) => {
+        ($caml:ident, $snake:ident) => {
             impl From<$caml> for network_envelope::Message {
                 fn from(msg: $caml) -> network_envelope::Message {
                     network_envelope::Message::$caml(msg)

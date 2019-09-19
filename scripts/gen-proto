@@ -35,4 +35,18 @@ done >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
 cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
     };
 }
+
+macro_rules! match_message {
+    (\$m:ident, \$target:ident) => {
+        match \$m {
 EOF
+cat ${TMPDIR}/message_names | while read camlName; do
+echo "            network_envelope::Message::$camlName(\$m) => \$target.$(to_snake_case $camlName)(\$m),"
+done >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+        }
+    };
+}
+EOF
+
+
