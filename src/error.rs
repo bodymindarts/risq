@@ -1,4 +1,3 @@
-use futures::sync::oneshot;
 use prost::DecodeError;
 use std::{io, result};
 
@@ -20,10 +19,5 @@ impl From<io::Error> for Error {
 impl From<DecodeError> for Error {
     fn from(err: DecodeError) -> Self {
         Error::Decode(err)
-    }
-}
-impl From<oneshot::Canceled> for Error {
-    fn from(_err: oneshot::Canceled) -> Self {
-        Error::OneshotCanceled
     }
 }

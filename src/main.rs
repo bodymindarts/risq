@@ -1,20 +1,24 @@
 #[macro_use]
 mod bisq;
+mod connection;
 mod error;
-mod peer;
 
 use bisq::{capabilities, message::*, BaseCurrencyNetwork};
-use futures::{
-    future::{ok, Future},
-    stream::Stream,
-};
-use peer::connection::{Connection, ConnectionConfig};
+use connection::{Connection, ConnectionConfig};
 use std::process;
-use tokio;
+use tokio::{
+    self,
+    prelude::{
+        future::{ok, Future},
+        stream::Stream,
+    },
+};
 
 use env_logger;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate futures;
 
 macro_rules! debug_method {
     ($caml:ident, $snake:ident) => {
