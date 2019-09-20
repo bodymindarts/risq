@@ -173,8 +173,8 @@ impl Stream for MessageStream {
 mod test {
     use super::{Connection, ConnectionConfig};
     use crate::bisq::{
+        constants::BaseCurrencyNetwork,
         message::{network_envelope::Message, Ping},
-        BaseCurrencyNetwork,
     };
     use crate::error::Error;
     use std::net::SocketAddr;

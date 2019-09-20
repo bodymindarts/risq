@@ -1,9 +1,10 @@
 #[macro_use]
 mod bisq;
+mod bootstrap;
 mod connection;
 mod error;
 
-use bisq::{capabilities, message::*, BaseCurrencyNetwork};
+use bisq::{capabilities, constants::BaseCurrencyNetwork, message::*};
 use connection::{Connection, ConnectionConfig};
 use std::process;
 use tokio::{
