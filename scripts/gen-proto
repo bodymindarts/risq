@@ -25,14 +25,14 @@ function to_snake_case() {
     perl -pe 's/([A-Z])/\L\1/g'
 }
 
-cat <<EOF > ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+cat <<EOF > ${REPO_ROOT_DIR}/src/generated/message_macros.rs
 macro_rules! for_all_messages {
     (\$m:ident) => {
 EOF
 cat ${TMPDIR}/message_names | while read camlName; do
   echo "        \$m!($camlName,$(to_snake_case $camlName));"
-done >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
-cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+done >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
+cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
     };
 }
 
@@ -42,8 +42,8 @@ macro_rules! match_message {
 EOF
 cat ${TMPDIR}/message_names | while read camlName; do
 echo "            network_envelope::Message::$camlName(\$m) => \$target.$(to_snake_case $camlName)(\$m),"
-done >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
-cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/for_all_messages.rs
+done >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
+cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
         }
     };
 }

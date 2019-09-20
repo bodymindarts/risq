@@ -8,9 +8,10 @@ pub enum BaseCurrencyNetwork {
     BtcRegtest,
 }
 
+#[macro_use]
 pub mod message {
     include!("generated/io.bisq.protobuffer.rs");
-    include!("generated/for_all_messages.rs");
+    include!("generated/message_macros.rs");
 
     use super::*;
 
@@ -23,12 +24,7 @@ pub mod message {
     }
     impl From<super::BaseCurrencyNetwork> for MessageVersion {
         fn from(network: BaseCurrencyNetwork) -> MessageVersion {
-            let base_currency_network = match network {
-                BaseCurrencyNetwork::BtcMainnet => 0,
-                BaseCurrencyNetwork::BtcTestnet => 1,
-                BaseCurrencyNetwork::BtcRegtest => 2,
-            };
-            MessageVersion(base_currency_network + 10 * P2P_NETWORK_VERSION)
+            MessageVersion((network as i32) + 10 * P2P_NETWORK_VERSION)
         }
     }
 
@@ -54,10 +50,69 @@ pub mod message {
         };
     }
     for_all_messages!(into_message);
+
+    #[cfg(test)]
+    mod tests {
+        use super::{network_envelope, Listener, Ping};
+        struct PingListener {}
+        impl super::Listener for PingListener {
+            fn ping(&mut self, msg: Ping) -> () {
+                assert!(msg.nonce == 5);
+            }
+        }
+
+        #[test]
+        fn accept_ping() {
+            let mut l = PingListener {};
+            l.accept(network_envelope::Message::Ping(Ping {
+                nonce: 5,
+                last_round_trip_time: 0,
+            }));
+        }
+    }
 }
 
-mod capabilities {
-    pub(super) fn for_app() -> Vec<i32> {
-        Vec::new()
+pub mod capabilities {
+    use lazy_static::lazy_static;
+
+    lazy_static! {
+        pub static ref LOCAL: Vec<i32> = {
+            let mut vec = Vec::with_capacity(SUPPORTED_CAPABILITIES.len());
+            SUPPORTED_CAPABILITIES
+                .iter()
+                .for_each(|c| vec.push(*c as i32));
+            vec
+        };
+    }
+    static SUPPORTED_CAPABILITIES: [Capability; 10] = [
+        Capability::TradeStatistics,
+        Capability::TradeStatistics2,
+        Capability::AccountAgeWitness,
+        Capability::AckMsg,
+        Capability::Proposal,
+        Capability::BlindVote,
+        Capability::DaoState,
+        Capability::BundleOfEnvelopes,
+        Capability::Mediation,
+        Capability::ReceiveBsqBlock,
+    ];
+    #[derive(Debug, Clone, Copy)]
+    pub enum Capability {
+        TradeStatistics, // Not required anymore as no old clients out there not having that support
+        TradeStatistics2, // Not required anymore as no old clients out there not having that support
+        AccountAgeWitness, // Not required anymore as no old clients out there not having that support
+        SeedNode,          // Node is a seed node
+        DaoFullNode,       // DAO full node can deliver BSQ blocks
+        Proposal, // Not required anymore as no old clients out there not having that support
+        BlindVote, // Not required anymore as no old clients out there not having that support
+        AckMsg,   // Not required anymore as no old clients out there not having that support
+        ReceiveBsqBlock, // Signaling that node which wants to receive BSQ blocks (DAO lite node)
+        DaoState, // Not required anymore as no old clients out there not having that support
+
+        //TODO can be set deprecated after v1.1.6 as we
+        //enforce update there
+        BundleOfEnvelopes, // Supports bundling of messages if many messages are sent in short interval
+        SignedAccountAgeWitness, // Supports the signed account age witness feature
+        Mediation,         // Supports mediation feature
     }
 }

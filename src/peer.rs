@@ -1,3 +1,5 @@
+// pub use connection::{Connection, ConnectionConfig};
+
 pub(super) mod connection {
     use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
     use crate::error::Error;
@@ -13,7 +15,7 @@ pub(super) mod connection {
     pub struct ConnectionConfig {
         pub message_version: MessageVersion,
     }
-    struct Connection {
+    pub struct Connection {
         writer: WriteHalf<TcpStream>,
         reader: Option<MessageStream>,
         conf: ConnectionConfig,
@@ -81,19 +83,6 @@ pub(super) mod connection {
         ) -> impl Stream<Item = network_envelope::Message, Error = Error> {
             self.reader.take().expect("Reader already removed")
         }
-
-        // pub fn get_next(
-        //     &mut self,
-        // ) -> impl Future<Item = Option<network_envelope::Message>, Error = Error> {
-        //     let (tx, rx) = oneshot::channel();
-        //     // self.reader.and_then(|res| tx.send(res));
-        //     let ping = network_envelope::Message::Ping(Ping {
-        //         nonce: 0,
-        //         last_round_trip_time: 0,
-        //     });
-        //     tx.send(Some(ping));
-        //     rx.map_err(|e| e.into())
-        // }
     }
     enum MessageStreamState {
         MessageInProgress {
@@ -144,7 +133,12 @@ pub(super) mod connection {
                         return Ok(Async::Ready(Some(msg)));
                     }
                     let mut read_size = vec![0];
-                    let _ = try_ready!(self.reader.poll_read(&mut read_size));
+                    let n = try_ready!(self.reader.poll_read(&mut read_size));
+                    if n == 0 {
+                        return Err(
+                            io::Error::new(io::ErrorKind::UnexpectedEof, "early eof").into()
+                        );
+                    }
                     let size = read_size[0].into();
                     self.state = MessageStreamState::MessageInProgress {
                         size,

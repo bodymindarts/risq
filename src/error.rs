@@ -10,12 +10,6 @@ pub enum Error {
     OneshotCanceled,
 }
 
-#[derive(Debug)]
-pub enum ReceiveErrorKind {
-    EOF,
-    Decode,
-}
-
 pub type Result<T> = result::Result<T, Error>;
 
 impl From<io::Error> for Error {
@@ -29,7 +23,7 @@ impl From<DecodeError> for Error {
     }
 }
 impl From<oneshot::Canceled> for Error {
-    fn from(err: oneshot::Canceled) -> Self {
+    fn from(_err: oneshot::Canceled) -> Self {
         Error::OneshotCanceled
     }
 }
