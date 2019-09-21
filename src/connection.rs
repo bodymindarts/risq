@@ -35,7 +35,7 @@ impl Connection {
             TcpStream::connect(&addr)
                 .map(move |tcp| {
                     let (reader, writer) = tcp.split();
-                    let reader = Some(MessageStream::new(reader));
+                    let reader = Some(MessageStream::new(reader, None));
                     Connection {
                         writer,
                         reader,
@@ -49,7 +49,7 @@ impl Connection {
         let (reader, writer) = stream.split();
         Connection {
             writer,
-            reader: Some(MessageStream::new(reader)),
+            reader: Some(MessageStream::new(reader, None)),
             conf: ConnectionConfig { message_version },
         }
     }
@@ -79,6 +79,16 @@ impl Connection {
             })
             .map_err(|err| err.into())
     }
+    pub fn into_message_stream(self) -> MessageStream {
+        let Connection {
+            mut reader,
+            conf,
+            writer,
+        } = self;
+        let mut reader = reader.expect("Reader already removed");
+        reader.conn = Some((conf, writer));
+        reader
+    }
     pub fn take_message_stream(
         &mut self,
     ) -> impl Stream<Item = network_envelope::Message, Error = Error> {
@@ -94,17 +104,35 @@ enum MessageStreamState {
     BetweenMessages,
     Empty,
 }
-struct MessageStream {
+pub struct MessageStream {
+    conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
     reader: ReadHalf<TcpStream>,
     state: MessageStreamState,
     buffer: VecDeque<NetworkEnvelope>,
 }
 impl MessageStream {
-    fn new(reader: ReadHalf<TcpStream>) -> MessageStream {
+    fn new(
+        reader: ReadHalf<TcpStream>,
+        conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
+    ) -> MessageStream {
         MessageStream {
+            conn,
             reader,
             state: MessageStreamState::BetweenMessages,
             buffer: VecDeque::new(),
+        }
+    }
+    pub fn into_inner(self) -> Connection {
+        let (conf, writer) = self.conn.expect("Inner not present");
+        Connection {
+            conf,
+            writer,
+            reader: Some(MessageStream {
+                reader: self.reader,
+                state: self.state,
+                buffer: self.buffer,
+                conn: None,
+            }),
         }
     }
     fn next_from_buffer(&mut self) -> Option<network_envelope::Message> {

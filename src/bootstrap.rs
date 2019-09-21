@@ -41,32 +41,32 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
             message_version: config.network.into(),
         },
     )
-    .and_then(|mut conn| {
+    .and_then(|conn| {
         let listener = GetDataResponseCollector {
             expecting_nonce: preliminary_get_data_request.nonce,
             response: None,
         };
-        conn.send(preliminary_get_data_request)
-            .and_then(|mut conn| {
-                future::loop_fn(
-                    (listener, conn.take_message_stream()),
-                    |(mut listener, stream)| {
-                        stream.into_future().map_err(|(err, _stream)| err).and_then(
-                            |(msg, stream)| {
-                                listener
-                                    .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
-                                    .and_then(|_| {
-                                        if let Some(response) = listener.response {
-                                            Ok(Loop::Break(response))
-                                        } else {
-                                            Ok(Loop::Continue((listener, stream)))
-                                        }
-                                    })
-                            },
-                        )
-                    },
-                )
-            })
+        conn.send(preliminary_get_data_request).and_then(|conn| {
+            future::loop_fn(
+                (listener, conn.into_message_stream()),
+                |(mut listener, stream)| {
+                    stream
+                        .into_future()
+                        .map_err(|(err, _stream)| err)
+                        .and_then(|(msg, stream)| {
+                            listener
+                                .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
+                                .and_then(|_| {
+                                    if let Some(response) = listener.response {
+                                        Ok(Loop::Break(response))
+                                    } else {
+                                        Ok(Loop::Continue((listener, stream)))
+                                    }
+                                })
+                        })
+                },
+            )
+        })
     });
     future::ok(BootstrapResult {})
 }
