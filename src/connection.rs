@@ -82,23 +82,35 @@ impl Connection {
             .map_err(|err| err.into())
     }
 
-    pub fn send_and_await<T>(
+    pub fn await_response<T>(
         self,
         listener: impl Listener<Option<T>>,
-    ) -> impl Future<Item = (T, Connection), Error = (Error, Connection)> {
+    ) -> impl Future<Item = (T, Connection), Error = Error> {
         future::loop_fn(
             (listener, self.into_message_stream()),
             |(mut listener, stream)| {
-                stream.into_future().and_then(|(msg, stream)| {
-                    match listener.accept_or_err(msg, Error::DidNotReceiveExpectedResponse) {
-                        Ok(Some(response)) => Ok(Loop::Break((response, stream.into_inner()))),
-                        Ok(None) => Ok(Loop::Continue((listener, stream))),
-                        Err(err) => Err((err, stream)),
-                    }
-                })
+                stream
+                    .into_future()
+                    .map_err(|(e, _)| e)
+                    .and_then(|(msg, stream)| {
+                        listener
+                            .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
+                            .and_then(|res| match res {
+                                Some(response) => Ok(Loop::Break((response, stream.into_inner()))),
+                                None => Ok(Loop::Continue((listener, stream))),
+                            })
+                    })
             },
         )
-        .map_err(|(err, stream)| (err, stream.into_inner()))
+    }
+
+    pub fn send_and_await<T>(
+        self,
+        msg: impl Into<network_envelope::Message>,
+        listener: impl Listener<Option<T>>,
+    ) -> impl Future<Item = (T, Self), Error = Error> {
+        self.send(msg)
+            .and_then(|conn| conn.await_response(listener))
     }
 
     pub fn into_message_stream(self) -> MessageStream {

@@ -14,10 +14,10 @@ pub struct Config {
     network: BaseCurrencyNetwork,
 }
 pub struct BootstrapResult {}
-struct GetDataResponseCollector {
+struct GetDataResponseListener {
     expecting_nonce: i32,
 }
-impl Listener<Option<GetDataResponse>> for GetDataResponseCollector {
+impl Listener<Option<GetDataResponse>> for GetDataResponseListener {
     fn get_data_response(&mut self, response: GetDataResponse) -> Option<GetDataResponse> {
         if response.request_nonce == self.expecting_nonce {
             Some(response)
@@ -43,11 +43,10 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
         },
     )
     .and_then(|conn| {
-        let listener = GetDataResponseCollector {
+        let listener = GetDataResponseListener {
             expecting_nonce: preliminary_get_data_request.nonce,
         };
-        conn.send(preliminary_get_data_request)
-            .and_then(|conn| conn.send_and_await(listener).map_err(|(err, _)| err))
+        conn.send_and_await(preliminary_get_data_request, listener)
     });
     future::ok(BootstrapResult {})
 }
