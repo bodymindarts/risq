@@ -22,8 +22,10 @@ macro_rules! listener_method {
     };
 }
 pub trait Listener {
-    fn accept(&mut self, msg: network_envelope::Message) {
-        match_message!(msg, self);
+    fn accept(&mut self, msg: impl Into<Option<network_envelope::Message>>) {
+        if let Some(msg) = msg.into() {
+            match_message!(msg, self);
+        }
     }
     fn accept_or_err<E>(
         &mut self,

@@ -80,13 +80,8 @@ impl Connection {
             .map_err(|err| err.into())
     }
     pub fn into_message_stream(self) -> MessageStream {
-        let Connection {
-            mut reader,
-            conf,
-            writer,
-        } = self;
-        let mut reader = reader.expect("Reader already removed");
-        reader.conn = Some((conf, writer));
+        let mut reader = self.reader.expect("Reader already removed");
+        reader.conn = Some((self.conf, self.writer));
         reader
     }
     pub fn take_message_stream(
