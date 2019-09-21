@@ -4,7 +4,10 @@ mod bootstrap;
 mod connection;
 mod error;
 
-use bisq::{capabilities, constants::BaseCurrencyNetwork, message::*};
+use bisq::{
+    constants::{BaseCurrencyNetwork, LOCAL_CAPABILITIES},
+    message::*,
+};
 use connection::{Connection, ConnectionConfig};
 use std::process;
 use tokio::{
@@ -53,7 +56,7 @@ fn main() -> () {
     let msg = PreliminaryGetDataRequest {
         nonce: 0,
         excluded_keys: Vec::new(),
-        supported_capabilities: capabilities::LOCAL.clone(),
+        supported_capabilities: LOCAL_CAPABILITIES.clone(),
     };
 
     let mut listener = DebugListener {};
