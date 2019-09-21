@@ -1,5 +1,6 @@
-use crate::bisq::message::{network_envelope, Listener, MessageVersion, NetworkEnvelope};
+use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
+use crate::listener::Listener;
 use prost::Message;
 use std::{collections::VecDeque, fmt::Debug, io, net::ToSocketAddrs};
 use tokio::{

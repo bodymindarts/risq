@@ -3,9 +3,12 @@ mod bisq;
 mod bootstrap;
 mod connection;
 mod error;
+mod listener;
 
 use bisq::{constants::BaseCurrencyNetwork, message::*};
 use connection::ConnectionConfig;
+use env_logger;
+use listener::Listener;
 use std::process;
 use tokio::{
     self,
@@ -15,7 +18,6 @@ use tokio::{
     },
 };
 
-use env_logger;
 #[macro_use]
 extern crate log;
 #[macro_use]

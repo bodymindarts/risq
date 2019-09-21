@@ -17,7 +17,7 @@ pub fn seed_nodes(network: BaseCurrencyNetwork) -> Vec<SocketAddr> {
     match network {
         BaseCurrencyNetwork::BtcRegtest => vec![
             "127.0.0.1:2002".parse().unwrap(),
-            "127.0.0.1:3002".parse().unwrap(),
+            // "127.0.0.1:3002".parse().unwrap(),
         ],
         BaseCurrencyNetwork::BtcTestnet => vec!["m5izk3fvjsjbmkqi.onion:8001".parse().unwrap()],
         BaseCurrencyNetwork::BtcMainnet => vec![

@@ -1,8 +1,10 @@
 mod api;
+#[macro_use]
 mod bisq;
 mod bootstrap;
 mod connection;
 mod error;
+mod listener;
 mod tor;
 
 #[macro_use]

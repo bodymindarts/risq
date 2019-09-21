@@ -1,14 +1,13 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
-    message::{
-        GetDataResponse, GetUpdatedDataRequest, Listener, NodeAddress, PreliminaryGetDataRequest,
-    },
+    message::{GetDataResponse, GetUpdatedDataRequest, NodeAddress, PreliminaryGetDataRequest},
 };
 use crate::connection::{Connection, ConnectionConfig};
 use crate::error::Error;
+use crate::listener::Listener;
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use tokio::prelude::{
-    future::{self, Future, IntoFuture, Loop},
+    future::{self, Future, IntoFuture},
     stream::Stream,
 };
 
