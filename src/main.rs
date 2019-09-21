@@ -4,11 +4,8 @@ mod bootstrap;
 mod connection;
 mod error;
 
-use bisq::{
-    constants::{BaseCurrencyNetwork, LOCAL_CAPABILITIES},
-    message::*,
-};
-use connection::{Connection, ConnectionConfig};
+use bisq::{constants::BaseCurrencyNetwork, message::*};
+use connection::ConnectionConfig;
 use std::process;
 use tokio::{
     self,
@@ -46,32 +43,15 @@ macro_rules! spawnable {
 
 fn main() -> () {
     env_logger::init();
-    let network = BaseCurrencyNetwork::BtcRegtest;
-    let config = ConnectionConfig {
-        message_version: network.into(),
-    };
-    let addr = "127.0.0.1:2002";
-    let connection = Connection::new(addr, config);
-
-    let msg = PreliminaryGetDataRequest {
-        nonce: 0,
-        excluded_keys: Vec::new(),
-        supported_capabilities: LOCAL_CAPABILITIES.clone(),
-    };
-
-    let mut listener = DebugListener {};
     tokio::run(spawnable!(
-        connection.and_then(|mut conn| {
-            tokio::spawn(spawnable!(
-                conn.take_message_stream().for_each(move |msg| {
-                    listener.accept(msg);
-                    ok(())
-                }),
-                "Error receiving: {:?}"
-            ));
-            conn.send(msg)
+        bootstrap::execute(bootstrap::Config {
+            network: BaseCurrencyNetwork::BtcRegtest,
+            local_node_address: NodeAddress {
+                host_name: "localhost".into(),
+                port: 8000
+            }
         }),
-        "Error sending: {:?}"
+        "Error bootstrapping: {:?}"
     ));
     process::exit(0);
 }

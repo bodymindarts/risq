@@ -13,8 +13,8 @@ use tokio::prelude::{
 };
 
 pub struct Config {
-    network: BaseCurrencyNetwork,
-    local_node_address: NodeAddress,
+    pub network: BaseCurrencyNetwork,
+    pub local_node_address: NodeAddress,
 }
 pub struct BootstrapResult {}
 struct GetDataResponseListener {
@@ -54,13 +54,13 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
         let listener = GetDataResponseListener {
             expecting_nonce: preliminary_get_data_request.nonce,
         };
-        debug!("Exchanging PreliminaryGetDataRequest with seed: {:?}", addr);
+        info!("Exchanging PreliminaryGetDataRequest with seed: {:?}", addr);
         conn.send_and_await(preliminary_get_data_request, listener)
             .and_then(move |(get_data_result, conn)| {
                 let listener = GetDataResponseListener {
                     expecting_nonce: get_updated_data_request.nonce,
                 };
-                debug!("Exchanging GetUpdatedDataRequest with seed: {:?}", addr);
+                info!("Exchanging GetUpdatedDataRequest with seed: {:?}", addr);
                 conn.send_and_await(get_updated_data_request, listener)
                     .and_then(|(get_data_result, conn)| Ok(conn))
             })
