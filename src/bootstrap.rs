@@ -16,12 +16,13 @@ pub struct Config {
 pub struct BootstrapResult {}
 struct GetDataResponseCollector {
     expecting_nonce: i32,
-    response: Option<GetDataResponse>,
 }
-impl Listener for GetDataResponseCollector {
-    fn get_data_response(&mut self, response: GetDataResponse) {
+impl Listener<Option<GetDataResponse>> for GetDataResponseCollector {
+    fn get_data_response(&mut self, response: GetDataResponse) -> Option<GetDataResponse> {
         if response.request_nonce == self.expecting_nonce {
-            self.response = Some(response)
+            Some(response)
+        } else {
+            None
         }
     }
 }
@@ -44,29 +45,9 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
     .and_then(|conn| {
         let listener = GetDataResponseCollector {
             expecting_nonce: preliminary_get_data_request.nonce,
-            response: None,
         };
-        conn.send(preliminary_get_data_request).and_then(|conn| {
-            future::loop_fn(
-                (listener, conn.into_message_stream()),
-                |(mut listener, stream)| {
-                    stream
-                        .into_future()
-                        .map_err(|(err, _stream)| err)
-                        .and_then(|(msg, stream)| {
-                            listener
-                                .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
-                                .and_then(|_| {
-                                    if let Some(response) = listener.response {
-                                        Ok(Loop::Break(response))
-                                    } else {
-                                        Ok(Loop::Continue((listener, stream)))
-                                    }
-                                })
-                        })
-                },
-            )
-        })
+        conn.send(preliminary_get_data_request)
+            .and_then(|conn| conn.send_and_await(listener).map_err(|(err, _)| err))
     });
     future::ok(BootstrapResult {})
 }

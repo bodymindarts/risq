@@ -1,4 +1,4 @@
-use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
+use crate::bisq::message::{network_envelope, Listener, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
 use prost::Message;
 use std::{collections::VecDeque, io, net::ToSocketAddrs};
@@ -6,7 +6,7 @@ use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
     net::TcpStream,
     prelude::{
-        future::{self, Future},
+        future::{self, Future, Loop},
         stream::Stream,
         Async,
     },
@@ -45,6 +45,7 @@ impl Connection {
                 .map_err(|err| err.into())
         })
     }
+
     pub fn from_tcp_stream(stream: TcpStream, message_version: MessageVersion) -> Connection {
         let (reader, writer) = stream.split();
         Connection {
@@ -53,6 +54,7 @@ impl Connection {
             conf: ConnectionConfig { message_version },
         }
     }
+
     pub fn send(
         self,
         msg: impl Into<network_envelope::Message>,
@@ -79,11 +81,32 @@ impl Connection {
             })
             .map_err(|err| err.into())
     }
+
+    pub fn send_and_await<T>(
+        self,
+        listener: impl Listener<Option<T>>,
+    ) -> impl Future<Item = (T, Connection), Error = (Error, Connection)> {
+        future::loop_fn(
+            (listener, self.into_message_stream()),
+            |(mut listener, stream)| {
+                stream.into_future().and_then(|(msg, stream)| {
+                    match listener.accept_or_err(msg, Error::DidNotReceiveExpectedResponse) {
+                        Ok(Some(response)) => Ok(Loop::Break((response, stream.into_inner()))),
+                        Ok(None) => Ok(Loop::Continue((listener, stream))),
+                        Err(err) => Err((err, stream)),
+                    }
+                })
+            },
+        )
+        .map_err(|(err, stream)| (err, stream.into_inner()))
+    }
+
     pub fn into_message_stream(self) -> MessageStream {
         let mut reader = self.reader.expect("Reader already removed");
         reader.conn = Some((self.conf, self.writer));
         reader
     }
+
     pub fn take_message_stream(
         &mut self,
     ) -> impl Stream<Item = network_envelope::Message, Error = Error> {

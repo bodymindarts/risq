@@ -32,7 +32,7 @@ macro_rules! debug_method {
     };
 }
 struct DebugListener {}
-impl Listener for DebugListener {
+impl Listener<()> for DebugListener {
     for_all_messages!(debug_method);
 }
 

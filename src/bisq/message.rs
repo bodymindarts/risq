@@ -18,20 +18,19 @@ impl From<BaseCurrencyNetwork> for MessageVersion {
 
 macro_rules! listener_method {
     ($caml:ident, $snake:ident) => {
-        fn $snake(&mut self, _msg: $caml) -> () {}
+        fn $snake(&mut self, _msg: $caml) -> T {
+            T::default()
+        }
     };
 }
-pub trait Listener {
-    fn accept(&mut self, msg: impl Into<Option<network_envelope::Message>>) {
-        if let Some(msg) = msg.into() {
-            match_message!(msg, self);
-        }
+pub trait Listener<T>
+where
+    T: Default,
+{
+    fn accept(&mut self, msg: network_envelope::Message) -> T {
+        match_message!(msg, self)
     }
-    fn accept_or_err<E>(
-        &mut self,
-        msg: Option<network_envelope::Message>,
-        err: E,
-    ) -> Result<(), E> {
+    fn accept_or_err<E>(&mut self, msg: Option<network_envelope::Message>, err: E) -> Result<T, E> {
         match msg {
             Some(msg) => Ok(self.accept(msg)),
             None => Err(err),
@@ -55,7 +54,7 @@ for_all_messages!(into_message);
 mod tests {
     use super::{network_envelope, Listener, Ping};
     struct PingListener {}
-    impl super::Listener for PingListener {
+    impl super::Listener<()> for PingListener {
         fn ping(&mut self, msg: Ping) -> () {
             assert!(msg.nonce == 5);
         }
