@@ -1,6 +1,6 @@
 use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
-use crate::listener::Listener;
+use crate::listener::{Accept, Listener};
 use prost::Message;
 use std::{collections::VecDeque, fmt::Debug, io, net::ToSocketAddrs};
 use tokio::{
@@ -83,40 +83,39 @@ impl Connection {
             .map_err(|err| err.into())
     }
 
-    pub fn await_response<T>(
+    pub fn await_response<T: Listener>(
         self,
-        listener: impl Listener<Option<T>>,
+        listener: T,
     ) -> impl Future<Item = (T, Connection), Error = Error> {
         future::loop_fn(
             (listener, self.into_message_stream()),
-            |(mut listener, stream)| {
+            |(listener, stream)| {
                 stream
                     .into_future()
                     .map_err(|(e, _)| e)
                     .and_then(|(msg, stream)| {
                         debug!("Passing message to listener: {:?}", msg);
-                        listener
-                            .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
-                            .and_then(|res| match res {
-                                Some(response) => {
-                                    debug!("Listener accepted message");
-                                    Ok(Loop::Break((response, stream.into_inner())))
-                                }
-                                None => {
-                                    warn!("Listener skipped message");
-                                    Ok(Loop::Continue((listener, stream)))
-                                }
-                            })
+                        match listener.accept_or_err(msg, Error::DidNotReceiveExpectedResponse) {
+                            Accept::Consumed(listener) => {
+                                debug!("Listener accepted message");
+                                Ok(Loop::Break((listener, stream.into_inner())))
+                            }
+                            Accept::Skipped(_, listener) => {
+                                warn!("Listener skipped message");
+                                Ok(Loop::Continue((listener, stream)))
+                            }
+                            Accept::Error(err) => Err(err),
+                        }
                     })
             },
         )
     }
 
-    pub fn send_and_await<T>(
+    pub fn send_and_await(
         self,
         msg: impl Into<network_envelope::Message>,
-        listener: impl Listener<Option<T>>,
-    ) -> impl Future<Item = (T, Self), Error = Error> {
+        listener: impl Listener,
+    ) -> impl Future<Item = (impl Listener, Self), Error = Error> {
         self.send(msg)
             .and_then(|conn| conn.await_response(listener))
     }

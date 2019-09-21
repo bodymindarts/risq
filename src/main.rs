@@ -8,7 +8,7 @@ mod listener;
 use bisq::{constants::BaseCurrencyNetwork, message::*};
 use connection::ConnectionConfig;
 use env_logger;
-use listener::Listener;
+use listener::{Accept, Listener};
 use std::process;
 use tokio::{
     self,
@@ -25,13 +25,14 @@ extern crate futures;
 
 macro_rules! debug_method {
     ($caml:ident, $snake:ident) => {
-        fn $snake(&mut self, msg: $caml) -> () {
+        fn $snake(self, msg: $caml) -> Accept<Self> {
             debug!("Received message: {:?}", msg);
+            Accept::Consumed(self)
         }
     };
 }
 struct DebugListener {}
-impl Listener<()> for DebugListener {
+impl Listener for DebugListener {
     for_all_messages!(debug_method);
 }
 

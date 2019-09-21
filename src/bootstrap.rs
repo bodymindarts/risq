@@ -4,7 +4,7 @@ use crate::bisq::{
 };
 use crate::connection::{Connection, ConnectionConfig};
 use crate::error::Error;
-use crate::listener::Listener;
+use crate::listener::{Accept, Listener};
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use tokio::prelude::{
     future::{self, Future, IntoFuture},
@@ -19,12 +19,12 @@ pub struct BootstrapResult {}
 struct GetDataResponseListener {
     expecting_nonce: i32,
 }
-impl Listener<Option<GetDataResponse>> for GetDataResponseListener {
-    fn get_data_response(&mut self, response: GetDataResponse) -> Option<GetDataResponse> {
+impl Listener for GetDataResponseListener {
+    fn get_data_response(self, response: GetDataResponse) -> Accept<Self> {
         if response.request_nonce == self.expecting_nonce {
-            Some(response)
+            Accept::Consumed(self)
         } else {
-            None
+            Accept::Skipped(response.into(), self)
         }
     }
 }
