@@ -6,7 +6,7 @@ use crate::connection::{Connection, ConnectionConfig};
 use crate::error::Error;
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use tokio::prelude::{
-    future::{self, Future, Loop},
+    future::{self, Future, IntoFuture, Loop},
     stream::Stream,
 };
 
@@ -49,14 +49,20 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
         let rec = future::loop_fn(
             (listener, conn.take_message_stream()),
             |(mut listener, stream)| {
-                stream.into_future().map(|(msg, stream)| {
-                    listener.accept(msg.unwrap());
-                    if let Some(response) = listener.response {
-                        Loop::Break(response)
-                    } else {
-                        Loop::Continue((listener, stream))
-                    }
-                })
+                stream
+                    .into_future()
+                    .map_err(|(err, _stream)| err)
+                    .and_then(|(msg, stream)| {
+                        listener
+                            .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
+                            .and_then(|_| {
+                                if let Some(response) = listener.response {
+                                    Ok(Loop::Break(response))
+                                } else {
+                                    Ok(Loop::Continue((listener, stream)))
+                                }
+                            })
+                    })
             },
         );
         future::ok(conn)
