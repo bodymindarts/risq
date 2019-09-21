@@ -1,16 +1,30 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
-    message::PreliminaryGetDataRequest,
+    message::{GetDataResponse, Listener, PreliminaryGetDataRequest},
 };
 use crate::connection::{Connection, ConnectionConfig};
 use crate::error::Error;
 use rand::{seq::SliceRandom, thread_rng, Rng};
-use tokio::prelude::future::{self, Future};
+use tokio::prelude::{
+    future::{self, Future, Loop},
+    stream::Stream,
+};
 
 pub struct Config {
     network: BaseCurrencyNetwork,
 }
 pub struct BootstrapResult {}
+struct GetDataResponseCollector {
+    expecting_nonce: i32,
+    response: Option<GetDataResponse>,
+}
+impl Listener for GetDataResponseCollector {
+    fn get_data_response(&mut self, response: GetDataResponse) {
+        if response.request_nonce == self.expecting_nonce {
+            self.response = Some(response)
+        }
+    }
+}
 
 pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Error> {
     let preliminary_get_data_request = PreliminaryGetDataRequest {
@@ -26,6 +40,26 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
         ConnectionConfig {
             message_version: config.network.into(),
         },
-    );
+    )
+    .and_then(|mut conn| {
+        let listener = GetDataResponseCollector {
+            expecting_nonce: preliminary_get_data_request.nonce,
+            response: None,
+        };
+        let rec = future::loop_fn(
+            (listener, conn.take_message_stream()),
+            |(mut listener, stream)| {
+                stream.into_future().map(|(msg, stream)| {
+                    listener.accept(msg.unwrap());
+                    if let Some(response) = listener.response {
+                        Loop::Break(response)
+                    } else {
+                        Loop::Continue((listener, stream))
+                    }
+                })
+            },
+        );
+        future::ok(conn)
+    });
     future::ok(BootstrapResult {})
 }

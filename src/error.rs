@@ -6,7 +6,7 @@ pub enum Error {
     ToSocketError,
     IoError(io::Error),
     Decode(DecodeError),
-    OneshotCanceled,
+    DidNotReceiveExpectedResponse,
 }
 
 pub type Result<T> = result::Result<T, Error>;
