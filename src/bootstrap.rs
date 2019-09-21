@@ -18,11 +18,15 @@ pub struct Config {
 pub struct BootstrapResult {}
 struct GetDataResponseListener {
     expecting_nonce: i32,
+    response: Option<GetDataResponse>,
 }
 impl Listener for GetDataResponseListener {
     fn get_data_response(self, response: GetDataResponse) -> Accept<Self> {
         if response.request_nonce == self.expecting_nonce {
-            Accept::Consumed(self)
+            Accept::Consumed(GetDataResponseListener {
+                expecting_nonce: self.expecting_nonce,
+                response: Some(response),
+            })
         } else {
             Accept::Skipped(response.into(), self)
         }
@@ -52,16 +56,18 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
     .and_then(move |conn| {
         let listener = GetDataResponseListener {
             expecting_nonce: preliminary_get_data_request.nonce,
+            response: None,
         };
         info!("Exchanging PreliminaryGetDataRequest with seed: {:?}", addr);
         conn.send_and_await(preliminary_get_data_request, listener)
-            .and_then(move |(get_data_result, conn)| {
+            .and_then(move |(_listener, conn)| {
                 let listener = GetDataResponseListener {
                     expecting_nonce: get_updated_data_request.nonce,
+                    response: None,
                 };
                 info!("Exchanging GetUpdatedDataRequest with seed: {:?}", addr);
                 conn.send_and_await(get_updated_data_request, listener)
-                    .and_then(|(get_data_result, conn)| Ok(conn))
+                    .and_then(|(_listener, conn)| Ok(conn))
             })
     })
     .map(|_| BootstrapResult {})
