@@ -1,7 +1,7 @@
 use crate::bisq::message::{network_envelope, Listener, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
 use prost::Message;
-use std::{collections::VecDeque, io, net::ToSocketAddrs};
+use std::{collections::VecDeque, fmt::Debug, io, net::ToSocketAddrs};
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
     net::TcpStream,
@@ -93,11 +93,18 @@ impl Connection {
                     .into_future()
                     .map_err(|(e, _)| e)
                     .and_then(|(msg, stream)| {
+                        debug!("Passing message to listener: {:?}", msg);
                         listener
                             .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
                             .and_then(|res| match res {
-                                Some(response) => Ok(Loop::Break((response, stream.into_inner()))),
-                                None => Ok(Loop::Continue((listener, stream))),
+                                Some(response) => {
+                                    debug!("Listener accepted message");
+                                    Ok(Loop::Break((response, stream.into_inner())))
+                                }
+                                None => {
+                                    warn!("Listener skipped message");
+                                    Ok(Loop::Continue((listener, stream)))
+                                }
                             })
                     })
             },

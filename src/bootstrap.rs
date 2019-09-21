@@ -44,18 +44,26 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
     let mut seed_nodes = seed_nodes(config.network);
     seed_nodes.shuffle(&mut thread_rng());
     let addr = seed_nodes.pop().expect("No seed nodes defined");
-    let conn = Connection::new(
-        addr,
+    Connection::new(
+        addr.clone(),
         ConnectionConfig {
             message_version: config.network.into(),
         },
     )
-    .and_then(|conn| {
+    .and_then(move |conn| {
         let listener = GetDataResponseListener {
             expecting_nonce: preliminary_get_data_request.nonce,
         };
+        debug!("Exchanging PreliminaryGetDataRequest with seed: {:?}", addr);
         conn.send_and_await(preliminary_get_data_request, listener)
-            .and_then(|(get_data_result, conn)| future::ok(conn))
-    });
-    future::ok(BootstrapResult {})
+            .and_then(move |(get_data_result, conn)| {
+                let listener = GetDataResponseListener {
+                    expecting_nonce: get_updated_data_request.nonce,
+                };
+                debug!("Exchanging GetUpdatedDataRequest with seed: {:?}", addr);
+                conn.send_and_await(get_updated_data_request, listener)
+                    .and_then(|(get_data_result, conn)| Ok(conn))
+            })
+    })
+    .map(|_| BootstrapResult {})
 }
