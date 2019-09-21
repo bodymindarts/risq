@@ -159,17 +159,12 @@ impl MessageStream {
             buffer: VecDeque::new(),
         }
     }
-    pub fn into_inner(self) -> Connection {
-        let (conf, writer) = self.conn.expect("Inner not present");
+    pub fn into_inner(mut self) -> Connection {
+        let (conf, writer) = self.conn.take().expect("Inner not present");
         Connection {
             conf,
             writer,
-            reader: Some(MessageStream {
-                reader: self.reader,
-                state: self.state,
-                buffer: self.buffer,
-                conn: None,
-            }),
+            reader: Some(self),
         }
     }
     fn next_from_buffer(&mut self) -> Option<network_envelope::Message> {

@@ -1,6 +1,8 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
-    message::{GetDataResponse, GetUpdatedDataRequest, NodeAddress, PreliminaryGetDataRequest},
+    message::{
+        gen_nonce, GetDataResponse, GetUpdatedDataRequest, NodeAddress, PreliminaryGetDataRequest,
+    },
 };
 use crate::connection::{Connection, ConnectionConfig};
 use crate::error::Error;
@@ -21,12 +23,10 @@ struct GetDataResponseListener {
     response: Option<GetDataResponse>,
 }
 impl Listener for GetDataResponseListener {
-    fn get_data_response(self, response: GetDataResponse) -> Accept<Self> {
+    fn get_data_response(mut self, response: GetDataResponse) -> Accept<Self> {
         if response.request_nonce == self.expecting_nonce {
-            Accept::Consumed(GetDataResponseListener {
-                expecting_nonce: self.expecting_nonce,
-                response: Some(response),
-            })
+            self.response = Some(response);
+            Accept::Consumed(self)
         } else {
             Accept::Skipped(response.into(), self)
         }
@@ -35,13 +35,13 @@ impl Listener for GetDataResponseListener {
 
 pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Error> {
     let preliminary_get_data_request = PreliminaryGetDataRequest {
-        nonce: thread_rng().gen(),
+        nonce: gen_nonce(),
         excluded_keys: Vec::new(),
         supported_capabilities: LOCAL_CAPABILITIES.clone(),
     };
     let get_updated_data_request = GetUpdatedDataRequest {
         sender_node_address: config.local_node_address.into(),
-        nonce: thread_rng().gen(),
+        nonce: gen_nonce(),
         excluded_keys: Vec::new(),
     };
     let mut seed_nodes = seed_nodes(config.network);

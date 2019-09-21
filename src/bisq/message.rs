@@ -2,6 +2,11 @@ include!("../generated/io.bisq.protobuffer.rs");
 include!("../generated/message_macros.rs");
 
 use super::constants::*;
+use rand::{thread_rng, Rng};
+
+pub fn gen_nonce() -> i32 {
+    thread_rng().gen()
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct MessageVersion(i32);
