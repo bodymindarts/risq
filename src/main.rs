@@ -4,6 +4,7 @@ mod bootstrap;
 mod connection;
 mod error;
 mod listener;
+mod peers;
 
 use bisq::{constants::BaseCurrencyNetwork, message::*};
 use connection::ConnectionConfig;

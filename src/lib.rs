@@ -5,6 +5,7 @@ mod bootstrap;
 mod connection;
 mod error;
 mod listener;
+mod peers;
 mod tor;
 
 #[macro_use]
