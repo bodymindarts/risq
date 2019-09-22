@@ -72,7 +72,7 @@ struct SeedResult {
 }
 
 fn bootstrap_from_seed(
-    seed_addr: SocketAddr,
+    seed_addr: NodeAddress,
     local_addr: NodeAddress,
     network: BaseCurrencyNetwork,
 ) -> impl Future<Item = SeedResult, Error = Error> {
@@ -87,21 +87,16 @@ fn bootstrap_from_seed(
         excluded_keys: Vec::new(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::new(
-        seed_addr.clone(),
-        ConnectionConfig {
-            message_version: network.into(),
-        },
-    )
+    Connection::new(ConnectionConfig {
+        message_version: network.into(),
+        node_address: Some(seed_addr.clone()),
+    })
     .and_then(move |conn| {
         let listener = GetDataListener {
             expecting_nonce: preliminary_get_data_request.nonce,
             response: None,
         };
-        debug!(
-            "Exchanging PreliminaryGetDataRequest with seed: {:?}",
-            seed_addr
-        );
+        debug!("Exchanging PreliminaryGetDataRequest with seed");
         conn.send_and_await(preliminary_get_data_request, listener)
             .map(|(listener, conn)| (listener.response.expect("Response not set"), conn))
     })
@@ -110,10 +105,7 @@ fn bootstrap_from_seed(
             expecting_nonce: get_updated_data_request.nonce,
             response: None,
         };
-        debug!(
-            "Exchanging GetUpdatedDataRequest with seed: {:?}",
-            seed_addr
-        );
+        debug!("Exchanging GetUpdatedDataRequest with seed");
         conn.send_and_await(get_updated_data_request, listener)
             .map(|(listener, conn)| {
                 (
@@ -135,10 +127,7 @@ fn bootstrap_from_seed(
                 expecting_nonce: get_peers_request.nonce,
                 response: None,
             };
-            debug!(
-                "Exchanging GetUpdatedDataRequest with seed: {:?}",
-                seed_addr
-            );
+            debug!("Exchanging GetUpdatedDataRequest with seed");
             conn.send_and_await(get_peers_request, listener)
                 .map(|(listener, connection)| SeedResult {
                     preliminary_data_response,

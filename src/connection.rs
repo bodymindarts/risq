@@ -1,4 +1,4 @@
-use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
+use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope, NodeAddress};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use prost::Message;
@@ -13,8 +13,9 @@ use tokio::{
     },
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct ConnectionConfig {
+    pub node_address: Option<NodeAddress>,
     pub message_version: MessageVersion,
 }
 pub struct Connection {
@@ -23,28 +24,19 @@ pub struct Connection {
     conf: ConnectionConfig,
 }
 impl Connection {
-    pub fn new(
-        addr: impl ToSocketAddrs,
-        conf: ConnectionConfig,
-    ) -> impl Future<Item = Connection, Error = Error> {
-        future::done(
-            addr.to_socket_addrs()
-                .map_err(|_| Error::ToSocketError)
-                .and_then(|mut i| i.next().ok_or(Error::ToSocketError)),
-        )
-        .and_then(move |addr| {
-            TcpStream::connect(&addr)
-                .map(move |tcp| {
-                    let (reader, writer) = tcp.split();
-                    let reader = Some(MessageStream::new(reader, None));
-                    Connection {
-                        writer,
-                        reader,
-                        conf,
-                    }
-                })
-                .map_err(|err| err.into())
-        })
+    pub fn new(conf: ConnectionConfig) -> impl Future<Item = Connection, Error = Error> {
+        let addr = conf.node_address.clone().unwrap();
+        TcpStream::connect(&addr.into())
+            .map(move |tcp| {
+                let (reader, writer) = tcp.split();
+                let reader = Some(MessageStream::new(reader, None));
+                Connection {
+                    writer,
+                    reader,
+                    conf,
+                }
+            })
+            .map_err(|err| err.into())
     }
 
     pub fn from_tcp_stream(stream: TcpStream, message_version: MessageVersion) -> Connection {
@@ -52,7 +44,10 @@ impl Connection {
         Connection {
             writer,
             reader: Some(MessageStream::new(reader, None)),
-            conf: ConnectionConfig { message_version },
+            conf: ConnectionConfig {
+                node_address: None,
+                message_version,
+            },
         }
     }
 
@@ -234,7 +229,7 @@ mod test {
     use super::{Connection, ConnectionConfig};
     use crate::bisq::{
         constants::BaseCurrencyNetwork,
-        message::{network_envelope::Message, Ping},
+        message::{network_envelope::Message, NodeAddress, Ping},
     };
     use crate::error::Error;
     use std::net::SocketAddr;
@@ -250,11 +245,14 @@ mod test {
     #[test]
     fn basic_send_and_receive() {
         let network = BaseCurrencyNetwork::BtcRegtest;
+        let addr = NodeAddress {
+            host_name: "127.0.0.1".to_string(),
+            port: 7477,
+        };
         let config = ConnectionConfig {
             message_version: network.into(),
+            node_address: Some(addr.clone()),
         };
-        let addr = "127.0.0.1:7477";
-        let connection = Connection::new(addr, config.clone());
         let (tx, rx) = oneshot::channel();
         let ping = Ping {
             nonce: 0,
@@ -264,7 +262,7 @@ mod test {
             nonce: 0,
             last_round_trip_time: 0,
         };
-        let receiver = TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())
+        let receiver = TcpListener::bind(&addr.clone().into())
             .unwrap()
             .incoming()
             .into_future()
@@ -276,7 +274,7 @@ mod test {
                     .map(|(msg, _)| tx.send(msg.unwrap()).unwrap())
                     .map_err(|e| println!("err"))
             });
-        let sender = Connection::new(addr, config)
+        let sender = Connection::new(config)
             .and_then(|conn| conn.send(ping).map(|_| ()))
             .map_err(|e| println!("stoen"));
         tokio::run(lazy(move || {
