@@ -5,6 +5,7 @@ mod connection;
 mod error;
 mod listener;
 mod peers;
+mod server;
 
 use actix::System;
 use bisq::{constants::BaseCurrencyNetwork, message::*};

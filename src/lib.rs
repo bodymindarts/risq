@@ -6,6 +6,7 @@ mod connection;
 mod error;
 mod listener;
 mod peers;
+mod server;
 mod tor;
 
 #[macro_use]
