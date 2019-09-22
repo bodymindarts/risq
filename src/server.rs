@@ -16,7 +16,9 @@ pub fn start(
     started: oneshot::Sender<NodeAddress>,
     opened: mpsc::Sender<TcpStream>,
 ) -> impl Future<Item = (), Error = Error> {
-    TcpListener::bind(&addr.clone().into())
+    let socket = addr.clone().into();
+    info!("Starting server listening to: {:?}", socket);
+    TcpListener::bind(&socket)
         .map_err(|e| e.into())
         .and_then(|server| {
             started

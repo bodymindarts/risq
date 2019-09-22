@@ -10,7 +10,10 @@ use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use rand::{seq::SliceRandom, thread_rng};
 use std::net::SocketAddr;
-use tokio::prelude::future::{Future, IntoFuture};
+use tokio::{
+    prelude::future::{Future, IntoFuture},
+    sync::oneshot,
+};
 
 pub struct Config {
     pub network: BaseCurrencyNetwork,

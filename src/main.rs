@@ -7,11 +7,13 @@ mod listener;
 mod peers;
 mod server;
 
+use crate::error::Error;
 use actix::{Arbiter, System};
 use bisq::{constants::BaseCurrencyNetwork, message::*};
 use connection::ConnectionConfig;
 use env_logger;
 use listener::{Accept, Listener};
+use peers::Peers;
 use std::{error::Error as StdError, process};
 use tokio::{
     self,
@@ -51,16 +53,12 @@ macro_rules! spawnable {
 fn main() {
     env_logger::init();
     let sys = System::new("risq");
-    let localAddress = NodeAddress {
-        host_name: "127.0.0.1".to_string(),
-        port: 4000,
-    };
     let (start_send, start_rec) = oneshot::channel();
     let (con_send, con_rec) = mpsc::channel(50);
     Arbiter::spawn(spawnable!(
         server::start(
             NodeAddress {
-                host_name: "localhost".into(),
+                host_name: "127.0.0.1".into(),
                 port: 8000
             },
             start_send,
@@ -69,11 +67,15 @@ fn main() {
         "Server error {:?}"
     ));
     Arbiter::spawn(spawnable!(
-        bootstrap::execute(bootstrap::Config {
-            network: BaseCurrencyNetwork::BtcRegtest,
-            local_node_address: localAddress
-        }),
+        start_rec
+            .map_err(|_| Error::ReceiveOneshotError)
+            .and_then(|node_address| {
+                bootstrap::execute(bootstrap::Config {
+                    network: BaseCurrencyNetwork::BtcRegtest,
+                    local_node_address: node_address,
+                })
+            }),
         "Error bootstrapping: {:?}"
     ));
-    sys.run();
+    let _ = sys.run();
 }

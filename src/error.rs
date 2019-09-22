@@ -9,6 +9,7 @@ pub enum Error {
     IoError(io::Error),
     Decode(DecodeError),
     SendOneshotError,
+    ReceiveOneshotError,
     SendMPSCError,
     DidNotReceiveExpectedResponse,
 }
