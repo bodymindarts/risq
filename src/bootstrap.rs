@@ -17,8 +17,8 @@ pub struct Config {
     pub local_node_address: NodeAddress,
 }
 pub struct BootstrapResult {
-    reported_peers: Vec<Peer>,
-    seed_connections: Vec<Connection>,
+    pub reported_peers: Vec<Peer>,
+    pub seed_connections: Vec<Connection>,
 }
 struct GetDataListener {
     expecting_nonce: i32,

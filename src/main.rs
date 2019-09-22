@@ -6,11 +6,12 @@ mod error;
 mod listener;
 mod peers;
 
+use actix::System;
 use bisq::{constants::BaseCurrencyNetwork, message::*};
 use connection::ConnectionConfig;
 use env_logger;
 use listener::{Accept, Listener};
-use std::process;
+use std::{error::Error as StdError, process};
 use tokio::{
     self,
     prelude::{
@@ -45,8 +46,9 @@ macro_rules! spawnable {
     };
 }
 
-fn main() -> () {
+fn main() {
     env_logger::init();
+    let sys = System::new("risq");
     tokio::run(spawnable!(
         bootstrap::execute(bootstrap::Config {
             network: BaseCurrencyNetwork::BtcRegtest,
@@ -57,5 +59,5 @@ fn main() -> () {
         }),
         "Error bootstrapping: {:?}"
     ));
-    process::exit(0);
+    sys.run();
 }
