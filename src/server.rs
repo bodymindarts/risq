@@ -1,5 +1,6 @@
+use crate::bisq::message::*;
 use crate::error::Error;
-use std::net::SocketAddr;
+use std::net::ToSocketAddrs;
 use tokio::{
     net::{TcpListener, TcpStream},
     prelude::{
@@ -11,15 +12,15 @@ use tokio::{
 };
 
 pub fn start(
-    addr: SocketAddr,
-    started: oneshot::Sender<()>,
+    addr: NodeAddress,
+    started: oneshot::Sender<NodeAddress>,
     opened: mpsc::Sender<TcpStream>,
 ) -> impl Future<Item = (), Error = Error> {
-    TcpListener::bind(&addr)
+    TcpListener::bind(&addr.clone().into())
         .map_err(|e| e.into())
         .and_then(|server| {
             started
-                .send(())
+                .send(addr)
                 .map(|_| server)
                 .map_err(|_| Error::SendOneshotError)
         })

@@ -7,7 +7,7 @@ mod listener;
 mod peers;
 mod server;
 
-use actix::System;
+use actix::{Arbiter, System};
 use bisq::{constants::BaseCurrencyNetwork, message::*};
 use connection::ConnectionConfig;
 use env_logger;
@@ -19,6 +19,7 @@ use tokio::{
         future::{ok, Future},
         stream::Stream,
     },
+    sync::{mpsc, oneshot},
 };
 
 #[macro_use]
@@ -50,13 +51,27 @@ macro_rules! spawnable {
 fn main() {
     env_logger::init();
     let sys = System::new("risq");
-    tokio::run(spawnable!(
-        bootstrap::execute(bootstrap::Config {
-            network: BaseCurrencyNetwork::BtcRegtest,
-            local_node_address: NodeAddress {
+    let localAddress = NodeAddress {
+        host_name: "127.0.0.1".to_string(),
+        port: 4000,
+    };
+    let (start_send, start_rec) = oneshot::channel();
+    let (con_send, con_rec) = mpsc::channel(50);
+    Arbiter::spawn(spawnable!(
+        server::start(
+            NodeAddress {
                 host_name: "localhost".into(),
                 port: 8000
-            }
+            },
+            start_send,
+            con_send
+        ),
+        "Server error {:?}"
+    ));
+    Arbiter::spawn(spawnable!(
+        bootstrap::execute(bootstrap::Config {
+            network: BaseCurrencyNetwork::BtcRegtest,
+            local_node_address: localAddress
         }),
         "Error bootstrapping: {:?}"
     ));
