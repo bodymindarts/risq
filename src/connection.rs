@@ -2,7 +2,7 @@ use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use prost::Message;
-use std::{collections::VecDeque, fmt::Debug, io, net::ToSocketAddrs};
+use std::{collections::VecDeque, io, net::ToSocketAddrs};
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
     net::TcpStream,
@@ -111,11 +111,11 @@ impl Connection {
         )
     }
 
-    pub fn send_and_await(
+    pub fn send_and_await<T: Listener>(
         self,
         msg: impl Into<network_envelope::Message>,
-        listener: impl Listener,
-    ) -> impl Future<Item = (impl Listener, Self), Error = Error> {
+        listener: T,
+    ) -> impl Future<Item = (T, Self), Error = Error> {
         self.send(msg)
             .and_then(|conn| conn.await_response(listener))
     }
