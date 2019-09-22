@@ -96,7 +96,7 @@ fn bootstrap_from_seed(
             expecting_nonce: preliminary_get_data_request.nonce,
             response: None,
         };
-        debug!("Exchanging PreliminaryGetDataRequest with seed");
+        debug!("Sending PreliminaryGetDataRequest to seed.");
         conn.send_and_await(preliminary_get_data_request, listener)
             .map(|(listener, conn)| (listener.response.expect("Response not set"), conn))
     })
@@ -105,7 +105,7 @@ fn bootstrap_from_seed(
             expecting_nonce: get_updated_data_request.nonce,
             response: None,
         };
-        debug!("Exchanging GetUpdatedDataRequest with seed");
+        debug!("Sending GetUpdatedDataRequest to seed.");
         conn.send_and_await(get_updated_data_request, listener)
             .map(|(listener, conn)| {
                 (

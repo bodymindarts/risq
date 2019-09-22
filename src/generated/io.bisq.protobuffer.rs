@@ -626,6 +626,7 @@ pub struct GetBlindVoteStateHashesResponse {
 // core
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Eq, Hash)]
 pub struct NodeAddress {
     #[prost(string, tag="1")]
     pub host_name: std::string::String,

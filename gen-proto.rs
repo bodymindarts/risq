@@ -9,6 +9,7 @@ fn main() {
 fn generate_protocols() {
     let mut config = prost_build::Config::new();
     config
+        .type_attribute("NodeAddress", "#[derive(Eq, Hash)]")
         .compile_protos(&protocol_files(), &protocol_includes())
         .expect("Error compiling protobuf definitions");
     for file in generated_files() {
