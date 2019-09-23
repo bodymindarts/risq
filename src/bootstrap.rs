@@ -21,7 +21,7 @@ pub struct Config {
 }
 pub struct BootstrapResult {
     pub reported_peers: Vec<Peer>,
-    pub seed_connections: Vec<Connection>,
+    pub seed_connections: Vec<(NodeAddress, Connection)>,
 }
 struct GetDataListener {
     expecting_nonce: i32,
@@ -56,12 +56,12 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
     let mut seed_nodes = seed_nodes(config.network);
     seed_nodes.shuffle(&mut thread_rng());
     let addr = seed_nodes.pop().expect("No seed nodes defined");
-    bootstrap_from_seed(addr, config.local_node_address, config.network).map(|seed_result| {
-        BootstrapResult {
+    bootstrap_from_seed(addr.clone(), config.local_node_address, config.network).map(
+        |seed_result| BootstrapResult {
             reported_peers: seed_result.reported_peers,
-            seed_connections: vec![seed_result.connection],
-        }
-    })
+            seed_connections: vec![(addr, seed_result.connection)],
+        },
+    )
 }
 
 struct SeedResult {

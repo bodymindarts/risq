@@ -13,6 +13,7 @@ pub enum Error {
     ReceiveOneshotError,
     MailboxError(MailboxError),
     SendMPSCError,
+    ConnectionClosed,
     DidNotReceiveExpectedResponse,
 }
 

@@ -1,12 +1,24 @@
-use crate::bisq::payload::*;
+use crate::bisq::{constants, payload::*};
+use crate::bootstrap::BootstrapResult;
 use crate::connection::{Connection, ConnectionId};
+use crate::error::Error;
 use crate::listener::{Accept, Listener};
-use actix::{Actor, Addr, Context, Handler, Message, MessageResult};
+use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult};
 use std::collections::HashMap;
+use tokio::prelude::{future::Future, stream::Stream};
+
+macro_rules! spawnable {
+    ($ex:expr, $f:tt) => {
+        $ex.map(|_| ()).map_err(|e| {
+            debug!($f, e);
+        })
+    };
+}
 
 pub struct Peers {
     connections: HashMap<ConnectionId, Connection>,
     reported_peers: Vec<Peer>,
+    known_connections: HashMap<NodeAddress, ConnectionId>,
 }
 
 impl Peers {
@@ -14,6 +26,7 @@ impl Peers {
         Self {
             connections: HashMap::new(),
             reported_peers: Vec::new(),
+            known_connections: HashMap::new(),
         }
         .start()
     }
@@ -32,6 +45,32 @@ impl Handler<GetReportedPeers> for Peers {
         MessageResult(self.reported_peers.clone())
     }
 }
+impl Message for BootstrapResult {
+    type Result = ();
+}
+impl Handler<BootstrapResult> for Peers {
+    type Result = ();
+    fn handle(&mut self, msg: BootstrapResult, _: &mut Self::Context) -> Self::Result {
+        debug!("Inserting connections from bootstrap");
+        msg.seed_connections.into_iter().for_each(|(addr, conn)| {
+            let id = conn.id;
+            self.connections.insert(id, conn);
+            self.known_connections.insert(addr, id);
+        })
+    }
+}
+struct SendPayloadTo(ConnectionId, network_envelope::Message);
+impl Message for SendPayloadTo {
+    type Result = ();
+}
+impl Handler<SendPayloadTo> for Peers {
+    type Result = ();
+    fn handle(&mut self, msg: SendPayloadTo, _: &mut Self::Context) -> Self::Result {
+        if let Some(ref mut con) = self.connections.get_mut(&msg.0) {
+            con.send_sync(msg.1);
+        }
+    }
+}
 
 impl Message for Connection {
     type Result = ();
@@ -42,8 +81,22 @@ struct PeersRequestListener {
 }
 impl Listener for PeersRequestListener {
     fn get_peers_request(self, msg: GetPeersRequest) -> Accept<Self> {
-        // Arbiter::spawn(self.peers.send(
-        Accept::Consumed(self)
+        let PeersRequestListener { peers, from } = self;
+        let peers_clone = peers.clone();
+        Arbiter::spawn(spawnable!(
+            peers
+                .send(GetReportedPeers {})
+                .and_then(move |reported_peers| {
+                    let res = GetPeersResponse {
+                        request_nonce: msg.nonce,
+                        reported_peers,
+                        supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
+                    };
+                    peers_clone.send(SendPayloadTo(from, res.into()))
+                }),
+            "Error responding to get_peers_request {:?}"
+        ));
+        Accept::Consumed(PeersRequestListener { peers, from })
     }
 }
 impl Handler<Connection> for Peers {
@@ -51,17 +104,21 @@ impl Handler<Connection> for Peers {
 
     fn handle(&mut self, mut connection: Connection, ctx: &mut Self::Context) -> Self::Result {
         let message_stream = connection.take_message_stream();
+        let listener = PeersRequestListener {
+            peers: ctx.address(),
+            from: connection.id,
+        };
         self.connections.insert(connection.id, connection);
         // future::loop_fn(message_stream,|stream|
-        // stream.into_future()
-        //             .map_err(|(e, _)| e)
-        //             .and_then(|(msg,stream)|
-        //                 match msg {
-        //                     Some(msg) =>
-        //                 }
-        //             )
-        // )
+        Arbiter::spawn(spawnable!(
+            message_stream
+                .into_future()
+                .map_err(|(e, _)| e)
+                .and_then(|(msg, stream)| {
+                    listener.accept_or_err(msg, Error::ConnectionClosed);
+                    Ok(())
+                }),
+            "Error receiving message {:?}"
+        ))
     }
 }
-
-// accept incoming conemtion and respond to peer requetss

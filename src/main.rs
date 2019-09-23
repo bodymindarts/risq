@@ -63,7 +63,7 @@ fn main() {
             },
             BaseCurrencyNetwork::BtcRegtest.into(),
             start_send,
-            peers_addr
+            peers_addr.clone()
         ),
         "Server error {:?}"
     ));
@@ -75,7 +75,8 @@ fn main() {
                     network: BaseCurrencyNetwork::BtcRegtest,
                     local_node_address: node_address,
                 })
-            }),
+            })
+            .and_then(move |result| peers_addr.send(result).map_err(|e| e.into())),
         "Error bootstrapping: {:?}"
     ));
     let _ = sys.run();

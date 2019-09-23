@@ -2,7 +2,11 @@ use crate::bisq::payload::{network_envelope, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use prost::Message;
-use std::{collections::VecDeque, io, net::SocketAddr};
+use std::{
+    collections::VecDeque,
+    io::{self, Write},
+    net::SocketAddr,
+};
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
     net::TcpStream,
@@ -63,10 +67,27 @@ impl Connection {
         }
     }
 
+    pub fn send_sync(&mut self, msg: impl Into<network_envelope::Message>) -> Result<(), Error> {
+        let msg = msg.into();
+        debug!("Sending message: {:?}", msg);
+        let envelope = NetworkEnvelope {
+            message_version: self.conf.message_version.into(),
+            message: Some(msg),
+        };
+        let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
+        envelope
+            .encode_length_delimited(&mut serialized)
+            .expect("Could not encode message");
+        self.writer.write_all(&serialized)?;
+        self.writer.flush()?;
+        Ok(())
+    }
     pub fn send(
         self,
         msg: impl Into<network_envelope::Message>,
     ) -> impl Future<Item = Connection, Error = Error> {
+        let msg = msg.into();
+        debug!("Sending message: {:?}", msg);
         let envelope = NetworkEnvelope {
             message_version: self.conf.message_version.into(),
             message: Some(msg.into()),
