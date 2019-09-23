@@ -5,7 +5,10 @@ use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult};
 use std::collections::HashMap;
-use tokio::prelude::{future::Future, stream::Stream};
+use tokio::prelude::{
+    future::{self, Future, Loop},
+    stream::Stream,
+};
 
 macro_rules! spawnable {
     ($ex:expr, $f:tt) => {
@@ -109,16 +112,24 @@ impl Handler<Connection> for Peers {
             from: connection.id,
         };
         self.connections.insert(connection.id, connection);
-        // future::loop_fn(message_stream,|stream|
-        Arbiter::spawn(spawnable!(
-            message_stream
-                .into_future()
-                .map_err(|(e, _)| e)
-                .and_then(|(msg, stream)| {
-                    listener.accept_or_err(msg, Error::ConnectionClosed);
-                    Ok(())
-                }),
-            "Error receiving message {:?}"
-        ))
+        Arbiter::spawn(
+            future::loop_fn((listener, message_stream), |(listener, stream)| {
+                stream
+                    .into_future()
+                    .map_err(|(e, _)| e)
+                    .and_then(|(msg, stream)| {
+                        listener
+                            .accept_or_err(msg, Error::ConnectionClosed)
+                            .map(|accepted| match accepted {
+                                Accept::Consumed(listener) => Loop::Continue((listener, stream)),
+                                Accept::Skipped(msg, listener) => {
+                                    warn!("Incoming listener skipped message: {:?}", msg);
+                                    Loop::Continue((listener, stream))
+                                }
+                            })
+                    })
+            })
+            .map_err(|e| info!("Connection closed: {:?}", e)),
+        )
     }
 }

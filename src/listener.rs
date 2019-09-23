@@ -4,7 +4,6 @@ use crate::error::Error;
 pub enum Accept<T> {
     Consumed(T),
     Skipped(network_envelope::Message, T),
-    Error(Error),
 }
 macro_rules! listener_method {
     ($caml:ident, $snake:ident) => {
@@ -17,10 +16,14 @@ pub trait Listener: Sized {
     fn accept(self, msg: network_envelope::Message) -> Accept<Self> {
         match_payload!(msg, self)
     }
-    fn accept_or_err(self, msg: Option<network_envelope::Message>, err: Error) -> Accept<Self> {
+    fn accept_or_err(
+        self,
+        msg: Option<network_envelope::Message>,
+        err: Error,
+    ) -> Result<Accept<Self>, Error> {
         match msg {
-            Some(msg) => self.accept(msg),
-            None => Accept::Error(err),
+            Some(msg) => Ok(self.accept(msg)),
+            None => Err(err),
         }
     }
     for_all_payloads!(listener_method);

@@ -125,17 +125,18 @@ impl Connection {
                     .map_err(|(e, _)| e)
                     .and_then(|(msg, stream)| {
                         debug!("Passing message to listener: {:?}", msg);
-                        match listener.accept_or_err(msg, Error::DidNotReceiveExpectedResponse) {
-                            Accept::Consumed(listener) => {
-                                debug!("Listener accepted message");
-                                Ok(Loop::Break((listener, stream.into_inner())))
-                            }
-                            Accept::Skipped(_, listener) => {
-                                warn!("Listener skipped message");
-                                Ok(Loop::Continue((listener, stream)))
-                            }
-                            Accept::Error(err) => Err(err),
-                        }
+                        listener
+                            .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
+                            .map(|accept| match accept {
+                                Accept::Consumed(listener) => {
+                                    debug!("Listener accepted message");
+                                    Loop::Break((listener, stream.into_inner()))
+                                }
+                                Accept::Skipped(_, listener) => {
+                                    warn!("Listener skipped message");
+                                    Loop::Continue((listener, stream))
+                                }
+                            })
                     })
             },
         )
@@ -258,6 +259,7 @@ impl Stream for MessageStream {
                 NetworkEnvelope::decode(&*buf)?
             }
         };
+        debug!("Received message: {:?}", next_read);
         self.buffer.push_back(next_read);
         self.state = MessageStreamState::BetweenMessages;
         self.poll()
