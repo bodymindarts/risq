@@ -38,42 +38,6 @@ impl Peers {
 impl Actor for Peers {
     type Context = Context<Peers>;
 }
-struct GetReportedPeers {}
-impl Message for GetReportedPeers {
-    type Result = Vec<Peer>;
-}
-impl Handler<GetReportedPeers> for Peers {
-    type Result = MessageResult<GetReportedPeers>;
-    fn handle(&mut self, mut _msg: GetReportedPeers, _: &mut Self::Context) -> Self::Result {
-        MessageResult(self.reported_peers.clone())
-    }
-}
-impl Message for BootstrapResult {
-    type Result = ();
-}
-impl Handler<BootstrapResult> for Peers {
-    type Result = ();
-    fn handle(&mut self, msg: BootstrapResult, _: &mut Self::Context) -> Self::Result {
-        debug!("Inserting connections from bootstrap");
-        msg.seed_connections.into_iter().for_each(|(addr, conn)| {
-            let id = conn.id;
-            self.connections.insert(id, conn);
-            self.known_connections.insert(addr, id);
-        })
-    }
-}
-struct SendPayloadTo(ConnectionId, network_envelope::Message);
-impl Message for SendPayloadTo {
-    type Result = ();
-}
-impl Handler<SendPayloadTo> for Peers {
-    type Result = ();
-    fn handle(&mut self, msg: SendPayloadTo, _: &mut Self::Context) -> Self::Result {
-        if let Some(ref mut con) = self.connections.get_mut(&msg.0) {
-            con.send_sync(msg.1);
-        }
-    }
-}
 
 impl Message for Connection {
     type Result = ();
@@ -88,14 +52,14 @@ impl Listener for PeersRequestListener {
         let peers_clone = peers.clone();
         Arbiter::spawn(spawnable!(
             peers
-                .send(GetReportedPeers {})
+                .send(message::GetReportedPeers {})
                 .and_then(move |reported_peers| {
                     let res = GetPeersResponse {
                         request_nonce: msg.nonce,
                         reported_peers,
                         supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
                     };
-                    peers_clone.send(SendPayloadTo(from, res.into()))
+                    peers_clone.send(message::SendPayloadTo(from, res.into()))
                 }),
             "Error responding to get_peers_request {:?}"
         ));
@@ -131,5 +95,51 @@ impl Handler<Connection> for Peers {
             })
             .map_err(|e| info!("Connection closed: {:?}", e)),
         )
+    }
+}
+
+pub mod message {
+    use crate::bisq::payload::*;
+    use crate::bootstrap::BootstrapResult;
+    use crate::connection::ConnectionId;
+    use actix::{Handler, Message, MessageResult};
+
+    pub struct SendPayloadTo(pub ConnectionId, pub network_envelope::Message);
+    impl Message for SendPayloadTo {
+        type Result = ();
+    }
+    impl Handler<SendPayloadTo> for super::Peers {
+        type Result = ();
+        fn handle(&mut self, msg: SendPayloadTo, _: &mut Self::Context) -> Self::Result {
+            if let Some(ref mut con) = self.connections.get_mut(&msg.0) {
+                con.send_sync(msg.1);
+            }
+        }
+    }
+
+    pub struct GetReportedPeers {}
+    impl Message for GetReportedPeers {
+        type Result = Vec<Peer>;
+    }
+    impl Handler<GetReportedPeers> for super::Peers {
+        type Result = MessageResult<GetReportedPeers>;
+        fn handle(&mut self, mut _msg: GetReportedPeers, _: &mut Self::Context) -> Self::Result {
+            MessageResult(self.reported_peers.clone())
+        }
+    }
+
+    impl Message for BootstrapResult {
+        type Result = ();
+    }
+    impl Handler<BootstrapResult> for super::Peers {
+        type Result = ();
+        fn handle(&mut self, msg: BootstrapResult, _: &mut Self::Context) -> Self::Result {
+            debug!("Inserting connections from bootstrap");
+            msg.seed_connections.into_iter().for_each(|(addr, conn)| {
+                let id = conn.id;
+                self.connections.insert(id, conn);
+                self.known_connections.insert(addr, id);
+            })
+        }
     }
 }
