@@ -28,12 +28,12 @@ struct GetDataListener {
     response: Option<GetDataResponse>,
 }
 impl Listener for GetDataListener {
-    fn get_data_response(mut self, response: GetDataResponse) -> Accept<Self> {
+    fn get_data_response(&mut self, response: &GetDataResponse) -> Accept {
         if response.request_nonce == self.expecting_nonce {
-            self.response = Some(response);
-            Accept::Consumed(self)
+            self.response = Some(response.to_owned());
+            Accept::Processed
         } else {
-            Accept::Skipped(response.into(), self)
+            Accept::Skipped
         }
     }
 }
@@ -42,12 +42,12 @@ struct GetPeersListener {
     response: Option<GetPeersResponse>,
 }
 impl Listener for GetPeersListener {
-    fn get_peers_response(mut self, response: GetPeersResponse) -> Accept<Self> {
+    fn get_peers_response(&mut self, response: &GetPeersResponse) -> Accept {
         if response.request_nonce == self.expecting_nonce {
-            self.response = Some(response);
-            Accept::Consumed(self)
+            self.response = Some(response.to_owned());
+            Accept::Processed
         } else {
-            Accept::Skipped(response.into(), self)
+            Accept::Skipped
         }
     }
 }

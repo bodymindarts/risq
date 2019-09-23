@@ -1,9 +1,11 @@
+// mod in_stream;
+
 use crate::bisq::{constants, payload::*};
 use crate::bootstrap::BootstrapResult;
 use crate::connection::{Connection, ConnectionId};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
-use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult};
+use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message};
 use std::collections::HashMap;
 use tokio::prelude::{
     future::{self, Future, Loop},
@@ -47,23 +49,24 @@ struct PeersRequestListener {
     from: ConnectionId,
 }
 impl Listener for PeersRequestListener {
-    fn get_peers_request(self, msg: GetPeersRequest) -> Accept<Self> {
-        let PeersRequestListener { peers, from } = self;
-        let peers_clone = peers.clone();
+    fn get_peers_request(&mut self, msg: &GetPeersRequest) -> Accept {
+        let request_nonce = msg.nonce.to_owned();
+        let peers = self.peers.to_owned();
+        let from = self.from.to_owned();
         Arbiter::spawn(spawnable!(
-            peers
+            self.peers
                 .send(message::GetReportedPeers {})
                 .and_then(move |reported_peers| {
                     let res = GetPeersResponse {
-                        request_nonce: msg.nonce,
+                        request_nonce,
                         reported_peers,
                         supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
                     };
-                    peers_clone.send(message::SendPayloadTo(from, res.into()))
+                    peers.send(message::SendPayloadTo(from, res.into()))
                 }),
             "Error responding to get_peers_request {:?}"
         ));
-        Accept::Consumed(PeersRequestListener { peers, from })
+        Accept::Processed
     }
 }
 impl Handler<Connection> for Peers {
@@ -77,16 +80,16 @@ impl Handler<Connection> for Peers {
         };
         self.connections.insert(connection.id, connection);
         Arbiter::spawn(
-            future::loop_fn((listener, message_stream), |(listener, stream)| {
+            future::loop_fn((listener, message_stream), |(mut listener, stream)| {
                 stream
                     .into_future()
                     .map_err(|(e, _)| e)
                     .and_then(|(msg, stream)| {
                         listener
-                            .accept_or_err(msg, Error::ConnectionClosed)
+                            .accept_or_err(&msg, Error::ConnectionClosed)
                             .map(|accepted| match accepted {
-                                Accept::Consumed(listener) => Loop::Continue((listener, stream)),
-                                Accept::Skipped(msg, listener) => {
+                                Accept::Processed => Loop::Continue((listener, stream)),
+                                Accept::Skipped => {
                                     warn!("Incoming listener skipped message: {:?}", msg);
                                     Loop::Continue((listener, stream))
                                 }

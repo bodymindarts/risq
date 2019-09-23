@@ -1,26 +1,26 @@
 use crate::bisq::payload::*;
 use crate::error::Error;
 
-pub enum Accept<T> {
-    Consumed(T),
-    Skipped(network_envelope::Message, T),
+pub enum Accept {
+    Processed,
+    Skipped,
 }
 macro_rules! listener_method {
     ($caml:ident, $snake:ident) => {
-        fn $snake(self, msg: $caml) -> Accept<Self> {
-            Accept::Skipped(msg.into(), self)
+        fn $snake(&mut self, msg: &$caml) -> Accept {
+            Accept::Skipped
         }
     };
 }
-pub trait Listener: Sized {
-    fn accept(self, msg: network_envelope::Message) -> Accept<Self> {
+pub trait Listener {
+    fn accept(&mut self, msg: &network_envelope::Message) -> Accept {
         match_payload!(msg, self)
     }
     fn accept_or_err(
-        self,
-        msg: Option<network_envelope::Message>,
+        &mut self,
+        msg: &Option<network_envelope::Message>,
         err: Error,
-    ) -> Result<Accept<Self>, Error> {
+    ) -> Result<Accept, Error> {
         match msg {
             Some(msg) => Ok(self.accept(msg)),
             None => Err(err),
@@ -37,20 +37,21 @@ mod tests {
         pub called: bool,
     }
     impl Listener for PingListener {
-        fn ping(self, msg: Ping) -> Accept<Self> {
+        fn ping(&mut self, msg: &Ping) -> Accept {
             assert!(msg.nonce == 5);
-            Accept::Consumed(PingListener { called: true })
+            self.called = true;
+            Accept::Processed
         }
     }
 
     #[test]
     fn accept_ping() {
-        let listener = PingListener { called: false };
-        match listener.accept(network_envelope::Message::Ping(Ping {
+        let mut listener = PingListener { called: false };
+        match listener.accept(&network_envelope::Message::Ping(Ping {
             nonce: 5,
             last_round_trip_time: 0,
         })) {
-            Accept::Consumed(listener) => assert!(listener.called),
+            Accept::Processed => assert!(listener.called),
             _ => assert!(false),
         }
     }

@@ -29,19 +29,6 @@ extern crate log;
 #[macro_use]
 extern crate futures;
 
-macro_rules! debug_method {
-    ($caml:ident, $snake:ident) => {
-        fn $snake(self, msg: $caml) -> Accept<Self> {
-            debug!("Received message: {:?}", msg);
-            Accept::Consumed(self)
-        }
-    };
-}
-struct DebugListener {}
-impl Listener for DebugListener {
-    for_all_payloads!(debug_method);
-}
-
 macro_rules! spawnable {
     ($ex:expr, $f:tt) => {
         $ex.map(|_| ()).map_err(|e| {

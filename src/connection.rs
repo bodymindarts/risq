@@ -119,20 +119,20 @@ impl Connection {
     ) -> impl Future<Item = (T, Connection), Error = Error> {
         future::loop_fn(
             (listener, self.into_message_stream()),
-            |(listener, stream)| {
+            |(mut listener, stream)| {
                 stream
                     .into_future()
                     .map_err(|(e, _)| e)
                     .and_then(|(msg, stream)| {
                         debug!("Passing message to listener: {:?}", msg);
                         listener
-                            .accept_or_err(msg, Error::DidNotReceiveExpectedResponse)
+                            .accept_or_err(&msg, Error::DidNotReceiveExpectedResponse)
                             .map(|accept| match accept {
-                                Accept::Consumed(listener) => {
+                                Accept::Processed => {
                                     debug!("Listener accepted message");
                                     Loop::Break((listener, stream.into_inner()))
                                 }
-                                Accept::Skipped(_, listener) => {
+                                Accept::Skipped => {
                                     warn!("Listener skipped message");
                                     Loop::Continue((listener, stream))
                                 }
