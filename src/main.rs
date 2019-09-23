@@ -10,6 +10,7 @@ mod server;
 use crate::error::Error;
 use actix::{Arbiter, System};
 use bisq::{constants::BaseCurrencyNetwork, message::*};
+use connection::ConnectionConfig;
 use env_logger;
 use listener::{Accept, Listener};
 use peers::Peers;
