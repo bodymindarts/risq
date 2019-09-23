@@ -1,3 +1,4 @@
+use actix::MailboxError;
 use prost::DecodeError;
 use std::{io, result};
 use tokio::sync::mpsc::error::SendError;
@@ -10,6 +11,7 @@ pub enum Error {
     Decode(DecodeError),
     SendOneshotError,
     ReceiveOneshotError,
+    MailboxError(MailboxError),
     SendMPSCError,
     DidNotReceiveExpectedResponse,
 }
@@ -29,5 +31,10 @@ impl From<DecodeError> for Error {
 impl From<SendError> for Error {
     fn from(err: SendError) -> Self {
         Error::SendMPSCError
+    }
+}
+impl From<MailboxError> for Error {
+    fn from(err: MailboxError) -> Self {
+        Error::MailboxError(err)
     }
 }

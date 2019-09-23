@@ -54,15 +54,16 @@ fn main() {
     env_logger::init();
     let sys = System::new("risq");
     let (start_send, start_rec) = oneshot::channel();
-    let (con_send, con_rec) = mpsc::channel(50);
+    let peers_addr = Peers::start();
     Arbiter::spawn(spawnable!(
         server::start(
             NodeAddress {
                 host_name: "127.0.0.1".into(),
                 port: 8000
             },
+            BaseCurrencyNetwork::BtcRegtest.into(),
             start_send,
-            con_send
+            peers_addr
         ),
         "Server error {:?}"
     ));

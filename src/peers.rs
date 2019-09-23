@@ -1,19 +1,21 @@
-use crate::bisq::message::Peer;
+use crate::bisq::message::{NodeAddress, Peer};
 use crate::bootstrap::BootstrapResult;
 use crate::connection::Connection;
 use actix::{Actor, Addr, Context, Handler, Message};
 use tokio::net::TcpStream;
 
 pub struct Peers {
+    local_node_address: Option<NodeAddress>,
     reported_peers: Vec<Peer>,
     connections: Vec<Connection>,
 }
 
 impl Peers {
-    pub fn start(bootstrap: BootstrapResult) -> Addr<Self> {
+    pub fn start() -> Addr<Self> {
         Self {
-            reported_peers: bootstrap.reported_peers,
-            connections: bootstrap.seed_connections,
+            local_node_address: None,
+            reported_peers: Vec::new(),
+            connections: Vec::new(),
         }
         .start()
     }
@@ -27,13 +29,15 @@ pub struct Bootstrapped {
     reported_peers: Vec<Peer>,
     seed_connections: Vec<Connection>,
 }
-impl Message for Bootstrapped {
+impl Message for Connection {
     type Result = ();
 }
-impl Handler<Bootstrapped> for Peers {
+impl Handler<Connection> for Peers {
     type Result = ();
 
-    fn handle(&mut self, msg: Bootstrapped, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: Connection, ctx: &mut Self::Context) -> Self::Result {
         ()
     }
 }
+
+// accept incoming conemtion and respond to peer requetss
