@@ -2,7 +2,7 @@ use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope, No
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use prost::Message;
-use std::{collections::VecDeque, io, net::ToSocketAddrs};
+use std::{collections::VecDeque, io, net::SocketAddr};
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
     net::TcpStream,
@@ -13,27 +13,65 @@ use tokio::{
     },
 };
 
-#[derive(Debug, Clone)]
-pub struct ConnectionConfig {
-    pub node_address: Option<NodeAddress>,
-    pub message_version: MessageVersion,
+pub struct IdentifiedConnection {
+    pub node_address: NodeAddress,
+    connection: Connection,
 }
+impl IdentifiedConnection {
+    pub fn new(
+        node_address: NodeAddress,
+        message_version: MessageVersion,
+    ) -> impl Future<Item = IdentifiedConnection, Error = Error> {
+        Connection::new(node_address.clone().into(), message_version).map(|connection| {
+            IdentifiedConnection {
+                node_address,
+                connection,
+            }
+        })
+    }
+
+    pub fn send_and_await<T: Listener>(
+        self,
+        msg: impl Into<network_envelope::Message>,
+        listener: T,
+    ) -> impl Future<Item = (T, Self), Error = Error> {
+        let Self {
+            connection,
+            node_address,
+        } = self;
+        connection
+            .send_and_await(msg, listener)
+            .map(|(listener, connection)| {
+                (
+                    listener,
+                    Self {
+                        connection,
+                        node_address,
+                    },
+                )
+            })
+    }
+}
+
 pub struct Connection {
     writer: WriteHalf<TcpStream>,
     reader: Option<MessageStream>,
-    conf: ConnectionConfig,
+    message_version: MessageVersion,
 }
+
 impl Connection {
-    pub fn new(conf: ConnectionConfig) -> impl Future<Item = Connection, Error = Error> {
-        let addr = conf.node_address.clone().unwrap();
-        TcpStream::connect(&addr.into())
+    pub fn new(
+        addr: SocketAddr,
+        message_version: MessageVersion,
+    ) -> impl Future<Item = Connection, Error = Error> {
+        TcpStream::connect(&addr)
             .map(move |tcp| {
                 let (reader, writer) = tcp.split();
                 let reader = Some(MessageStream::new(reader, None));
                 Connection {
                     writer,
                     reader,
-                    conf,
+                    message_version,
                 }
             })
             .map_err(|err| err.into())
@@ -44,10 +82,7 @@ impl Connection {
         Connection {
             writer,
             reader: Some(MessageStream::new(reader, None)),
-            conf: ConnectionConfig {
-                node_address: None,
-                message_version,
-            },
+            message_version: message_version,
         }
     }
 
@@ -56,7 +91,7 @@ impl Connection {
         msg: impl Into<network_envelope::Message>,
     ) -> impl Future<Item = Connection, Error = Error> {
         let envelope = NetworkEnvelope {
-            message_version: self.conf.message_version.into(),
+            message_version: self.message_version.into(),
             message: Some(msg.into()),
         };
         let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
@@ -65,14 +100,14 @@ impl Connection {
             .expect("Could not encode message");
         let Connection {
             writer,
-            conf,
+            message_version,
             reader,
         } = self;
         write_all(writer, serialized)
             .and_then(|(writer, _)| flush(writer))
             .map(move |writer| Connection {
                 writer,
-                conf,
+                message_version,
                 reader,
             })
             .map_err(|err| err.into())
@@ -117,7 +152,7 @@ impl Connection {
 
     pub fn into_message_stream(self) -> MessageStream {
         let mut reader = self.reader.expect("Reader already removed");
-        reader.conn = Some((self.conf, self.writer));
+        reader.conn = Some((self.message_version, self.writer));
         reader
     }
 
@@ -137,7 +172,7 @@ enum MessageStreamState {
     Empty,
 }
 pub struct MessageStream {
-    conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
+    conn: Option<(MessageVersion, WriteHalf<TcpStream>)>,
     reader: ReadHalf<TcpStream>,
     state: MessageStreamState,
     buffer: VecDeque<NetworkEnvelope>,
@@ -145,7 +180,7 @@ pub struct MessageStream {
 impl MessageStream {
     fn new(
         reader: ReadHalf<TcpStream>,
-        conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
+        conn: Option<(MessageVersion, WriteHalf<TcpStream>)>,
     ) -> MessageStream {
         MessageStream {
             conn,
@@ -155,9 +190,9 @@ impl MessageStream {
         }
     }
     pub fn into_inner(mut self) -> Connection {
-        let (conf, writer) = self.conn.take().expect("Inner not present");
+        let (message_version, writer) = self.conn.take().expect("Inner not present");
         Connection {
-            conf,
+            message_version,
             writer,
             reader: Some(self),
         }
@@ -227,7 +262,7 @@ impl Stream for MessageStream {
 
 #[cfg(test)]
 mod test {
-    use super::{Connection, ConnectionConfig};
+    use super::{Connection, IdentifiedConnection};
     use crate::bisq::{
         constants::BaseCurrencyNetwork,
         message::{network_envelope::Message, NodeAddress, Ping},
@@ -250,10 +285,6 @@ mod test {
             host_name: "127.0.0.1".to_string(),
             port: 7477,
         };
-        let config = ConnectionConfig {
-            message_version: network.into(),
-            node_address: Some(addr.clone()),
-        };
         let (tx, rx) = oneshot::channel();
         let ping = Ping {
             nonce: 0,
@@ -275,7 +306,7 @@ mod test {
                     .map(|(msg, _)| tx.send(msg.unwrap()).unwrap())
                     .map_err(|e| println!("err"))
             });
-        let sender = Connection::new(config)
+        let sender = Connection::new(addr.into(), network.into())
             .and_then(|conn| conn.send(ping).map(|_| ()))
             .map_err(|e| println!("stoen"));
         tokio::run(lazy(move || {

@@ -5,7 +5,7 @@ use crate::bisq::{
         NodeAddress, Peer, PreliminaryGetDataRequest,
     },
 };
-use crate::connection::{Connection, ConnectionConfig};
+use crate::connection::IdentifiedConnection;
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use rand::{seq::SliceRandom, thread_rng};
@@ -21,7 +21,7 @@ pub struct Config {
 }
 pub struct BootstrapResult {
     pub reported_peers: Vec<Peer>,
-    pub seed_connections: Vec<Connection>,
+    pub seed_connections: Vec<IdentifiedConnection>,
 }
 struct GetDataListener {
     expecting_nonce: i32,
@@ -68,7 +68,7 @@ struct SeedResult {
     preliminary_data_response: GetDataResponse,
     get_updated_data_response: GetDataResponse,
     reported_peers: Vec<Peer>,
-    connection: Connection,
+    connection: IdentifiedConnection,
 }
 
 fn bootstrap_from_seed(
@@ -87,54 +87,51 @@ fn bootstrap_from_seed(
         excluded_keys: Vec::new(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::new(ConnectionConfig {
-        message_version: network.into(),
-        node_address: Some(seed_addr.clone()),
-    })
-    .and_then(move |conn| {
-        let listener = GetDataListener {
-            expecting_nonce: preliminary_get_data_request.nonce,
-            response: None,
-        };
-        debug!("Sending PreliminaryGetDataRequest to seed.");
-        conn.send_and_await(preliminary_get_data_request, listener)
-            .map(|(listener, conn)| (listener.response.expect("Response not set"), conn))
-    })
-    .and_then(move |(preliminary_data_response, conn)| {
-        let listener = GetDataListener {
-            expecting_nonce: get_updated_data_request.nonce,
-            response: None,
-        };
-        debug!("Sending GetUpdatedDataRequest to seed.");
-        conn.send_and_await(get_updated_data_request, listener)
-            .map(|(listener, conn)| {
-                (
-                    preliminary_data_response,
-                    listener.response.expect("Response not set"),
-                    conn,
-                )
-            })
-    })
-    .and_then(
-        move |(preliminary_data_response, get_updated_data_response, conn)| {
-            let get_peers_request = GetPeersRequest {
-                sender_node_address: local_addr.into(),
-                nonce: gen_nonce(),
-                supported_capabilities: LOCAL_CAPABILITIES.clone(),
-                reported_peers: Vec::new(),
-            };
-            let listener = GetPeersListener {
-                expecting_nonce: get_peers_request.nonce,
+    IdentifiedConnection::new(seed_addr.clone(), network.into())
+        .and_then(move |conn| {
+            let listener = GetDataListener {
+                expecting_nonce: preliminary_get_data_request.nonce,
                 response: None,
             };
-            debug!("Exchanging GetUpdatedDataRequest with seed");
-            conn.send_and_await(get_peers_request, listener)
-                .map(|(listener, connection)| SeedResult {
-                    preliminary_data_response,
-                    get_updated_data_response,
-                    connection,
-                    reported_peers: listener.response.expect("Response not set").reported_peers,
+            debug!("Sending PreliminaryGetDataRequest to seed.");
+            conn.send_and_await(preliminary_get_data_request, listener)
+                .map(|(listener, conn)| (listener.response.expect("Response not set"), conn))
+        })
+        .and_then(move |(preliminary_data_response, conn)| {
+            let listener = GetDataListener {
+                expecting_nonce: get_updated_data_request.nonce,
+                response: None,
+            };
+            debug!("Sending GetUpdatedDataRequest to seed.");
+            conn.send_and_await(get_updated_data_request, listener)
+                .map(|(listener, conn)| {
+                    (
+                        preliminary_data_response,
+                        listener.response.expect("Response not set"),
+                        conn,
+                    )
                 })
-        },
-    )
+        })
+        .and_then(
+            move |(preliminary_data_response, get_updated_data_response, conn)| {
+                let get_peers_request = GetPeersRequest {
+                    sender_node_address: local_addr.into(),
+                    nonce: gen_nonce(),
+                    supported_capabilities: LOCAL_CAPABILITIES.clone(),
+                    reported_peers: Vec::new(),
+                };
+                let listener = GetPeersListener {
+                    expecting_nonce: get_peers_request.nonce,
+                    response: None,
+                };
+                debug!("Exchanging GetUpdatedDataRequest with seed");
+                conn.send_and_await(get_peers_request, listener)
+                    .map(|(listener, connection)| SeedResult {
+                        preliminary_data_response,
+                        get_updated_data_response,
+                        connection,
+                        reported_peers: listener.response.expect("Response not set").reported_peers,
+                    })
+            },
+        )
 }
