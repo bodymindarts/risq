@@ -1,13 +1,13 @@
 use crate::bisq::payload::{NodeAddress, Peer};
 use crate::bootstrap::BootstrapResult;
-use crate::connection::Connection;
+use crate::connection::{Connection, ConnectionId};
 use actix::{Actor, Addr, Context, Handler, Message};
 use std::collections::HashMap;
 use tokio::net::TcpStream;
 use uuid::Uuid;
 
 pub struct Peers {
-    connections: HashMap<Uuid, Connection>,
+    connections: HashMap<ConnectionId, Connection>,
 }
 
 impl Peers {
@@ -32,6 +32,7 @@ impl Message for Connection {
 }
 struct PeersRequestListener {
     peers: Addr<Peers>,
+    cId: Uuid,
 }
 // impl Listener for PeersRequestListener {
 //     fn get_peers_request(self, msg: GetPeersRequest){
@@ -43,7 +44,7 @@ impl Handler<Connection> for Peers {
 
     fn handle(&mut self, mut connection: Connection, ctx: &mut Self::Context) -> Self::Result {
         let message_stream = connection.take_message_stream();
-        self.connections.insert(connection.uuid, connection);
+        self.connections.insert(connection.id, connection);
         // future::loop_fn(message_stream,|stream|
         // stream.into_future()
         //             .map_err(|(e, _)| e)
