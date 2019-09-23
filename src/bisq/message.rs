@@ -3,16 +3,26 @@ include!("../generated/message_macros.rs");
 
 use super::constants::*;
 use rand::{thread_rng, Rng};
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::{
+    io,
+    net::{SocketAddr, ToSocketAddrs},
+    vec,
+};
 
 pub fn gen_nonce() -> i32 {
     thread_rng().gen()
 }
 
+impl ToSocketAddrs for NodeAddress {
+    type Iter = vec::IntoIter<SocketAddr>;
+    fn to_socket_addrs(&self) -> io::Result<Self::Iter> {
+        (&*self.host_name, self.port as u16).to_socket_addrs()
+    }
+}
+
 impl From<NodeAddress> for SocketAddr {
     fn from(addr: NodeAddress) -> SocketAddr {
-        (&*addr.host_name, addr.port as u16)
-            .to_socket_addrs()
+        addr.to_socket_addrs()
             .expect("SocketAddr from NodeAddress")
             .next()
             .expect("SocketAddr from NodeAddress")

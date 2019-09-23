@@ -87,10 +87,12 @@ fn bootstrap_from_seed(
         excluded_keys: Vec::new(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::new(ConnectionConfig {
-        message_version: network.into(),
-        node_address: Some(seed_addr.clone()),
-    })
+    Connection::new(
+        seed_addr,
+        ConnectionConfig {
+            message_version: network.into(),
+        },
+    )
     .and_then(move |conn| {
         let listener = GetDataListener {
             expecting_nonce: preliminary_get_data_request.nonce,

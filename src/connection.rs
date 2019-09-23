@@ -1,21 +1,20 @@
-use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope, NodeAddress};
+use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use prost::Message;
-use std::{collections::VecDeque, io, net::ToSocketAddrs};
+use std::{collections::VecDeque, io, net::SocketAddr};
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
     net::TcpStream,
     prelude::{
-        future::{self, Future, Loop},
+        future::{self, Future, IntoFuture, Loop},
         stream::Stream,
         Async,
     },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct ConnectionConfig {
-    pub node_address: Option<NodeAddress>,
     pub message_version: MessageVersion,
 }
 pub struct Connection {
@@ -24,8 +23,10 @@ pub struct Connection {
     conf: ConnectionConfig,
 }
 impl Connection {
-    pub fn new(conf: ConnectionConfig) -> impl Future<Item = Connection, Error = Error> {
-        let addr = conf.node_address.clone().unwrap();
+    pub fn new(
+        addr: impl Into<SocketAddr>,
+        conf: ConnectionConfig,
+    ) -> impl Future<Item = Connection, Error = Error> {
         TcpStream::connect(&addr.into())
             .map(move |tcp| {
                 let (reader, writer) = tcp.split();
@@ -44,10 +45,7 @@ impl Connection {
         Connection {
             writer,
             reader: Some(MessageStream::new(reader, None)),
-            conf: ConnectionConfig {
-                node_address: None,
-                message_version,
-            },
+            conf: ConnectionConfig { message_version },
         }
     }
 
@@ -230,7 +228,7 @@ mod test {
     use super::{Connection, ConnectionConfig};
     use crate::bisq::{
         constants::BaseCurrencyNetwork,
-        message::{network_envelope::Message, NodeAddress, Ping},
+        message::{network_envelope::Message, Ping},
     };
     use crate::error::Error;
     use std::net::SocketAddr;
@@ -246,14 +244,10 @@ mod test {
     #[test]
     fn basic_send_and_receive() {
         let network = BaseCurrencyNetwork::BtcRegtest;
-        let addr = NodeAddress {
-            host_name: "127.0.0.1".to_string(),
-            port: 7477,
-        };
         let config = ConnectionConfig {
             message_version: network.into(),
-            node_address: Some(addr.clone()),
         };
+        let addr = "127.0.0.1:7477";
         let (tx, rx) = oneshot::channel();
         let ping = Ping {
             nonce: 0,
@@ -263,7 +257,7 @@ mod test {
             nonce: 0,
             last_round_trip_time: 0,
         };
-        let receiver = TcpListener::bind(&addr.clone().into())
+        let receiver = TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())
             .unwrap()
             .incoming()
             .into_future()
@@ -275,7 +269,7 @@ mod test {
                     .map(|(msg, _)| tx.send(msg.unwrap()).unwrap())
                     .map_err(|e| println!("err"))
             });
-        let sender = Connection::new(config)
+        let sender = Connection::new(addr.parse::<SocketAddr>().unwrap(), config)
             .and_then(|conn| conn.send(ping).map(|_| ()))
             .map_err(|e| println!("stoen"));
         tokio::run(lazy(move || {
