@@ -12,12 +12,14 @@ use tokio::{
         Async,
     },
 };
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ConnectionConfig {
     pub message_version: MessageVersion,
 }
 pub struct Connection {
+    uuid: Uuid,
     writer: WriteHalf<TcpStream>,
     reader: Option<MessageStream>,
     conf: ConnectionConfig,
@@ -30,8 +32,10 @@ impl Connection {
         TcpStream::connect(&addr.into())
             .map(move |tcp| {
                 let (reader, writer) = tcp.split();
-                let reader = Some(MessageStream::new(reader, None));
+                let uuid = Uuid::new_v4();
+                let reader = Some(MessageStream::new(uuid, reader, None));
                 Connection {
+                    uuid,
                     writer,
                     reader,
                     conf,
@@ -42,9 +46,11 @@ impl Connection {
 
     pub fn from_tcp_stream(stream: TcpStream, message_version: MessageVersion) -> Connection {
         let (reader, writer) = stream.split();
+        let uuid = Uuid::new_v4();
         Connection {
+            uuid,
             writer,
-            reader: Some(MessageStream::new(reader, None)),
+            reader: Some(MessageStream::new(uuid, reader, None)),
             conf: ConnectionConfig { message_version },
         }
     }
@@ -62,6 +68,7 @@ impl Connection {
             .encode_length_delimited(&mut serialized)
             .expect("Could not encode message");
         let Connection {
+            uuid,
             writer,
             conf,
             reader,
@@ -69,6 +76,7 @@ impl Connection {
         write_all(writer, serialized)
             .and_then(|(writer, _)| flush(writer))
             .map(move |writer| Connection {
+                uuid,
                 writer,
                 conf,
                 reader,
@@ -135,6 +143,7 @@ enum MessageStreamState {
     Empty,
 }
 pub struct MessageStream {
+    uuid: Uuid,
     conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
     reader: ReadHalf<TcpStream>,
     state: MessageStreamState,
@@ -142,10 +151,12 @@ pub struct MessageStream {
 }
 impl MessageStream {
     fn new(
+        uuid: Uuid,
         reader: ReadHalf<TcpStream>,
         conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
     ) -> MessageStream {
         MessageStream {
+            uuid,
             conn,
             reader,
             state: MessageStreamState::BetweenMessages,
@@ -155,6 +166,7 @@ impl MessageStream {
     pub fn into_inner(mut self) -> Connection {
         let (conf, writer) = self.conn.take().expect("Inner not present");
         Connection {
+            uuid: self.uuid,
             conf,
             writer,
             reader: Some(self),

@@ -20,8 +20,9 @@ log = "*"
 prost = "*"
 prost-types = "*"
 rand = "*"
-tokio = "*"
 socks = "*"
+tokio = "*"
+uuid = { version = "*", features = ["v4"] }
 
 [build-dependencies]
 prost-build = "*"
