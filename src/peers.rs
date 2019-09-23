@@ -1,19 +1,19 @@
-use crate::bisq::payload::{NodeAddress, Peer};
-use crate::bootstrap::BootstrapResult;
+use crate::bisq::payload::*;
 use crate::connection::{Connection, ConnectionId};
-use actix::{Actor, Addr, Context, Handler, Message};
+use crate::listener::{Accept, Listener};
+use actix::{Actor, Addr, Context, Handler, Message, MessageResult};
 use std::collections::HashMap;
-use tokio::net::TcpStream;
-use uuid::Uuid;
 
 pub struct Peers {
     connections: HashMap<ConnectionId, Connection>,
+    reported_peers: Vec<Peer>,
 }
 
 impl Peers {
     pub fn start() -> Addr<Self> {
         Self {
             connections: HashMap::new(),
+            reported_peers: Vec::new(),
         }
         .start()
     }
@@ -22,23 +22,30 @@ impl Peers {
 impl Actor for Peers {
     type Context = Context<Peers>;
 }
-
-pub struct Bootstrapped {
-    reported_peers: Vec<Peer>,
-    seed_connections: Vec<Connection>,
+struct GetReportedPeers {}
+impl Message for GetReportedPeers {
+    type Result = Vec<Peer>;
 }
+impl Handler<GetReportedPeers> for Peers {
+    type Result = MessageResult<GetReportedPeers>;
+    fn handle(&mut self, mut _msg: GetReportedPeers, _: &mut Self::Context) -> Self::Result {
+        MessageResult(self.reported_peers.clone())
+    }
+}
+
 impl Message for Connection {
     type Result = ();
 }
 struct PeersRequestListener {
     peers: Addr<Peers>,
-    cId: Uuid,
+    from: ConnectionId,
 }
-// impl Listener for PeersRequestListener {
-//     fn get_peers_request(self, msg: GetPeersRequest){
-//         Arbiter::spawn(self.peers.send(
-//     }
-// }
+impl Listener for PeersRequestListener {
+    fn get_peers_request(self, msg: GetPeersRequest) -> Accept<Self> {
+        // Arbiter::spawn(self.peers.send(
+        Accept::Consumed(self)
+    }
+}
 impl Handler<Connection> for Peers {
     type Result = ();
 
