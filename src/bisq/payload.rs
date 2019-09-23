@@ -1,5 +1,5 @@
 include!("../generated/io.bisq.protobuffer.rs");
-include!("../generated/message_macros.rs");
+include!("../generated/payload_macros.rs");
 
 use super::constants::*;
 use rand::{thread_rng, Rng};
@@ -51,4 +51,4 @@ macro_rules! into_message {
         }
     };
 }
-for_all_messages!(into_message);
+for_all_payloads!(into_message);

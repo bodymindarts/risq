@@ -1,4 +1,4 @@
-use crate::bisq::message::*;
+use crate::bisq::payload::*;
 use crate::error::Error;
 
 pub enum Accept<T> {
@@ -15,7 +15,7 @@ macro_rules! listener_method {
 }
 pub trait Listener: Sized {
     fn accept(self, msg: network_envelope::Message) -> Accept<Self> {
-        match_message!(msg, self)
+        match_payload!(msg, self)
     }
     fn accept_or_err(self, msg: Option<network_envelope::Message>, err: Error) -> Accept<Self> {
         match msg {
@@ -23,13 +23,13 @@ pub trait Listener: Sized {
             None => Accept::Error(err),
         }
     }
-    for_all_messages!(listener_method);
+    for_all_payloads!(listener_method);
 }
 
 #[cfg(test)]
 mod tests {
     use super::{Accept, Listener};
-    use crate::bisq::message::{network_envelope, Ping};
+    use crate::bisq::payload::{network_envelope, Ping};
     struct PingListener {
         pub called: bool,
     }

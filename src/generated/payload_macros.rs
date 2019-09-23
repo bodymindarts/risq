@@ -1,4 +1,4 @@
-macro_rules! for_all_messages {
+macro_rules! for_all_payloads {
     ($m:ident) => {
         $m!(PreliminaryGetDataRequest,preliminary_get_data_request);
         $m!(GetDataResponse,get_data_response);
@@ -47,7 +47,7 @@ macro_rules! for_all_messages {
     };
 }
 
-macro_rules! match_message {
+macro_rules! match_payload {
     ($m:ident, $target:ident) => {
         match $m {
             network_envelope::Message::PreliminaryGetDataRequest($m) => $target.preliminary_get_data_request($m),

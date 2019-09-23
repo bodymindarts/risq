@@ -1,4 +1,4 @@
-use super::message::NodeAddress;
+use super::payload::NodeAddress;
 use lazy_static::lazy_static;
 
 #[derive(Debug, Clone, Copy)]

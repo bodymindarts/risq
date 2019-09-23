@@ -17,7 +17,7 @@ cat src/generated/io.bisq.protobuffer.rs | \
   sed '1,/^    }$/!d' | \
   egrep -v '{|}|prost' | \
   sed 's/        \([A-Za-z]*\)(.*/\1/' \
-  > ${TMPDIR}/message_names
+  > ${TMPDIR}/payload_names
 
 function to_snake_case() {
   echo $1 | \
@@ -25,25 +25,25 @@ function to_snake_case() {
     perl -pe 's/([A-Z])/\L\1/g'
 }
 
-cat <<EOF > ${REPO_ROOT_DIR}/src/generated/message_macros.rs
-macro_rules! for_all_messages {
+cat <<EOF > ${REPO_ROOT_DIR}/src/generated/payload_macros.rs
+macro_rules! for_all_payloads {
     (\$m:ident) => {
 EOF
-cat ${TMPDIR}/message_names | while read camlName; do
+cat ${TMPDIR}/payload_names | while read camlName; do
   echo "        \$m!($camlName,$(to_snake_case $camlName));"
-done >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
-cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
+done >> ${REPO_ROOT_DIR}/src/generated/payload_macros.rs
+cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/payload_macros.rs
     };
 }
 
-macro_rules! match_message {
+macro_rules! match_payload {
     (\$m:ident, \$target:ident) => {
         match \$m {
 EOF
-cat ${TMPDIR}/message_names | while read camlName; do
+cat ${TMPDIR}/payload_names | while read camlName; do
 echo "            network_envelope::Message::$camlName(\$m) => \$target.$(to_snake_case $camlName)(\$m),"
-done >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
-cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/message_macros.rs
+done >> ${REPO_ROOT_DIR}/src/generated/payload_macros.rs
+cat <<EOF >> ${REPO_ROOT_DIR}/src/generated/payload_macros.rs
         }
     };
 }

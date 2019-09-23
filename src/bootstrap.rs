@@ -1,6 +1,6 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
-    message::{
+    payload::{
         gen_nonce, GetDataResponse, GetPeersRequest, GetPeersResponse, GetUpdatedDataRequest,
         NodeAddress, Peer, PreliminaryGetDataRequest,
     },

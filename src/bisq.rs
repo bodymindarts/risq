@@ -1,3 +1,3 @@
 pub mod constants;
 #[macro_use]
-pub mod message;
+pub mod payload;

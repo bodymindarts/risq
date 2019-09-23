@@ -1,4 +1,4 @@
-use crate::bisq::message::{network_envelope, MessageVersion, NetworkEnvelope};
+use crate::bisq::payload::{network_envelope, MessageVersion, NetworkEnvelope};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use prost::Message;
@@ -19,7 +19,7 @@ pub struct ConnectionConfig {
     pub message_version: MessageVersion,
 }
 pub struct Connection {
-    uuid: Uuid,
+    pub uuid: Uuid,
     writer: WriteHalf<TcpStream>,
     reader: Option<MessageStream>,
     conf: ConnectionConfig,
@@ -240,7 +240,7 @@ mod test {
     use super::{Connection, ConnectionConfig};
     use crate::bisq::{
         constants::BaseCurrencyNetwork,
-        message::{network_envelope::Message, Ping},
+        payload::{network_envelope::Message, Ping},
     };
     use crate::error::Error;
     use std::net::SocketAddr;

@@ -9,7 +9,7 @@ mod server;
 
 use crate::error::Error;
 use actix::{Arbiter, System};
-use bisq::{constants::BaseCurrencyNetwork, message::*};
+use bisq::{constants::BaseCurrencyNetwork, payload::*};
 use connection::ConnectionConfig;
 use env_logger;
 use listener::{Accept, Listener};
@@ -39,7 +39,7 @@ macro_rules! debug_method {
 }
 struct DebugListener {}
 impl Listener for DebugListener {
-    for_all_messages!(debug_method);
+    for_all_payloads!(debug_method);
 }
 
 macro_rules! spawnable {

@@ -1,4 +1,4 @@
-use crate::bisq::message::*;
+use crate::bisq::payload::*;
 use crate::connection::Connection;
 use crate::error::Error;
 use crate::peers::Peers;
