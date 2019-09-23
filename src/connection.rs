@@ -191,7 +191,8 @@ impl Stream for MessageStream {
                 let mut read_size = vec![0];
                 let n = try_ready!(self.reader.poll_read(&mut read_size));
                 if n == 0 {
-                    return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "early eof").into());
+                    self.state = MessageStreamState::Empty;
+                    return Ok(Async::Ready(None));
                 }
                 let size = read_size[0].into();
                 self.state = MessageStreamState::MessageInProgress {
