@@ -1,7 +1,7 @@
 use actix::MailboxError;
 use prost::DecodeError;
 use std::{io, result};
-use tokio::sync::mpsc::error::SendError;
+use tokio::sync::mpsc::error::{RecvError, SendError};
 
 #[derive(Debug)]
 pub enum Error {
@@ -13,6 +13,7 @@ pub enum Error {
     ReceiveOneshotError,
     MailboxError(MailboxError),
     SendMPSCError,
+    ReceiveMPSCError,
     ConnectionClosed,
     DidNotReceiveExpectedResponse,
 }
@@ -30,8 +31,13 @@ impl From<DecodeError> for Error {
     }
 }
 impl From<SendError> for Error {
-    fn from(err: SendError) -> Self {
+    fn from(_err: SendError) -> Self {
         Error::SendMPSCError
+    }
+}
+impl From<RecvError> for Error {
+    fn from(_err: RecvError) -> Self {
+        Error::ReceiveMPSCError
     }
 }
 impl From<MailboxError> for Error {

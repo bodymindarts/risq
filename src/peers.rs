@@ -1,3 +1,4 @@
+mod sender;
 // mod in_stream;
 
 use crate::bisq::{constants, payload::*};

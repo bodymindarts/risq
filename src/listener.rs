@@ -7,7 +7,7 @@ pub enum Accept {
 }
 macro_rules! listener_method {
     ($caml:ident, $snake:ident) => {
-        fn $snake(&mut self, msg: &$caml) -> Accept {
+        fn $snake(&mut self, _msg: &$caml) -> Accept {
             Accept::Skipped
         }
     };
