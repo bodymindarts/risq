@@ -1,12 +1,11 @@
 mod sender;
-// mod in_stream;
-
 use crate::bisq::{constants, payload::*};
 use crate::bootstrap::BootstrapResult;
 use crate::connection::{Connection, ConnectionId};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message};
+use sender::Sender;
 use std::collections::HashMap;
 use tokio::prelude::{
     future::{self, Future, Loop},
@@ -22,7 +21,7 @@ macro_rules! spawnable {
 }
 
 pub struct Peers {
-    connections: HashMap<ConnectionId, Connection>,
+    connections: HashMap<ConnectionId, Addr<Sender>>,
     reported_peers: Vec<Peer>,
     known_connections: HashMap<NodeAddress, ConnectionId>,
 }
@@ -79,7 +78,9 @@ impl Handler<Connection> for Peers {
             peers: ctx.address(),
             from: connection.id,
         };
-        self.connections.insert(connection.id, connection);
+        let id = connection.id.clone();
+        let sender = Sender::start(connection);
+        self.connections.insert(id, sender);
         Arbiter::spawn(
             future::loop_fn((listener, message_stream), |(mut listener, stream)| {
                 stream
@@ -103,10 +104,12 @@ impl Handler<Connection> for Peers {
 }
 
 pub mod message {
+    use super::sender::{SendPayload, Sender};
     use crate::bisq::payload::*;
     use crate::bootstrap::BootstrapResult;
     use crate::connection::ConnectionId;
-    use actix::{Handler, Message, MessageResult};
+    use actix::{Arbiter, Handler, Message, MessageResult};
+    use tokio::prelude::future::Future;
 
     pub struct SendPayloadTo(pub ConnectionId, pub network_envelope::Message);
     impl Message for SendPayloadTo {
@@ -115,8 +118,8 @@ pub mod message {
     impl Handler<SendPayloadTo> for super::Peers {
         type Result = ();
         fn handle(&mut self, msg: SendPayloadTo, _: &mut Self::Context) -> Self::Result {
-            if let Some(ref mut con) = self.connections.get_mut(&msg.0) {
-                con.send_sync(msg.1);
+            if let Some(sender) = self.connections.get(&msg.0) {
+                Arbiter::spawn(sender.send(SendPayload(msg.1)).then(|_| Ok(())));
             }
         }
     }
@@ -141,7 +144,7 @@ pub mod message {
             debug!("Inserting connections from bootstrap");
             msg.seed_connections.into_iter().for_each(|(addr, conn)| {
                 let id = conn.id;
-                self.connections.insert(id, conn);
+                self.connections.insert(id, Sender::start(conn));
                 self.known_connections.insert(addr, id);
             })
         }
