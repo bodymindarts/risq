@@ -1,8 +1,9 @@
 mod keep_alive;
+mod receiver;
 mod sender;
 use crate::bisq::{constants, payload::*};
 use crate::bootstrap::BootstrapResult;
-use crate::connection::{Connection, ConnectionId};
+use crate::connection::{Connection, ConnectionId, MessageStream};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr};
@@ -81,26 +82,8 @@ impl Handler<Connection> for Peers {
             peers: ctx.address(),
             return_addr: sender.downgrade(),
         };
+        receiver::listen(message_stream, sender.downgrade(), ctx.address());
         self.connections.insert(id, sender);
-        Arbiter::spawn(
-            future::loop_fn((listener, message_stream), |(mut listener, stream)| {
-                stream
-                    .into_future()
-                    .map_err(|(e, _)| e)
-                    .and_then(|(msg, stream)| {
-                        listener
-                            .accept_or_err(&msg, Error::ConnectionClosed)
-                            .map(|accepted| match accepted {
-                                Accept::Processed => Loop::Continue((listener, stream)),
-                                Accept::Skipped => {
-                                    warn!("Incoming listener skipped message: {:?}", msg);
-                                    Loop::Continue((listener, stream))
-                                }
-                            })
-                    })
-            })
-            .map_err(|e| info!("Connection closed: {:?}", e)),
-        )
     }
 }
 

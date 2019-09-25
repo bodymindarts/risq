@@ -157,9 +157,7 @@ impl Connection {
         reader
     }
 
-    pub fn take_message_stream(
-        &mut self,
-    ) -> impl Stream<Item = network_envelope::Message, Error = Error> {
+    pub fn take_message_stream(&mut self) -> MessageStream {
         self.reader.take().expect("Reader already removed")
     }
 }
