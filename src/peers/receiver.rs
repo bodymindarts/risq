@@ -2,7 +2,7 @@ use super::{
     keep_alive::KeepAliveListener,
     message,
     sender::{SendPayload, Sender},
-    Peers,
+    Peers, ReportedPeersListener,
 };
 use crate::bisq::{constants, payload::*};
 use crate::connection::{ConnectionId, MessageStream};
@@ -14,29 +14,12 @@ use tokio::prelude::{
     stream::Stream,
 };
 
-struct ReportedPeersResponder {
-    peers: Addr<Peers>,
-    from: ConnectionId,
-}
-impl Listener for ReportedPeersResponder {
-    fn get_peers_request(&mut self, msg: &GetPeersRequest) -> Accept {
-        Arbiter::spawn(
-            self.peers
-                .send(message::PeersExchange {
-                    request: msg.to_owned(),
-                    from: self.from,
-                })
-                .then(|_| Ok(())),
-        );
-        Accept::Processed
-    }
-}
 pub fn listen(
     message_stream: MessageStream,
     return_addr: WeakAddr<Sender>,
     peers: Addr<Peers>,
 ) -> () {
-    let listener = ReportedPeersResponder {
+    let listener = ReportedPeersListener {
         peers,
         from: message_stream.id,
     }

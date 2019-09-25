@@ -35,27 +35,33 @@ impl Actor for Peers {
     type Context = Context<Peers>;
 }
 
-impl Message for Connection {
-    type Result = ();
+struct ReportedPeersListener {
+    pub peers: Addr<Peers>,
+    pub from: ConnectionId,
 }
-impl Handler<Connection> for Peers {
-    type Result = ();
-
-    fn handle(&mut self, mut connection: Connection, ctx: &mut Self::Context) -> Self::Result {
-        let message_stream = connection.take_message_stream();
-        let id = connection.id.clone();
-        let sender = Sender::start(connection);
-        receiver::listen(message_stream, sender.downgrade(), ctx.address());
-        self.connections.insert(id, sender);
+impl Listener for ReportedPeersListener {
+    fn get_peers_request(&mut self, msg: &GetPeersRequest) -> Accept {
+        Arbiter::spawn(
+            self.peers
+                .send(message::PeersExchange {
+                    request: msg.to_owned(),
+                    from: self.from,
+                })
+                .then(|_| Ok(())),
+        );
+        Accept::Processed
     }
 }
 
 pub mod message {
-    use super::sender::{SendPayload, Sender};
+    use super::{
+        receiver,
+        sender::{SendPayload, Sender},
+    };
     use crate::bisq::{constants, payload::*};
     use crate::bootstrap::BootstrapResult;
-    use crate::connection::ConnectionId;
-    use actix::{Arbiter, Handler, Message, MessageResult, WeakAddr};
+    use crate::connection::{Connection, ConnectionId};
+    use actix::{Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr};
     use rand::{seq::SliceRandom, thread_rng};
     use std::{
         iter::{Extend, FromIterator},
@@ -129,6 +135,21 @@ pub mod message {
                 self.connections.insert(id, Sender::start(conn));
                 self.identified_connections.insert(id, addr);
             })
+        }
+    }
+
+    impl Message for Connection {
+        type Result = ();
+    }
+    impl Handler<Connection> for super::Peers {
+        type Result = ();
+
+        fn handle(&mut self, mut connection: Connection, ctx: &mut Self::Context) -> Self::Result {
+            let message_stream = connection.take_message_stream();
+            let id = connection.id;
+            let sender = Sender::start(connection);
+            receiver::listen(message_stream, sender.downgrade(), ctx.address());
+            self.connections.insert(id, sender);
         }
     }
 }
