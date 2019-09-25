@@ -1,11 +1,12 @@
+mod keep_alive;
 mod sender;
 use crate::bisq::{constants, payload::*};
 use crate::bootstrap::BootstrapResult;
 use crate::connection::{Connection, ConnectionId};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
-use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message};
-use sender::Sender;
+use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr};
+use sender::{SendPayload, Sender};
 use std::collections::HashMap;
 use tokio::prelude::{
     future::{self, Future, Loop},
@@ -46,26 +47,26 @@ impl Message for Connection {
 }
 struct PeersRequestListener {
     peers: Addr<Peers>,
-    from: ConnectionId,
+    return_addr: WeakAddr<Sender>,
 }
 impl Listener for PeersRequestListener {
     fn get_peers_request(&mut self, msg: &GetPeersRequest) -> Accept {
         let request_nonce = msg.nonce.to_owned();
-        let peers = self.peers.to_owned();
-        let from = self.from.to_owned();
-        Arbiter::spawn(spawnable!(
-            self.peers
-                .send(message::GetReportedPeers {})
-                .and_then(move |reported_peers| {
-                    let res = GetPeersResponse {
-                        request_nonce,
-                        reported_peers,
-                        supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
-                    };
-                    peers.send(message::SendPayloadTo(from, res.into()))
-                }),
-            "Error responding to get_peers_request {:?}"
-        ));
+        if let Some(addr) = self.return_addr.upgrade() {
+            Arbiter::spawn(spawnable!(
+                self.peers
+                    .send(message::GetReportedPeers {})
+                    .and_then(move |reported_peers| {
+                        let res = GetPeersResponse {
+                            request_nonce,
+                            reported_peers,
+                            supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
+                        };
+                        addr.send(SendPayload(res.into()))
+                    }),
+                "Error responding to get_peers_request {:?}"
+            ));
+        }
         Accept::Processed
     }
 }
@@ -74,12 +75,12 @@ impl Handler<Connection> for Peers {
 
     fn handle(&mut self, mut connection: Connection, ctx: &mut Self::Context) -> Self::Result {
         let message_stream = connection.take_message_stream();
-        let listener = PeersRequestListener {
-            peers: ctx.address(),
-            from: connection.id,
-        };
         let id = connection.id.clone();
         let sender = Sender::start(connection);
+        let listener = PeersRequestListener {
+            peers: ctx.address(),
+            return_addr: sender.downgrade(),
+        };
         self.connections.insert(id, sender);
         Arbiter::spawn(
             future::loop_fn((listener, message_stream), |(mut listener, stream)| {
@@ -110,19 +111,6 @@ pub mod message {
     use crate::connection::ConnectionId;
     use actix::{Arbiter, Handler, Message, MessageResult};
     use tokio::prelude::future::Future;
-
-    pub struct SendPayloadTo(pub ConnectionId, pub network_envelope::Message);
-    impl Message for SendPayloadTo {
-        type Result = ();
-    }
-    impl Handler<SendPayloadTo> for super::Peers {
-        type Result = ();
-        fn handle(&mut self, msg: SendPayloadTo, _: &mut Self::Context) -> Self::Result {
-            if let Some(sender) = self.connections.get(&msg.0) {
-                Arbiter::spawn(sender.send(SendPayload(msg.1)).then(|_| Ok(())));
-            }
-        }
-    }
 
     pub struct GetReportedPeers {}
     impl Message for GetReportedPeers {
