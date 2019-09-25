@@ -14,14 +14,6 @@ use tokio::prelude::{
     stream::Stream,
 };
 
-macro_rules! spawnable {
-    ($ex:expr, $f:tt) => {
-        $ex.map(|_| ()).map_err(|e| {
-            debug!($f, e);
-        })
-    };
-}
-
 pub struct Peers {
     connections: HashMap<ConnectionId, Addr<Sender>>,
     reported_peers: Vec<Peer>,
@@ -60,20 +52,38 @@ impl Handler<Connection> for Peers {
 
 pub mod message {
     use super::sender::{SendPayload, Sender};
-    use crate::bisq::payload::*;
+    use crate::bisq::{constants, payload::*};
     use crate::bootstrap::BootstrapResult;
     use crate::connection::ConnectionId;
-    use actix::{Arbiter, Handler, Message, MessageResult};
+    use actix::{Arbiter, Handler, Message, MessageResult, WeakAddr};
+    use rand::{seq::SliceRandom, thread_rng};
     use tokio::prelude::future::Future;
 
-    pub struct GetReportedPeers {}
-    impl Message for GetReportedPeers {
-        type Result = Vec<Peer>;
+    pub struct PeersExchange {
+        pub request: GetPeersRequest,
+        pub from: ConnectionId,
     }
-    impl Handler<GetReportedPeers> for super::Peers {
-        type Result = MessageResult<GetReportedPeers>;
-        fn handle(&mut self, mut _msg: GetReportedPeers, _: &mut Self::Context) -> Self::Result {
-            MessageResult(self.reported_peers.clone())
+    impl Message for PeersExchange {
+        type Result = ();
+    }
+    impl Handler<PeersExchange> for super::Peers {
+        type Result = ();
+        fn handle(&mut self, mut msg: PeersExchange, _: &mut Self::Context) -> Self::Result {
+            self.reported_peers.append(&mut msg.request.reported_peers);
+            self.reported_peers.shuffle(&mut thread_rng());
+            if self.reported_peers.len() > constants::MAX_REPORTED_PEERS {
+                // Do something with removed reported peers
+                let _ = self.reported_peers.drain(constants::MAX_REPORTED_PEERS..);
+            }
+
+            if let Some(addr) = self.connections.get(&msg.from) {
+                let res = GetPeersResponse {
+                    request_nonce: msg.request.nonce,
+                    reported_peers: self.reported_peers.clone(),
+                    supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
+                };
+                Arbiter::spawn(addr.send(SendPayload(res.into())).then(|_| Ok(())))
+            }
         }
     }
 

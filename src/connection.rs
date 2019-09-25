@@ -171,7 +171,8 @@ enum MessageStreamState {
     Empty,
 }
 pub struct MessageStream {
-    id: ConnectionId,
+    pub id: ConnectionId,
+
     conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
     reader: ReadHalf<TcpStream>,
     state: MessageStreamState,

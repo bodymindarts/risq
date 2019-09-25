@@ -9,7 +9,9 @@ pub enum BaseCurrencyNetwork {
 }
 
 pub(super) const P2P_NETWORK_VERSION: i32 = 1;
-pub const MAX_PERMITTED_MESSAGE_SIZE: i32 = 10 * 1024 * 1024; // 10 MB (425 offers resulted in about 660 kb, mailbox msg will add more to it) offer has usually 2 kb, mailbox 3kb.
+
+pub const MAX_REPORTED_PEERS: usize = 1000;
+pub const MAX_COTIONS_DEFAULT: u8 = 12;
 pub const NUM_SEEDS_FOR_PRELIMINARY_REQUEST: u8 = 2;
 pub const NUM_ADDITIONAL_SEEDS_FOR_UPDATE_REQUEST: u8 = 1;
 

@@ -5,7 +5,7 @@ use super::{
     Peers,
 };
 use crate::bisq::{constants, payload::*};
-use crate::connection::MessageStream;
+use crate::connection::{ConnectionId, MessageStream};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use actix::{Addr, Arbiter, WeakAddr};
@@ -16,26 +16,18 @@ use tokio::prelude::{
 
 struct ReportedPeersResponder {
     peers: Addr<Peers>,
-    return_addr: WeakAddr<Sender>,
+    from: ConnectionId,
 }
 impl Listener for ReportedPeersResponder {
     fn get_peers_request(&mut self, msg: &GetPeersRequest) -> Accept {
-        if let Some(addr) = self.return_addr.upgrade() {
-            let request_nonce = msg.nonce;
-            Arbiter::spawn(
-                self.peers
-                    .send(message::GetReportedPeers {})
-                    .and_then(move |reported_peers| {
-                        let res = GetPeersResponse {
-                            request_nonce,
-                            reported_peers,
-                            supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
-                        };
-                        addr.send(SendPayload(res.into()))
-                    })
-                    .then(|_| Ok(())),
-            )
-        }
+        Arbiter::spawn(
+            self.peers
+                .send(message::PeersExchange {
+                    request: msg.to_owned(),
+                    from: self.from,
+                })
+                .then(|_| Ok(())),
+        );
         Accept::Processed
     }
 }
@@ -46,7 +38,7 @@ pub fn listen(
 ) -> () {
     let listener = ReportedPeersResponder {
         peers,
-        return_addr: return_addr.upgrade().unwrap().downgrade(),
+        from: message_stream.id,
     }
     .forward_to(KeepAliveListener { return_addr });
 
