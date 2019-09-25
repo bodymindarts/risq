@@ -12,7 +12,7 @@ macro_rules! listener_method {
         }
     };
 }
-pub trait Listener {
+pub trait Listener: Sized {
     fn accept(&mut self, msg: &network_envelope::Message) -> Accept {
         match_payload!(msg, self)
     }
@@ -27,6 +27,28 @@ pub trait Listener {
         }
     }
     for_all_payloads!(listener_method);
+
+    fn forward_to<N: Listener>(self, next: N) -> ForwardTo<Self, N> {
+        ForwardTo { first: self, next }
+    }
+}
+
+pub struct ForwardTo<F: Listener, N: Listener> {
+    first: F,
+    next: N,
+}
+macro_rules! forward_method {
+    ($caml:ident, $snake:ident) => {
+        fn $snake(&mut self, msg: &$caml) -> Accept {
+            match self.first.$snake(msg) {
+                Accept::Processed => Accept::Processed,
+                Accept::Skipped => self.next.$snake(msg),
+            }
+        }
+    };
+}
+impl<F: Listener, N: Listener> Listener for ForwardTo<F, N> {
+    for_all_payloads!(forward_method);
 }
 
 #[cfg(test)]

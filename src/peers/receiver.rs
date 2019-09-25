@@ -1,4 +1,5 @@
 use super::{
+    keep_alive::KeepAliveListener,
     message,
     sender::{SendPayload, Sender},
     Peers,
@@ -43,7 +44,11 @@ pub fn listen(
     return_addr: WeakAddr<Sender>,
     peers: Addr<Peers>,
 ) -> () {
-    let listener = ReportedPeersResponder { peers, return_addr };
+    let listener = ReportedPeersResponder {
+        peers,
+        return_addr: return_addr.upgrade().unwrap().downgrade(),
+    }
+    .forward_to(KeepAliveListener { return_addr });
 
     Arbiter::spawn(
         future::loop_fn((listener, message_stream), |(mut listener, stream)| {

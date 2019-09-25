@@ -13,10 +13,10 @@ lazy_static! {
     static ref LAST_ACTIVITY_AGE: Duration = Duration::from_secs(*LOOP_INTERVAL_SEC / 2);
 }
 
-pub struct PingResponder {
-    return_addr: WeakAddr<Sender>,
+pub struct KeepAliveListener {
+    pub return_addr: WeakAddr<Sender>,
 }
-impl Listener for PingResponder {
+impl Listener for KeepAliveListener {
     fn ping(&mut self, msg: &Ping) -> Accept {
         let pong = Pong {
             request_nonce: msg.nonce,

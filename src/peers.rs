@@ -46,31 +46,6 @@ impl Actor for Peers {
 impl Message for Connection {
     type Result = ();
 }
-struct PeersRequestListener {
-    peers: Addr<Peers>,
-    return_addr: WeakAddr<Sender>,
-}
-impl Listener for PeersRequestListener {
-    fn get_peers_request(&mut self, msg: &GetPeersRequest) -> Accept {
-        let request_nonce = msg.nonce.to_owned();
-        if let Some(addr) = self.return_addr.upgrade() {
-            Arbiter::spawn(spawnable!(
-                self.peers
-                    .send(message::GetReportedPeers {})
-                    .and_then(move |reported_peers| {
-                        let res = GetPeersResponse {
-                            request_nonce,
-                            reported_peers,
-                            supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
-                        };
-                        addr.send(SendPayload(res.into()))
-                    }),
-                "Error responding to get_peers_request {:?}"
-            ));
-        }
-        Accept::Processed
-    }
-}
 impl Handler<Connection> for Peers {
     type Result = ();
 
@@ -78,10 +53,6 @@ impl Handler<Connection> for Peers {
         let message_stream = connection.take_message_stream();
         let id = connection.id.clone();
         let sender = Sender::start(connection);
-        let listener = PeersRequestListener {
-            peers: ctx.address(),
-            return_addr: sender.downgrade(),
-        };
         receiver::listen(message_stream, sender.downgrade(), ctx.address());
         self.connections.insert(id, sender);
     }
