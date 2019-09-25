@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr};
 use sender::{SendPayload, Sender};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tokio::prelude::{
     future::{self, Future, Loop},
     stream::Stream,
@@ -16,16 +16,16 @@ use tokio::prelude::{
 
 pub struct Peers {
     connections: HashMap<ConnectionId, Addr<Sender>>,
-    reported_peers: Vec<Peer>,
-    known_connections: HashMap<NodeAddress, ConnectionId>,
+    reported_peers: HashMap<NodeAddress, Peer>,
+    identified_connections: HashMap<ConnectionId, NodeAddress>,
 }
 
 impl Peers {
     pub fn start() -> Addr<Self> {
         Self {
             connections: HashMap::new(),
-            reported_peers: Vec::new(),
-            known_connections: HashMap::new(),
+            reported_peers: HashMap::new(),
+            identified_connections: HashMap::new(),
         }
         .start()
     }
@@ -57,6 +57,10 @@ pub mod message {
     use crate::connection::ConnectionId;
     use actix::{Arbiter, Handler, Message, MessageResult, WeakAddr};
     use rand::{seq::SliceRandom, thread_rng};
+    use std::{
+        iter::{Extend, FromIterator},
+        time::{SystemTime, UNIX_EPOCH},
+    };
     use tokio::prelude::future::Future;
 
     pub struct PeersExchange {
@@ -69,17 +73,43 @@ pub mod message {
     impl Handler<PeersExchange> for super::Peers {
         type Result = ();
         fn handle(&mut self, mut msg: PeersExchange, _: &mut Self::Context) -> Self::Result {
-            self.reported_peers.append(&mut msg.request.reported_peers);
-            self.reported_peers.shuffle(&mut thread_rng());
-            if self.reported_peers.len() > constants::MAX_REPORTED_PEERS {
-                // Do something with removed reported peers
-                let _ = self.reported_peers.drain(constants::MAX_REPORTED_PEERS..);
+            self.reported_peers
+                .extend(msg.request.reported_peers.drain(..).filter_map(|peer| {
+                    let addr = peer.node_address.clone();
+                    addr.map(|addr| (addr, peer))
+                }));
+            if let Some(addr) = msg.request.sender_node_address {
+                self.reported_peers.insert(
+                    addr.clone(),
+                    Peer {
+                        node_address: Some(addr.clone()),
+                        supported_capabilities: msg.request.supported_capabilities,
+                        date: SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .expect("Time went backwards")
+                            .as_millis() as i64,
+                    },
+                );
+                if let None = self.identified_connections.insert(msg.from, addr) {
+                    debug!("Identified connection {:?}", msg.from);
+                }
             }
-
             if let Some(addr) = self.connections.get(&msg.from) {
+                let from = msg.from;
                 let res = GetPeersResponse {
                     request_nonce: msg.request.nonce,
-                    reported_peers: self.reported_peers.clone(),
+                    reported_peers: Vec::from_iter(
+                        self.identified_connections
+                            .iter()
+                            .filter_map(|(k, v)| {
+                                if *k == from {
+                                    None
+                                } else {
+                                    self.reported_peers.get(v)
+                                }
+                            })
+                            .cloned(),
+                    ),
                     supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
                 };
                 Arbiter::spawn(addr.send(SendPayload(res.into())).then(|_| Ok(())))
@@ -97,7 +127,7 @@ pub mod message {
             msg.seed_connections.into_iter().for_each(|(addr, conn)| {
                 let id = conn.id;
                 self.connections.insert(id, Sender::start(conn));
-                self.known_connections.insert(addr, id);
+                self.identified_connections.insert(id, addr);
             })
         }
     }
