@@ -22,10 +22,10 @@ pub fn seed_nodes(network: BaseCurrencyNetwork) -> Vec<NodeAddress> {
                 host_name: "127.0.0.1".to_string(),
                 port: 2002,
             },
-            NodeAddress {
-                host_name: "127.0.0.1".to_string(),
-                port: 3002,
-            },
+            // NodeAddress {
+            //     host_name: "127.0.0.1".to_string(),
+            //     port: 3002,
+            // },
         ],
         BaseCurrencyNetwork::BtcTestnet => vec![NodeAddress {
             host_name: "m5izk3fvjsjbmkqi.onion".to_string(),

@@ -20,7 +20,6 @@ pub struct Config {
     pub local_node_address: NodeAddress,
 }
 pub struct BootstrapResult {
-    pub reported_peers: Vec<Peer>,
     pub seed_connections: Vec<(NodeAddress, Connection)>,
 }
 struct GetDataListener {
@@ -58,7 +57,6 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
     let addr = seed_nodes.pop().expect("No seed nodes defined");
     bootstrap_from_seed(addr.clone(), config.local_node_address, config.network).map(
         |seed_result| BootstrapResult {
-            reported_peers: seed_result.reported_peers,
             seed_connections: vec![(addr, seed_result.connection)],
         },
     )
@@ -67,7 +65,6 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
 struct SeedResult {
     preliminary_data_response: GetDataResponse,
     get_updated_data_response: GetDataResponse,
-    reported_peers: Vec<Peer>,
     connection: Connection,
 }
 
@@ -109,34 +106,10 @@ fn bootstrap_from_seed(
         };
         debug!("Sending GetUpdatedDataRequest to seed.");
         conn.send_and_await(get_updated_data_request, listener)
-            .map(|(listener, conn)| {
-                (
-                    preliminary_data_response,
-                    listener.response.expect("Response not set"),
-                    conn,
-                )
+            .map(|(listener, connection)| SeedResult {
+                preliminary_data_response,
+                get_updated_data_response: listener.response.expect("Response not set"),
+                connection,
             })
     })
-    .and_then(
-        move |(preliminary_data_response, get_updated_data_response, conn)| {
-            let get_peers_request = GetPeersRequest {
-                sender_node_address: local_addr.into(),
-                nonce: gen_nonce(),
-                supported_capabilities: LOCAL_CAPABILITIES.clone(),
-                reported_peers: Vec::new(),
-            };
-            let listener = GetPeersListener {
-                expecting_nonce: get_peers_request.nonce,
-                response: None,
-            };
-            debug!("Exchanging GetUpdatedDataRequest with seed");
-            conn.send_and_await(get_peers_request, listener)
-                .map(|(listener, connection)| SeedResult {
-                    preliminary_data_response,
-                    get_updated_data_response,
-                    connection,
-                    reported_peers: listener.response.expect("Response not set").reported_peers,
-                })
-        },
-    )
 }

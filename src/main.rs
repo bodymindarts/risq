@@ -13,12 +13,12 @@ use bisq::{constants::BaseCurrencyNetwork, payload::*};
 use connection::ConnectionConfig;
 use env_logger;
 use listener::{Accept, Listener};
-use peers::Peers;
+use peers::{message::OutgoingConnection, Peers};
 use std::{error::Error as StdError, process};
 use tokio::{
     self,
     prelude::{
-        future::{ok, Future},
+        future::{self, ok, Future},
         stream::Stream,
     },
     sync::{mpsc, oneshot},
@@ -39,16 +39,17 @@ macro_rules! spawnable {
 
 fn main() {
     env_logger::init();
+    let network = BaseCurrencyNetwork::BtcRegtest.into();
     let sys = System::new("risq");
     let (start_send, start_rec) = oneshot::channel();
-    let peers_addr = Peers::start();
+    let peers_addr = Peers::start(network);
     Arbiter::spawn(spawnable!(
         server::start(
             NodeAddress {
                 host_name: "127.0.0.1".into(),
                 port: 8000
             },
-            BaseCurrencyNetwork::BtcRegtest.into(),
+            network.into(),
             start_send,
             peers_addr.clone()
         ),
@@ -63,7 +64,15 @@ fn main() {
                     local_node_address: node_address,
                 })
             })
-            .and_then(move |result| peers_addr.send(result).map_err(|e| e.into())),
+            .and_then(
+                move |result| future::join_all(result.seed_connections.into_iter().map(
+                    move |(addr, conn)| {
+                        peers_addr
+                            .send(OutgoingConnection(addr, conn))
+                            .map_err(|e| e.into())
+                    }
+                ))
+            ),
         "Error bootstrapping: {:?}"
     ));
     let _ = sys.run();

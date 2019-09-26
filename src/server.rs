@@ -1,7 +1,7 @@
 use crate::bisq::payload::*;
 use crate::connection::Connection;
 use crate::error::Error;
-use crate::peers::Peers;
+use crate::peers::{message::IncomingConnection, Peers};
 use actix::Addr;
 use std::net::ToSocketAddrs;
 use tokio::{
@@ -43,10 +43,10 @@ pub fn start(
                             .and_then(move |socket| {
                                 debug!("New connection received {:?}", socket);
                                 opened
-                                    .send(Connection::from_tcp_stream(
+                                    .send(IncomingConnection(Connection::from_tcp_stream(
                                         socket,
                                         message_version.clone(),
-                                    ))
+                                    )))
                                     .map_err(|e| e.into())
                                     .map(|_| Loop::Continue((opened, stream)))
                             })
