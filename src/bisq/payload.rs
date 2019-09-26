@@ -2,15 +2,42 @@ include!("../generated/io.bisq.protobuffer.rs");
 include!("../generated/payload_macros.rs");
 
 use super::constants::*;
+use crate::error;
+use bytes::BytesMut;
+use prost::Message;
 use rand::{thread_rng, Rng};
 use std::{
     io,
     net::{SocketAddr, ToSocketAddrs},
     vec,
 };
+use tokio::codec::Encoder;
 
 pub fn gen_nonce() -> i32 {
     thread_rng().gen()
+}
+
+pub struct PayloadEncoder {
+    message_version: MessageVersion,
+}
+impl PayloadEncoder {
+    pub fn from(network: BaseCurrencyNetwork) -> PayloadEncoder {
+        PayloadEncoder {
+            message_version: network.into(),
+        }
+    }
+}
+
+impl Encoder for PayloadEncoder {
+    type Item = network_envelope::Message;
+    type Error = error::Error;
+    fn encode(&mut self, msg: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        let envelope = NetworkEnvelope {
+            message_version: self.message_version.into(),
+            message: Some(msg),
+        };
+        envelope.encode_length_delimited(dst).map_err(|e| e.into())
+    }
 }
 
 impl ToSocketAddrs for NodeAddress {

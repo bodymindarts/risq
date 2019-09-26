@@ -1,5 +1,8 @@
 #[macro_use]
 mod bisq;
+mod alt_bootstrap;
+mod alt_connection;
+mod alt_server;
 mod bootstrap;
 mod connection;
 mod error;

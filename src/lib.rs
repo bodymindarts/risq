@@ -1,6 +1,8 @@
 mod api;
 #[macro_use]
 mod bisq;
+mod alt_bootstrap;
+mod alt_connection;
 mod bootstrap;
 mod connection;
 mod error;
