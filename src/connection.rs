@@ -5,10 +5,8 @@ use crate::bisq::{
 use crate::error;
 use crate::listener::Listener;
 use actix::{
-    self,
-    fut::{self, ActorFuture},
-    prelude::ActorContext,
-    Actor, Addr, Arbiter, AsyncContext, Context, Handler, ResponseActFuture, StreamHandler,
+    self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
+    ResponseActFuture, StreamHandler,
 };
 use prost::Message;
 use std::{

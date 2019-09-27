@@ -46,6 +46,17 @@ impl ResponseExtractor for GetPeersRequest {
         .expect("Msg was not the extpected response type")
     }
 }
+impl ResponseExtractor for Ping {
+    type Response = Pong;
+
+    fn extract(msg: Message) -> Self::Response {
+        match msg {
+            Message::Pong(response) => Some(response),
+            _ => None,
+        }
+        .expect("Msg was not the extpected response type")
+    }
+}
 
 impl Correlated for Message {
     fn correlation_id(&self) -> Option<CorrelationId> {

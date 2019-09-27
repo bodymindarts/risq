@@ -1,7 +1,11 @@
-use crate::bisq::payload::{Ping, Pong};
-use crate::connection::{Connection, ConnectionId};
+use crate::bisq::payload::{gen_nonce, Ping, Pong};
+use crate::connection::{Connection, ConnectionId, Request};
+use crate::error;
 use crate::listener::{Accept, Listener};
-use actix::{Actor, Arbiter, AsyncContext, Context, Handler, Message, StreamHandler, WeakAddr};
+use actix::{
+    fut::{self, ActorFuture},
+    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, StreamHandler, WeakAddr,
+};
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
 use std::{
@@ -24,49 +28,66 @@ lazy_static! {
 
 struct Info {
     last_active: Instant,
-    last_ping: Instant,
-    last_pong: Instant,
+    last_round_trip_time: Duration,
 }
 pub struct KeepAlive {
-    info: HashMap<ConnectionId, Info>,
+    infos: HashMap<ConnectionId, Info>,
     connections: HashMap<ConnectionId, WeakAddr<Connection>>,
+}
+fn ping_peer(
+    id: ConnectionId,
+    addr: Addr<Connection>,
+    info: Option<&Info>,
+    ctx: &mut Context<KeepAlive>,
+) {
+    let ping = Ping {
+        nonce: gen_nonce(),
+        last_round_trip_time: info.map_or(0, |i| i.last_round_trip_time.as_millis() as i32),
+    };
+    let send = Instant::now();
+    ctx.spawn(
+        fut::wrap_future(addr.send(Request(ping)).flatten().map(move |_pong| {
+            let ret = Instant::now();
+            Info {
+                last_active: ret,
+                last_round_trip_time: ret - send,
+            }
+        }))
+        .map(move |info, keep_alive: &mut KeepAlive, _ctx| keep_alive.infos.insert(id, info))
+        .then(|_, _, _| fut::ok(())),
+    );
 }
 impl Actor for KeepAlive {
     type Context = Context<KeepAlive>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(LOOP_INTERVAL.to_owned(), |keep_alive, ctx| ());
+        ctx.run_interval(LOOP_INTERVAL.to_owned(), |keep_alive, ctx| {
+            let now = Instant::now();
+            let infos = &keep_alive.infos;
+            keep_alive
+                .connections
+                .retain(|id, addr| match infos.get(id) {
+                    Some(info) if now.duration_since(info.last_active) > *LAST_ACTIVITY_AGE => {
+                        if let Some(addr) = addr.upgrade() {
+                            ping_peer(id.to_owned(), addr, info.into(), ctx);
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    None => {
+                        if let Some(addr) = addr.upgrade() {
+                            ping_peer(id.to_owned(), addr, None, ctx);
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    Some(_) => true,
+                })
+        });
     }
 }
-impl StreamHandler<Instant, timer::Error> for KeepAlive {
-    fn handle(&mut self, item: Instant, ctx: &mut Context<KeepAlive>) {
-        println!("PING");
-    }
-
-    fn finished(&mut self, ctx: &mut Self::Context) {
-        println!("finished");
-    }
-}
-
-// struct Tick {}
-// impl Message for Tick {
-//     type Result = ();
-// }
-// impl Handler<Tick> for KeepAlive {
-//     type Result = ();
-//     fn handle(&mut self, _: Tick, _: &mut Self::Context) -> Self::Result {
-//         self.senders
-//             .iter()
-//             .for_each(|(id, addr)| match (addr.upgrade(), self.info.get(id)) {
-//                 (Some(addr), Some(info))
-//                     if Instant::now().duration_since(info.last_active) > *LAST_ACTIVITY_AGE =>
-//                 {
-//                     ()
-//                 }
-//                 _ => (),
-//             });
-//     }
-// }
 pub struct KeepAliveListener {
     // pub return_addr: WeakAddr<Sender>,
 }

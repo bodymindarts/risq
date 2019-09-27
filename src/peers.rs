@@ -94,6 +94,7 @@ impl Peers {
         )
     }
     fn add_to_reported_peers(&mut self, reported: &mut Vec<Peer>) {
+        debug!("Adding reported peers {:?}", reported);
         self.reported_peers
             .extend(reported.drain(..).filter_map(|peer| {
                 let addr = peer.node_address.clone();
