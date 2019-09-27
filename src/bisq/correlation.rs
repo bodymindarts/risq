@@ -18,7 +18,7 @@ impl ResponseExtractor for PreliminaryGetDataRequest {
 
     fn extract(msg: Message) -> Self::Response {
         match msg {
-            Message::GetDataResponse(request) => Some(request),
+            Message::GetDataResponse(response) => Some(response),
             _ => None,
         }
         .expect("Msg was not the extpected response type")
@@ -29,7 +29,18 @@ impl ResponseExtractor for GetUpdatedDataRequest {
 
     fn extract(msg: Message) -> Self::Response {
         match msg {
-            Message::GetDataResponse(request) => Some(request),
+            Message::GetDataResponse(response) => Some(response),
+            _ => None,
+        }
+        .expect("Msg was not the extpected response type")
+    }
+}
+impl ResponseExtractor for GetPeersRequest {
+    type Response = GetPeersResponse;
+
+    fn extract(msg: Message) -> Self::Response {
+        match msg {
+            Message::GetPeersResponse(response) => Some(response),
             _ => None,
         }
         .expect("Msg was not the extpected response type")

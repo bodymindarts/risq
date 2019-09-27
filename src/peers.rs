@@ -1,14 +1,22 @@
 mod keep_alive;
 mod receiver;
-use crate::alt_connection::{Connection, ConnectionId};
+
 use crate::bisq::{
-    constants::{self, BaseCurrencyNetwork},
+    constants::{self, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
     payload::*,
 };
+use crate::connection::{Connection, ConnectionId, Request};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
-use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr};
-use std::collections::{HashMap, HashSet};
+use actix::{
+    fut::{self, ActorFuture},
+    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,
+};
+use core::time::Duration;
+use std::{
+    collections::{HashMap, HashSet},
+    iter::FromIterator,
+};
 use tokio::prelude::{
     future::{self, Future, Loop},
     stream::Stream,
@@ -16,6 +24,8 @@ use tokio::prelude::{
 
 pub struct DummyListener {}
 impl Listener for DummyListener {}
+
+const REQUEST_PERIODICALLY_INTERVAL_MIN: Duration = Duration::from_secs(10 * 60 * 60);
 
 pub struct Peers {
     network: BaseCurrencyNetwork,
@@ -37,9 +47,67 @@ impl Peers {
         .start()
     }
 }
-
+impl Peers {
+    fn request_peers(&self, ctx: &mut <Self as Actor>::Context) {
+        self.connections.iter().for_each(move |(id, conn)| {
+            self.request_peers_from(*id, conn, ctx);
+        })
+    }
+    fn request_peers_from(
+        &self,
+        id: ConnectionId,
+        conn: &Addr<Connection>,
+        ctx: &mut <Self as Actor>::Context,
+    ) {
+        let request = GetPeersRequest {
+            sender_node_address: self.local_addr.clone(),
+            nonce: gen_nonce(),
+            supported_capabilities: LOCAL_CAPABILITIES.clone(),
+            reported_peers: self.collect_reported_peers(&id),
+        };
+        ctx.spawn(
+            fut::wrap_future(conn.send(Request(request)).flatten())
+                .map(move |mut res, peers: &mut Peers, _ctx| {
+                    if let Some(node) = peers.identified_connections.get(&id) {
+                        if let Some((node, mut peer)) = peers.reported_peers.remove_entry(node) {
+                            peer.supported_capabilities = res.supported_capabilities;
+                            peers.reported_peers.insert(node, peer);
+                        }
+                    }
+                    peers.add_to_reported_peers(&mut res.reported_peers)
+                })
+                .map_err(|_, _, _| ()),
+        );
+    }
+    fn collect_reported_peers(&self, exclude: &ConnectionId) -> Vec<Peer> {
+        Vec::from_iter(
+            self.identified_connections
+                .iter()
+                .filter_map(|(k, v)| {
+                    if *k == *exclude {
+                        None
+                    } else {
+                        self.reported_peers.get(v)
+                    }
+                })
+                .cloned(),
+        )
+    }
+    fn add_to_reported_peers(&mut self, reported: &mut Vec<Peer>) {
+        self.reported_peers
+            .extend(reported.drain(..).filter_map(|peer| {
+                let addr = peer.node_address.clone();
+                addr.map(|addr| (addr, peer))
+            }));
+    }
+}
 impl Actor for Peers {
     type Context = Context<Peers>;
+    fn started(&mut self, ctx: &mut Self::Context) {
+        ctx.run_interval(REQUEST_PERIODICALLY_INTERVAL_MIN, |peers, ctx| {
+            peers.request_peers(ctx);
+        });
+    }
 }
 
 struct ReportedPeersListener {
@@ -62,8 +130,8 @@ impl Listener for ReportedPeersListener {
 
 pub mod message {
     use super::receiver;
-    use crate::alt_connection::{Connection, ConnectionId};
     use crate::bisq::{constants, payload::*};
+    use crate::connection::{Connection, ConnectionId};
     use actix::{Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr};
     use rand::{seq::SliceRandom, thread_rng};
     use std::{
@@ -93,11 +161,7 @@ pub mod message {
     impl Handler<PeersExchange> for super::Peers {
         type Result = ();
         fn handle(&mut self, mut msg: PeersExchange, _: &mut Self::Context) -> Self::Result {
-            self.reported_peers
-                .extend(msg.request.reported_peers.drain(..).filter_map(|peer| {
-                    let addr = peer.node_address.clone();
-                    addr.map(|addr| (addr, peer))
-                }));
+            self.add_to_reported_peers(&mut msg.request.reported_peers);
             if let Some(addr) = msg.request.sender_node_address {
                 self.reported_peers.insert(
                     addr.clone(),
@@ -179,6 +243,7 @@ pub mod message {
                     supported_capabilities: Vec::new(),
                 },
             );
+            self.request_peers_from(id, self.connections.get(&id).unwrap(), ctx);
         }
     }
 }

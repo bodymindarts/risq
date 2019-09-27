@@ -11,7 +11,7 @@ pub enum BaseCurrencyNetwork {
 pub(super) const P2P_NETWORK_VERSION: i32 = 1;
 
 pub const MAX_REPORTED_PEERS: usize = 1000;
-pub const MAX_COTIONS_DEFAULT: u8 = 12;
+pub const MAX_CONNECTIONS_DEFAULT: u8 = 12;
 pub const NUM_SEEDS_FOR_PRELIMINARY_REQUEST: u8 = 2;
 pub const NUM_ADDITIONAL_SEEDS_FOR_UPDATE_REQUEST: u8 = 1;
 

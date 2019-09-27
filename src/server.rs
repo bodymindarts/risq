@@ -1,5 +1,5 @@
-use crate::alt_connection::Connection;
 use crate::bisq::payload::*;
+use crate::connection::Connection;
 use crate::peers::{
     message::{IncomingConnection, ServerStarted},
     Peers,

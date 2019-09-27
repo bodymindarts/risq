@@ -1,10 +1,19 @@
-use crate::bisq::payload::{network_envelope, MessageVersion, NetworkEnvelope};
-use crate::error::Error;
-use crate::listener::{Accept, Listener};
+use crate::bisq::{
+    correlation::*,
+    payload::{network_envelope, MessageVersion, NetworkEnvelope},
+};
+use crate::error;
+use crate::listener::Listener;
+use actix::{
+    self,
+    fut::{self, ActorFuture},
+    prelude::ActorContext,
+    Actor, Addr, Arbiter, AsyncContext, Context, Handler, ResponseActFuture, StreamHandler,
+};
 use prost::Message;
 use std::{
-    collections::VecDeque,
-    io::{self, Write},
+    collections::{HashMap, VecDeque},
+    io,
     net::SocketAddr,
 };
 use tokio::{
@@ -13,8 +22,9 @@ use tokio::{
     prelude::{
         future::{self, Future, IntoFuture, Loop},
         stream::Stream,
-        Async,
+        Async, Sink,
     },
+    sync::{mpsc, oneshot},
 };
 use uuid::Uuid;
 
@@ -26,141 +36,128 @@ impl ConnectionId {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct ConnectionConfig {
-    pub message_version: MessageVersion,
-}
 pub struct Connection {
-    pub id: ConnectionId,
-    writer: WriteHalf<TcpStream>,
-    reader: Option<MessageStream>,
-    conf: ConnectionConfig,
+    id: ConnectionId,
+    writer: mpsc::Sender<network_envelope::Message>,
+    listener: Box<dyn Listener>,
+    response_channels: HashMap<CorrelationId, oneshot::Sender<network_envelope::Message>>,
 }
-impl Connection {
-    pub fn new(
-        addr: impl Into<SocketAddr>,
-        conf: ConnectionConfig,
-    ) -> impl Future<Item = Connection, Error = Error> {
-        TcpStream::connect(&addr.into())
-            .map(move |tcp| {
-                let (reader, writer) = tcp.split();
-                let id = ConnectionId::new();
-                let reader = Some(MessageStream::new(id, reader, None));
-                Connection {
-                    id,
-                    writer,
-                    reader,
-                    conf,
-                }
-            })
-            .map_err(|err| err.into())
-    }
-
-    pub fn from_tcp_stream(stream: TcpStream, message_version: MessageVersion) -> Connection {
-        let (reader, writer) = stream.split();
-        let id = ConnectionId::new();
-        Connection {
-            id,
-            writer,
-            reader: Some(MessageStream::new(id, reader, None)),
-            conf: ConnectionConfig { message_version },
+impl Actor for Connection {
+    type Context = Context<Connection>;
+    fn started(&mut self, ctx: &mut Self::Context) {}
+}
+impl StreamHandler<network_envelope::Message, error::Error> for Connection {
+    fn handle(&mut self, msg: network_envelope::Message, _ctx: &mut Self::Context) {
+        debug!("{:?} received message: {:?}", self.id, msg);
+        if let Some(id) = msg.correlation_id() {
+            if let Some(channel) = self.response_channels.remove(&id) {
+                channel.send(msg).expect("Couldn't send response");
+            }
         }
     }
 
-    pub fn send_sync(&mut self, msg: impl Into<network_envelope::Message>) -> Result<(), Error> {
-        let msg = msg.into();
-        debug!("Sending message: {:?}", msg);
-        let envelope = NetworkEnvelope {
-            message_version: self.conf.message_version.into(),
-            message: Some(msg),
-        };
-        let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
-        envelope
-            .encode_length_delimited(&mut serialized)
-            .expect("Could not encode message");
-        self.writer.write_all(&serialized)?;
-        self.writer.flush()?;
-        Ok(())
-    }
-    pub fn send(
-        self,
-        msg: impl Into<network_envelope::Message>,
-    ) -> impl Future<Item = Connection, Error = Error> {
-        let msg = msg.into();
-        debug!("Sending message: {:?}", msg);
-        let envelope = NetworkEnvelope {
-            message_version: self.conf.message_version.into(),
-            message: Some(msg.into()),
-        };
-        let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
-        envelope
-            .encode_length_delimited(&mut serialized)
-            .expect("Could not encode message");
-        let Connection {
-            id,
-            writer,
-            conf,
-            reader,
-        } = self;
-        write_all(writer, serialized)
-            .and_then(|(writer, _)| flush(writer))
-            .map(move |writer| Connection {
-                id,
-                writer,
-                conf,
-                reader,
-            })
-            .map_err(|err| err.into())
-    }
-
-    pub fn await_response<T: Listener>(
-        self,
-        listener: T,
-    ) -> impl Future<Item = (T, Connection), Error = Error> {
-        future::loop_fn(
-            (listener, self.into_message_stream()),
-            |(mut listener, stream)| {
-                stream
-                    .into_future()
-                    .map_err(|(e, _)| e)
-                    .and_then(|(msg, stream)| {
-                        debug!("Passing message to listener: {:?}", msg);
-                        listener
-                            .accept_or_err(&msg, Error::DidNotReceiveExpectedResponse)
-                            .map(|accept| match accept {
-                                Accept::Processed => {
-                                    debug!("Listener accepted message");
-                                    Loop::Break((listener, stream.into_inner()))
-                                }
-                                Accept::Skipped => {
-                                    warn!("Listener skipped message");
-                                    Loop::Continue((listener, stream))
-                                }
-                            })
-                    })
-            },
-        )
-    }
-
-    pub fn send_and_await<T: Listener>(
-        self,
-        msg: impl Into<network_envelope::Message>,
-        listener: T,
-    ) -> impl Future<Item = (T, Self), Error = Error> {
-        self.send(msg)
-            .and_then(|conn| conn.await_response(listener))
-    }
-
-    pub fn into_message_stream(self) -> MessageStream {
-        let mut reader = self.reader.expect("Reader already removed");
-        reader.conn = Some((self.conf, self.writer));
-        reader
-    }
-
-    pub fn take_message_stream(&mut self) -> MessageStream {
-        self.reader.take().expect("Reader already removed")
+    fn finished(&mut self, ctx: &mut Self::Context) {
+        debug!("{:?} incoming stream has closed", self.id);
+        ctx.stop();
     }
 }
+
+impl Connection {
+    pub fn open(
+        addr: impl Into<SocketAddr>,
+        message_version: MessageVersion,
+        listener: Box<dyn Listener>,
+    ) -> impl Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error> {
+        TcpStream::connect(&addr.into())
+            .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, listener))
+            .map_err(|err| err.into())
+    }
+    pub fn from_tcp_stream(
+        connection: TcpStream,
+        message_version: MessageVersion,
+        listener: Box<dyn Listener>,
+    ) -> (ConnectionId, Addr<Connection>) {
+        let (reader, writer) = connection.split();
+        let (send, rec) = mpsc::channel(10);
+        Arbiter::spawn(
+            future::loop_fn((rec, writer), move |(rec, writer)| {
+                rec.into_future()
+                    .map_err(|(e, _)| e.into())
+                    .and_then(|(msg, rec)| {
+                        msg.ok_or(error::Error::ReceiveMPSCError)
+                            .map(|msg| (msg, rec))
+                    })
+                    .and_then(move |(msg, rec)| {
+                        debug!("Sending message: {:?}", msg);
+                        let envelope = NetworkEnvelope {
+                            message_version: message_version.into(),
+                            message: Some(msg),
+                        };
+                        let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
+                        envelope
+                            .encode_length_delimited(&mut serialized)
+                            .expect("Could not encode message");
+                        write_all(writer, serialized)
+                            .and_then(|(writer, _)| flush(writer))
+                            .then(|writer| match writer {
+                                Ok(writer) => Ok(Loop::Continue((rec, writer))),
+                                Err(e) => Ok(Loop::Break(e)),
+                            })
+                    })
+                    .map_err(|e| error!("Sender errored: {:?}", e))
+            })
+            .map(|_| ()),
+        );
+        let id = ConnectionId::new();
+        (
+            id,
+            Connection::create(move |ctx| {
+                ctx.add_stream(MessageStream::new(reader));
+                Connection {
+                    id,
+                    writer: send,
+                    listener,
+                    response_channels: HashMap::new(),
+                }
+            }),
+        )
+    }
+}
+
+pub struct Request<M: Into<network_envelope::Message> + ResponseExtractor>(pub M);
+impl<M> actix::Message for Request<M>
+where
+    M: Into<network_envelope::Message> + ResponseExtractor + 'static,
+{
+    type Result = Result<<M as ResponseExtractor>::Response, error::Error>;
+}
+impl<M> Handler<Request<M>> for Connection
+where
+    M: Into<network_envelope::Message> + ResponseExtractor + 'static,
+{
+    type Result = Box<dyn Future<Item = <M as ResponseExtractor>::Response, Error = error::Error>>;
+    fn handle(&mut self, request: Request<M>, _: &mut Self::Context) -> Self::Result {
+        let msg: network_envelope::Message = request.0.into();
+        let correlation_id = msg
+            .correlation_id()
+            .expect("Request without correlation_id");
+        let (send, receive) = oneshot::channel::<network_envelope::Message>();
+        self.response_channels.insert(correlation_id.clone(), send);
+        debug!("{:?} sending message: {:?}", self.id, msg);
+        Box::new(
+            self.writer
+                .clone()
+                .sink_from_err::<error::Error>()
+                .send(msg)
+                .and_then(|_| {
+                    receive
+                        .map(|response| <M as ResponseExtractor>::extract(response))
+                        .map_err(|e| e.into())
+                }),
+        )
+    }
+}
+
 enum MessageStreamState {
     MessageInProgress {
         size: usize,
@@ -170,35 +167,17 @@ enum MessageStreamState {
     BetweenMessages,
     Empty,
 }
-pub struct MessageStream {
-    pub id: ConnectionId,
-
-    conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
+struct MessageStream {
     reader: ReadHalf<TcpStream>,
     state: MessageStreamState,
     buffer: VecDeque<NetworkEnvelope>,
 }
 impl MessageStream {
-    fn new(
-        id: ConnectionId,
-        reader: ReadHalf<TcpStream>,
-        conn: Option<(ConnectionConfig, WriteHalf<TcpStream>)>,
-    ) -> MessageStream {
+    fn new(reader: ReadHalf<TcpStream>) -> MessageStream {
         MessageStream {
-            id,
-            conn,
             reader,
             state: MessageStreamState::BetweenMessages,
             buffer: VecDeque::new(),
-        }
-    }
-    pub fn into_inner(mut self) -> Connection {
-        let (conf, writer) = self.conn.take().expect("Inner not present");
-        Connection {
-            id: self.id,
-            conf,
-            writer,
-            reader: Some(self),
         }
     }
     fn next_from_buffer(&mut self) -> Option<network_envelope::Message> {
@@ -218,7 +197,7 @@ impl MessageStream {
 }
 impl Stream for MessageStream {
     type Item = network_envelope::Message;
-    type Error = Error;
+    type Error = error::Error;
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
         let next_read = match self.state {
@@ -258,71 +237,8 @@ impl Stream for MessageStream {
                 NetworkEnvelope::decode(&*buf)?
             }
         };
-        debug!("Received message: {:?}", next_read);
         self.buffer.push_back(next_read);
         self.state = MessageStreamState::BetweenMessages;
         self.poll()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::{Connection, ConnectionConfig};
-    use crate::bisq::{
-        constants::BaseCurrencyNetwork,
-        payload::{network_envelope::Message, Ping},
-    };
-    use crate::error::Error;
-    use std::net::SocketAddr;
-    use tokio::{
-        net::TcpListener,
-        prelude::{
-            future::{lazy, ok, Future},
-            stream::Stream,
-        },
-        sync::oneshot,
-    };
-
-    #[test]
-    fn basic_send_and_receive() {
-        let network = BaseCurrencyNetwork::BtcRegtest;
-        let config = ConnectionConfig {
-            message_version: network.into(),
-        };
-        let addr = "127.0.0.1:7477";
-        let (tx, rx) = oneshot::channel();
-        let ping = Ping {
-            nonce: 0,
-            last_round_trip_time: 0,
-        };
-        let ping2 = Ping {
-            nonce: 0,
-            last_round_trip_time: 0,
-        };
-        let receiver = TcpListener::bind(&addr.parse::<SocketAddr>().unwrap())
-            .unwrap()
-            .incoming()
-            .into_future()
-            .map_err(|e| println!("err"))
-            .and_then(move |(tcp, _)| {
-                Connection::from_tcp_stream(tcp.unwrap(), network.into())
-                    .take_message_stream()
-                    .into_future()
-                    .map(|(msg, _)| tx.send(msg.unwrap()).unwrap())
-                    .map_err(|e| println!("err"))
-            });
-        let sender = Connection::new(addr.parse::<SocketAddr>().unwrap(), config)
-            .and_then(|conn| conn.send(ping).map(|_| ()))
-            .map_err(|e| println!("stoen"));
-        tokio::run(lazy(move || {
-            tokio::spawn(receiver);
-            tokio::spawn(sender);
-            rx.then(move |msg| {
-                ok(match msg {
-                    Ok(msg) => assert!(msg == ping2.into()),
-                    Err(_) => assert!(false),
-                })
-            })
-        }));
     }
 }

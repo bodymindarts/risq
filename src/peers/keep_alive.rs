@@ -1,5 +1,5 @@
-use crate::alt_connection::{Connection, ConnectionId};
 use crate::bisq::payload::{Ping, Pong};
+use crate::connection::{Connection, ConnectionId};
 use crate::listener::{Accept, Listener};
 use actix::{Actor, Arbiter, AsyncContext, Context, Handler, Message, StreamHandler, WeakAddr};
 use lazy_static::lazy_static;
