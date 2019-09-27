@@ -13,6 +13,7 @@ use actix::{
     Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,
 };
 use core::time::Duration;
+use keep_alive::{AddConnection, KeepAlive};
 use std::{
     collections::{HashMap, HashSet},
     iter::FromIterator,
@@ -28,6 +29,7 @@ impl Listener for DummyListener {}
 const REQUEST_PERIODICALLY_INTERVAL_MIN: Duration = Duration::from_secs(10 * 60 * 60);
 
 pub struct Peers {
+    keep_alive: Addr<KeepAlive>,
     network: BaseCurrencyNetwork,
     connections: HashMap<ConnectionId, Addr<Connection>>,
     reported_peers: HashMap<NodeAddress, Peer>,
@@ -38,6 +40,7 @@ pub struct Peers {
 impl Peers {
     pub fn start(network: BaseCurrencyNetwork) -> Addr<Self> {
         Self {
+            keep_alive: KeepAlive::start(),
             network,
             connections: HashMap::new(),
             reported_peers: HashMap::new(),
@@ -46,8 +49,25 @@ impl Peers {
         }
         .start()
     }
-}
-impl Peers {
+
+    fn add_connection(
+        &mut self,
+        id: ConnectionId,
+        conn: Addr<Connection>,
+        addr: Option<&NodeAddress>,
+    ) {
+        let downgraded = conn.downgrade();
+        self.connections.insert(id, conn);
+        if let Some(addr) = addr {
+            self.identified_connections.insert(id, addr.to_owned());
+        }
+        Arbiter::spawn(
+            self.keep_alive
+                .send(AddConnection(id, downgraded))
+                .then(|_| Ok(())),
+        );
+    }
+
     fn request_peers(&self, ctx: &mut <Self as Actor>::Context) {
         self.connections.iter().for_each(move |(id, conn)| {
             self.request_peers_from(*id, conn, ctx);
@@ -229,10 +249,12 @@ pub mod message {
     }
     impl Handler<SeedConnection> for super::Peers {
         type Result = ();
-        fn handle(&mut self, connection: SeedConnection, ctx: &mut Self::Context) -> Self::Result {
-            let SeedConnection(addr, id, connection) = connection;
-            self.connections.insert(id, connection);
-            self.identified_connections.insert(id, addr.clone());
+        fn handle(
+            &mut self,
+            SeedConnection(addr, id, connection): SeedConnection,
+            ctx: &mut Self::Context,
+        ) -> Self::Result {
+            self.add_connection(id, connection, Some(&addr));
             self.reported_peers.insert(
                 addr.clone(),
                 Peer {

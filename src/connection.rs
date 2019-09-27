@@ -42,11 +42,10 @@ pub struct Connection {
 }
 impl Actor for Connection {
     type Context = Context<Connection>;
-    fn started(&mut self, ctx: &mut Self::Context) {}
 }
 impl StreamHandler<network_envelope::Message, error::Error> for Connection {
     fn handle(&mut self, msg: network_envelope::Message, _ctx: &mut Self::Context) {
-        debug!("{:?} received message: {:?}", self.id, msg);
+        debug!("{:?} received: {:?}", self.id, msg);
         if let Some(id) = msg.correlation_id() {
             if let Some(channel) = self.response_channels.remove(&id) {
                 channel.send(msg).expect("Couldn't send response");
@@ -55,7 +54,7 @@ impl StreamHandler<network_envelope::Message, error::Error> for Connection {
     }
 
     fn finished(&mut self, ctx: &mut Self::Context) {
-        debug!("{:?} incoming stream has closed", self.id);
+        info!("{:?} closed", self.id);
         ctx.stop();
     }
 }
@@ -77,6 +76,7 @@ impl Connection {
     ) -> (ConnectionId, Addr<Connection>) {
         let (reader, writer) = connection.split();
         let (send, rec) = mpsc::channel(10);
+        let id = ConnectionId::new();
         Arbiter::spawn(
             future::loop_fn((rec, writer), move |(rec, writer)| {
                 rec.into_future()
@@ -86,7 +86,7 @@ impl Connection {
                             .map(|msg| (msg, rec))
                     })
                     .and_then(move |(msg, rec)| {
-                        debug!("Sending message: {:?}", msg);
+                        debug!("{:?} sending: {:?}", id, msg);
                         let envelope = NetworkEnvelope {
                             message_version: message_version.into(),
                             message: Some(msg),
@@ -102,11 +102,10 @@ impl Connection {
                                 Err(e) => Ok(Loop::Break(e)),
                             })
                     })
-                    .map_err(|e| error!("Sender errored: {:?}", e))
+                    .map_err(|e| ())
             })
             .map(|_| ()),
         );
-        let id = ConnectionId::new();
         (
             id,
             Connection::create(move |ctx| {
@@ -122,6 +121,29 @@ impl Connection {
     }
 }
 
+pub struct Payload<M: Into<network_envelope::Message>>(pub M);
+impl<M> actix::Message for Payload<M>
+where
+    M: Into<network_envelope::Message>,
+{
+    type Result = Result<(), error::Error>;
+}
+impl<M> Handler<Payload<M>> for Connection
+where
+    M: Into<network_envelope::Message>,
+{
+    type Result = Box<dyn Future<Item = (), Error = error::Error>>;
+    fn handle(&mut self, msg: Payload<M>, _ctx: &mut Self::Context) -> Self::Result {
+        Box::new(
+            self.writer
+                .clone()
+                .sink_from_err::<error::Error>()
+                .send(msg.0.into())
+                .map(|_| ())
+                .map_err(|e| e.into()),
+        )
+    }
+}
 pub struct Request<M: Into<network_envelope::Message> + ResponseExtractor>(pub M);
 impl<M> actix::Message for Request<M>
 where
@@ -141,7 +163,6 @@ where
             .expect("Request without correlation_id");
         let (send, receive) = oneshot::channel::<network_envelope::Message>();
         self.response_channels.insert(correlation_id.clone(), send);
-        debug!("{:?} sending message: {:?}", self.id, msg);
         Box::new(
             self.writer
                 .clone()
