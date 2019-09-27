@@ -1,7 +1,6 @@
+use crate::alt_connection::{Connection, ConnectionId};
 use crate::bisq::payload::{Ping, Pong};
-use crate::connection::ConnectionId;
 use crate::listener::{Accept, Listener};
-use crate::peers::sender::{SendPayload, Sender};
 use actix::{Actor, Arbiter, AsyncContext, Context, Handler, Message, StreamHandler, WeakAddr};
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
@@ -30,7 +29,7 @@ struct Info {
 }
 pub struct KeepAlive {
     info: HashMap<ConnectionId, Info>,
-    senders: HashMap<ConnectionId, WeakAddr<Sender>>,
+    connections: HashMap<ConnectionId, WeakAddr<Connection>>,
 }
 impl Actor for KeepAlive {
     type Context = Context<KeepAlive>;
@@ -69,16 +68,16 @@ impl StreamHandler<Instant, timer::Error> for KeepAlive {
 //     }
 // }
 pub struct KeepAliveListener {
-    pub return_addr: WeakAddr<Sender>,
+    // pub return_addr: WeakAddr<Sender>,
 }
 impl Listener for KeepAliveListener {
     fn ping(&mut self, msg: &Ping) -> Accept {
         let pong = Pong {
             request_nonce: msg.nonce,
         };
-        if let Some(addr) = self.return_addr.upgrade() {
-            Arbiter::spawn(addr.send(SendPayload(pong.into())).then(|_| Ok(())));
-        }
+        // if let Some(addr) = self.return_addr.upgrade() {
+        // Arbiter::spawn(addr.send(SendPayload(pong.into())).then(|_| Ok(())));
+        // }
         Accept::Processed
     }
 }

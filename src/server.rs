@@ -1,56 +1,41 @@
+use crate::alt_connection::Connection;
 use crate::bisq::payload::*;
-use crate::connection::Connection;
-use crate::error::Error;
-use crate::peers::{message::IncomingConnection, Peers};
-use actix::Addr;
-use std::net::ToSocketAddrs;
+use crate::peers::{
+    message::{IncomingConnection, ServerStarted},
+    Peers,
+};
+use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, StreamHandler};
+use std::{io, net::SocketAddr};
 use tokio::{
     net::{TcpListener, TcpStream},
-    prelude::{
-        future::{self, Future, IntoFuture, Loop},
-        stream::Stream,
-        Sink,
-    },
-    sync::oneshot,
+    prelude::future::Future,
 };
 
-pub fn start(
+pub struct Server {
     addr: NodeAddress,
-    message_version: MessageVersion,
-    started: oneshot::Sender<NodeAddress>,
-    opened: Addr<Peers>,
-) -> impl Future<Item = (), Error = Error> {
-    let socket = addr.clone().into();
-    info!("Starting server listening to: {:?}", socket);
-    TcpListener::bind(&socket)
-        .map_err(|e| e.into())
-        .and_then(|server| {
-            started
-                .send(addr)
-                .map(|_| server)
-                .map_err(|_| Error::SendOneshotError)
-        })
-        .into_future()
-        .and_then(move |server| {
-            future::loop_fn((opened, server.incoming()), move |(opened, stream)| {
-                stream
-                    .into_future()
-                    .map_err(|(e, _)| e.into())
-                    .and_then(move |(socket, stream)| {
-                        socket
-                            .ok_or(Error::ServerShutdown)
-                            .into_future()
-                            .and_then(move |socket| {
-                                debug!("New connection received {:?}", socket);
-                                opened
-                                    .send(IncomingConnection(Connection::from_tcp_stream(
-                                        socket,
-                                        message_version.clone(),
-                                    )))
-                                    .map_err(|e| e.into())
-                                    .map(|_| Loop::Continue((opened, stream)))
-                            })
-                    })
-            })
-        })
+    peers: Addr<Peers>,
+}
+pub fn start(addr: NodeAddress, peers: Addr<Peers>) -> Addr<Server> {
+    Server { addr, peers }.start()
+}
+impl Actor for Server {
+    type Context = Context<Server>;
+    fn started(&mut self, ctx: &mut Self::Context) {
+        let tcp = TcpListener::bind(&self.addr.clone().into()).expect("Unable to bind port");
+        ctx.add_stream(tcp.incoming());
+        Arbiter::spawn(
+            self.peers
+                .send(ServerStarted(self.addr.clone()))
+                .then(|_| Ok(())),
+        );
+    }
+}
+impl StreamHandler<TcpStream, io::Error> for Server {
+    fn handle(&mut self, connection: TcpStream, _ctx: &mut Self::Context) {
+        Arbiter::spawn(
+            self.peers
+                .send(IncomingConnection(connection))
+                .then(|_| Ok(())),
+        );
+    }
 }

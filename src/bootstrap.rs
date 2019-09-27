@@ -1,13 +1,14 @@
+use crate::alt_connection::{Connection, ConnectionId, Request};
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
     payload::{
-        gen_nonce, GetDataResponse, GetPeersRequest, GetPeersResponse, GetUpdatedDataRequest,
-        NodeAddress, Peer, PreliminaryGetDataRequest,
+        gen_nonce, GetDataResponse, GetPeersResponse, GetUpdatedDataRequest, NodeAddress,
+        PayloadEncoder, Peer, PreliminaryGetDataRequest,
     },
 };
-use crate::connection::{Connection, ConnectionConfig};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
+use actix::Addr;
 use rand::{seq::SliceRandom, thread_rng};
 use std::net::SocketAddr;
 use tokio::{
@@ -19,37 +20,12 @@ pub struct Config {
     pub network: BaseCurrencyNetwork,
     pub local_node_address: NodeAddress,
 }
+
 pub struct BootstrapResult {
-    pub seed_connections: Vec<(NodeAddress, Connection)>,
+    pub seed_connections: Vec<(NodeAddress, ConnectionId, Addr<Connection>)>,
 }
-struct GetDataListener {
-    expecting_nonce: i32,
-    response: Option<GetDataResponse>,
-}
-impl Listener for GetDataListener {
-    fn get_data_response(&mut self, response: &GetDataResponse) -> Accept {
-        if response.request_nonce == self.expecting_nonce {
-            self.response = Some(response.to_owned());
-            Accept::Processed
-        } else {
-            Accept::Skipped
-        }
-    }
-}
-struct GetPeersListener {
-    expecting_nonce: i32,
-    response: Option<GetPeersResponse>,
-}
-impl Listener for GetPeersListener {
-    fn get_peers_response(&mut self, response: &GetPeersResponse) -> Accept {
-        if response.request_nonce == self.expecting_nonce {
-            self.response = Some(response.to_owned());
-            Accept::Processed
-        } else {
-            Accept::Skipped
-        }
-    }
-}
+pub struct DummyListener {}
+impl Listener for DummyListener {}
 
 pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Error> {
     let mut seed_nodes = seed_nodes(config.network);
@@ -57,7 +33,7 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
     let addr = seed_nodes.pop().expect("No seed nodes defined");
     bootstrap_from_seed(addr.clone(), config.local_node_address, config.network).map(
         |seed_result| BootstrapResult {
-            seed_connections: vec![(addr, seed_result.connection)],
+            seed_connections: vec![(addr, seed_result.connection_id, seed_result.connection)],
         },
     )
 }
@@ -65,7 +41,8 @@ pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Er
 struct SeedResult {
     preliminary_data_response: GetDataResponse,
     get_updated_data_response: GetDataResponse,
-    connection: Connection,
+    connection: Addr<Connection>,
+    connection_id: ConnectionId,
 }
 
 fn bootstrap_from_seed(
@@ -84,32 +61,26 @@ fn bootstrap_from_seed(
         excluded_keys: Vec::new(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::new(
+    Connection::open(
         seed_addr,
-        ConnectionConfig {
-            message_version: network.into(),
-        },
+        PayloadEncoder::from(network),
+        Box::new(DummyListener {}),
     )
-    .and_then(move |conn| {
-        let listener = GetDataListener {
-            expecting_nonce: preliminary_get_data_request.nonce,
-            response: None,
-        };
+    .and_then(|(id, conn)| {
         debug!("Sending PreliminaryGetDataRequest to seed.");
-        conn.send_and_await(preliminary_get_data_request, listener)
-            .map(|(listener, conn)| (listener.response.expect("Response not set"), conn))
+        conn.send(Request(preliminary_get_data_request))
+            .flatten()
+            .map(move |response| (id, conn, response))
     })
-    .and_then(move |(preliminary_data_response, conn)| {
-        let listener = GetDataListener {
-            expecting_nonce: get_updated_data_request.nonce,
-            response: None,
-        };
+    .and_then(|(id, conn, preliminary_data_response)| {
         debug!("Sending GetUpdatedDataRequest to seed.");
-        conn.send_and_await(get_updated_data_request, listener)
-            .map(|(listener, connection)| SeedResult {
+        conn.send(Request(get_updated_data_request)).flatten().map(
+            move |get_updated_data_response| SeedResult {
                 preliminary_data_response,
-                get_updated_data_response: listener.response.expect("Response not set"),
-                connection,
-            })
+                get_updated_data_response,
+                connection_id: id,
+                connection: conn,
+            },
+        )
     })
 }

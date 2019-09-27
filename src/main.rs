@@ -1,8 +1,6 @@
 #[macro_use]
 mod bisq;
-mod alt_bootstrap;
 mod alt_connection;
-mod alt_server;
 mod bootstrap;
 mod connection;
 mod error;
@@ -13,10 +11,9 @@ mod server;
 use crate::error::Error;
 use actix::{Arbiter, System};
 use bisq::{constants::BaseCurrencyNetwork, payload::*};
-use connection::ConnectionConfig;
 use env_logger;
 use listener::{Accept, Listener};
-use peers::{message::OutgoingConnection, Peers};
+use peers::{message::SeedConnection, Peers};
 use std::{error::Error as StdError, process};
 use tokio::{
     self,
@@ -45,19 +42,14 @@ fn main() {
     let network = BaseCurrencyNetwork::BtcRegtest.into();
     let sys = System::new("risq");
     let (start_send, start_rec) = oneshot::channel();
-    let peers_addr = Peers::start(network);
-    Arbiter::spawn(spawnable!(
-        server::start(
-            NodeAddress {
-                host_name: "127.0.0.1".into(),
-                port: 8000
-            },
-            network.into(),
-            start_send,
-            peers_addr.clone()
-        ),
-        "Server error {:?}"
-    ));
+    let peers = Peers::start(network);
+    let server = server::start(
+        NodeAddress {
+            host_name: "127.0.0.1".into(),
+            port: 8000,
+        },
+        peers.clone(),
+    );
     Arbiter::spawn(spawnable!(
         start_rec
             .map_err(|_| Error::ReceiveOneshotError)
@@ -69,9 +61,9 @@ fn main() {
             })
             .and_then(
                 move |result| future::join_all(result.seed_connections.into_iter().map(
-                    move |(addr, conn)| {
-                        peers_addr
-                            .send(OutgoingConnection(addr, conn))
+                    move |(addr, id, conn)| {
+                        peers
+                            .send(SeedConnection(addr, id, conn))
                             .map_err(|e| e.into())
                     }
                 ))

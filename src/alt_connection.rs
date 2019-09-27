@@ -1,14 +1,22 @@
-use crate::bisq::payload::{network_envelope, NetworkEnvelope, PayloadEncoder};
+use crate::bisq::{
+    correlation::*,
+    payload::{network_envelope, NetworkEnvelope, PayloadEncoder},
+};
 use crate::error;
-use crate::listener::{Accept, Listener};
+use crate::listener::Listener;
 use actix::{
     self,
-    fut::{self, ActorFuture, IntoActorFuture},
+    fut::{self, ActorFuture},
     io::{FramedWrite, WriteHandler},
+    prelude::ActorContext,
     Actor, Addr, AsyncContext, Context, Handler, ResponseActFuture, StreamHandler,
 };
 use prost::Message;
-use std::{collections::VecDeque, io, net::SocketAddr};
+use std::{
+    collections::{HashMap, VecDeque},
+    io,
+    net::SocketAddr,
+};
 use tokio::{
     io::{AsyncRead, ReadHalf, WriteHalf},
     net::TcpStream,
@@ -22,52 +30,45 @@ use tokio::{
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-struct ConnectionId(Uuid);
+pub struct ConnectionId(Uuid);
 impl ConnectionId {
     fn new() -> ConnectionId {
         ConnectionId(Uuid::new_v4())
     }
 }
 
-pub struct Connection<L: Listener> {
+pub struct Connection {
     id: ConnectionId,
     writer: FramedWrite<WriteHalf<TcpStream>, PayloadEncoder>,
-    listener: L,
-    bootstrap_response_channel: Option<oneshot::Sender<network_envelope::Message>>,
+    listener: Box<dyn Listener>,
+    response_channels: HashMap<CorrelationId, oneshot::Sender<network_envelope::Message>>,
 }
-impl<L: Listener + 'static> Actor for Connection<L> {
-    type Context = Context<Connection<L>>;
+impl Actor for Connection {
+    type Context = Context<Connection>;
 }
-impl<L: Listener + 'static> WriteHandler<error::Error> for Connection<L> {}
-impl<L: Listener + 'static> StreamHandler<network_envelope::Message, error::Error>
-    for Connection<L>
-{
+impl WriteHandler<error::Error> for Connection {}
+impl StreamHandler<network_envelope::Message, error::Error> for Connection {
     fn handle(&mut self, msg: network_envelope::Message, _ctx: &mut Self::Context) {
         debug!("{:?} received message: {:?}", self.id, msg);
-        match (
-            self.listener.accept(&msg),
-            self.bootstrap_response_channel.is_some(),
-        ) {
-            (Accept::Skipped, true) => self.bootstrap_response_channel.take().unwrap().send(msg),
-            _ => {
-                warn!("Received {:?} skipped", msg);
-                Ok(())
+        if let Some(id) = msg.correlation_id() {
+            if let Some(channel) = self.response_channels.remove(&id) {
+                channel.send(msg).expect("Couldn't send response");
             }
         }
-        .expect("Couldn't respont on response_channel");
     }
 
-    fn finished(&mut self, _ctx: &mut Self::Context) {
+    fn finished(&mut self, ctx: &mut Self::Context) {
         debug!("{:?} incoming stream has closed", self.id);
+        ctx.stop();
     }
 }
 
-impl<L: Listener + 'static> Connection<L> {
+impl Connection {
     pub fn open(
         addr: impl Into<SocketAddr>,
         encoder: PayloadEncoder,
-        listener: L,
-    ) -> impl Future<Item = Addr<Connection<L>>, Error = error::Error> {
+        listener: Box<dyn Listener>,
+    ) -> impl Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error> {
         TcpStream::connect(&addr.into())
             .map(move |tcp| Connection::from_tcp_stream(tcp, encoder, listener))
             .map_err(|err| err.into())
@@ -75,51 +76,54 @@ impl<L: Listener + 'static> Connection<L> {
     pub fn from_tcp_stream(
         connection: TcpStream,
         encoder: PayloadEncoder,
-        listener: L,
-    ) -> Addr<Connection<L>> {
+        listener: Box<dyn Listener>,
+    ) -> (ConnectionId, Addr<Connection>) {
         connection
             .set_nodelay(true)
             .expect("Unable to set nodelayx");
         let (reader, writer) = connection.split();
-        Connection::create(move |ctx| {
-            ctx.add_stream(MessageStream::new(reader));
-            Connection {
-                id: ConnectionId::new(),
-                writer: FramedWrite::new(writer, encoder, ctx),
-                listener,
-                bootstrap_response_channel: None,
-            }
-        })
+        let id = ConnectionId::new();
+        (
+            id,
+            Connection::create(move |ctx| {
+                ctx.add_stream(MessageStream::new(reader));
+                let mut writer = FramedWrite::new(writer, encoder, ctx);
+                writer.set_buffer_capacity(0, 0);
+                Connection {
+                    id,
+                    writer,
+                    listener,
+                    response_channels: HashMap::new(),
+                }
+            }),
+        )
     }
 }
 
-pub struct SendAndAwait<L: Listener>(pub network_envelope::Message, pub L);
-impl<L: Listener + 'static> actix::Message for SendAndAwait<L> {
-    type Result = Result<L, error::Error>;
-}
-
-impl<S: Listener + 'static, L: Listener + Send + 'static> Handler<SendAndAwait<L>>
-    for Connection<S>
+pub struct Request<M: Into<network_envelope::Message> + ResponseExtractor>(pub M);
+impl<M> actix::Message for Request<M>
+where
+    M: Into<network_envelope::Message> + ResponseExtractor + 'static,
 {
-    type Result = ResponseActFuture<Connection<S>, L, error::Error>;
-    fn handle(&mut self, msg: SendAndAwait<L>, _: &mut Self::Context) -> Self::Result {
-        let SendAndAwait(msg, mut listener) = msg;
+    type Result = Result<<M as ResponseExtractor>::Response, error::Error>;
+}
+impl<M> Handler<Request<M>> for Connection
+where
+    M: Into<network_envelope::Message> + ResponseExtractor + 'static,
+{
+    type Result = Box<dyn Future<Item = <M as ResponseExtractor>::Response, Error = error::Error>>;
+    fn handle(&mut self, request: Request<M>, _: &mut Self::Context) -> Self::Result {
+        let msg: network_envelope::Message = request.0.into();
+        let correlation_id = msg
+            .correlation_id()
+            .expect("Request without correlation_id");
         let (send, receive) = oneshot::channel::<network_envelope::Message>();
-        self.bootstrap_response_channel = Some(send);
+        self.response_channels.insert(correlation_id.clone(), send);
         self.writer.write(msg);
         Box::new(
-            fut::wrap_future(
-                receive
-                    .and_then(move |response| {
-                        listener.accept(&response);
-                        Ok(listener)
-                    })
-                    .map_err(|e| e.into()),
-            )
-            .then(|res, conn: &mut Connection<S>, _ctx| {
-                conn.bootstrap_response_channel = None;
-                fut::result(res)
-            }),
+            receive
+                .map(|response| <M as ResponseExtractor>::extract(response))
+                .map_err(|e| e.into()),
         )
     }
 }

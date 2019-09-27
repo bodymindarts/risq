@@ -12,7 +12,7 @@ macro_rules! listener_method {
         }
     };
 }
-pub trait Listener: Sized {
+pub trait Listener {
     fn accept(&mut self, msg: &network_envelope::Message) -> Accept {
         match_payload!(msg, self)
     }
@@ -27,15 +27,30 @@ pub trait Listener: Sized {
         }
     }
     for_all_payloads!(listener_method);
-
-    fn forward_to<N: Listener>(self, next: N) -> ForwardTo<Self, N> {
-        ForwardTo { first: self, next }
+}
+pub struct Chain<L: Listener + Sized> {
+    first: L,
+}
+impl<L: Listener + Sized> Chain<L> {
+    fn forward_to<N: Listener + Sized>(self, next: N) -> ForwardTo<L, N> {
+        ForwardTo {
+            first: self.first,
+            next,
+        }
     }
 }
+pub fn chain<L: Listener + Sized>(listener: L) -> Chain<L> {
+    Chain { first: listener }
+}
 
-pub struct ForwardTo<F: Listener, N: Listener> {
+pub struct ForwardTo<F: Listener + Sized, N: Listener + Sized> {
     first: F,
     next: N,
+}
+impl<F: Listener + Sized, N: Listener + Sized> ForwardTo<F, N> {
+    fn forward_to<O: Listener + Sized>(self, next: O) -> ForwardTo<ForwardTo<F, N>, O> {
+        ForwardTo { first: self, next }
+    }
 }
 macro_rules! forward_method {
     ($caml:ident, $snake:ident) => {
@@ -47,7 +62,7 @@ macro_rules! forward_method {
         }
     };
 }
-impl<F: Listener, N: Listener> Listener for ForwardTo<F, N> {
+impl<F: Listener + Sized, N: Listener + Sized> Listener for ForwardTo<F, N> {
     for_all_payloads!(forward_method);
 }
 

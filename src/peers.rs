@@ -1,26 +1,28 @@
 mod keep_alive;
 mod receiver;
-mod sender;
+use crate::alt_connection::{Connection, ConnectionId};
 use crate::bisq::{
     constants::{self, BaseCurrencyNetwork},
     payload::*,
 };
-use crate::connection::{Connection, ConnectionId, MessageStream};
 use crate::error::Error;
 use crate::listener::{Accept, Listener};
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr};
-use sender::{SendPayload, Sender};
 use std::collections::{HashMap, HashSet};
 use tokio::prelude::{
     future::{self, Future, Loop},
     stream::Stream,
 };
 
+pub struct DummyListener {}
+impl Listener for DummyListener {}
+
 pub struct Peers {
     network: BaseCurrencyNetwork,
-    connections: HashMap<ConnectionId, Addr<Sender>>,
+    connections: HashMap<ConnectionId, Addr<Connection>>,
     reported_peers: HashMap<NodeAddress, Peer>,
     identified_connections: HashMap<ConnectionId, NodeAddress>,
+    local_addr: Option<NodeAddress>,
 }
 
 impl Peers {
@@ -30,6 +32,7 @@ impl Peers {
             connections: HashMap::new(),
             reported_peers: HashMap::new(),
             identified_connections: HashMap::new(),
+            local_addr: None,
         }
         .start()
     }
@@ -58,19 +61,27 @@ impl Listener for ReportedPeersListener {
 }
 
 pub mod message {
-    use super::{
-        receiver,
-        sender::{SendPayload, Sender},
-    };
+    use super::receiver;
+    use crate::alt_connection::{Connection, ConnectionId};
     use crate::bisq::{constants, payload::*};
-    use crate::connection::{Connection, ConnectionConfig, ConnectionId};
     use actix::{Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr};
     use rand::{seq::SliceRandom, thread_rng};
     use std::{
         iter::{Extend, FromIterator},
         time::{SystemTime, UNIX_EPOCH},
     };
-    use tokio::prelude::future::Future;
+    use tokio::{net::TcpStream, prelude::future::Future};
+
+    pub struct ServerStarted(pub NodeAddress);
+    impl Message for ServerStarted {
+        type Result = ();
+    }
+    impl Handler<ServerStarted> for super::Peers {
+        type Result = ();
+        fn handle(&mut self, msg: ServerStarted, _: &mut Self::Context) -> Self::Result {
+            self.local_addr = Some(msg.0);
+        }
+    }
 
     pub struct PeersExchange {
         pub request: GetPeersRequest,
@@ -121,12 +132,12 @@ pub mod message {
                     ),
                     supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
                 };
-                Arbiter::spawn(addr.send(SendPayload(res.into())).then(|_| Ok(())))
+                // Arbiter::spawn(addr.send(SendPayload(res.into())).then(|_| Ok(())))
             }
         }
     }
 
-    pub struct IncomingConnection(pub Connection);
+    pub struct IncomingConnection(pub TcpStream);
     impl Message for IncomingConnection {
         type Result = ();
     }
@@ -138,32 +149,24 @@ pub mod message {
             connection: IncomingConnection,
             ctx: &mut Self::Context,
         ) -> Self::Result {
-            let mut connection = connection.0;
-            let message_stream = connection.take_message_stream();
-            let id = connection.id;
-            let sender = Sender::start(connection);
-            receiver::listen(message_stream, sender.downgrade(), ctx.address());
-            self.connections.insert(id, sender);
+            // let mut tcp = connection.0;
+            // let message_stream = connection.take_message_stream();
+            // let id = connection.id;
+            // let sender = Sender::start(connection);
+            // receiver::listen(message_stream, sender.downgrade(), ctx.address());
+            // self.connections.insert(id, sender);
         }
     }
 
-    pub struct OutgoingConnection(pub NodeAddress, pub Connection);
-    impl Message for OutgoingConnection {
+    pub struct SeedConnection(pub NodeAddress, pub ConnectionId, pub Addr<Connection>);
+    impl Message for SeedConnection {
         type Result = ();
     }
-    impl Handler<OutgoingConnection> for super::Peers {
+    impl Handler<SeedConnection> for super::Peers {
         type Result = ();
-        fn handle(
-            &mut self,
-            connection: OutgoingConnection,
-            ctx: &mut Self::Context,
-        ) -> Self::Result {
-            let OutgoingConnection(addr, mut connection) = connection;
-            let message_stream = connection.take_message_stream();
-            let id = connection.id;
-            let sender = Sender::start(connection);
-            receiver::listen(message_stream, sender.downgrade(), ctx.address());
-            self.connections.insert(id, sender);
+        fn handle(&mut self, connection: SeedConnection, ctx: &mut Self::Context) -> Self::Result {
+            let SeedConnection(addr, id, connection) = connection;
+            self.connections.insert(id, connection);
             self.identified_connections.insert(id, addr.clone());
             self.reported_peers.insert(
                 addr.clone(),
