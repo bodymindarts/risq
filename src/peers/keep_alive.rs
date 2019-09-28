@@ -1,5 +1,6 @@
 use crate::bisq::payload::{gen_nonce, Ping, Pong};
 use crate::connection::{Connection, ConnectionId, Payload, Request};
+use crate::dispatch::Receive;
 use actix::{
     fut::{self, ActorFuture},
     Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,
@@ -70,20 +71,17 @@ impl Handler<AddConnection> for KeepAlive {
     }
 }
 
-struct PingReceived(ConnectionId, Instant, Ping);
-impl Message for PingReceived {
+impl Handler<Receive<Ping>> for KeepAlive {
     type Result = ();
-}
-impl Handler<PingReceived> for KeepAlive {
-    type Result = ();
-    fn handle(
-        &mut self,
-        PingReceived(id, time, ping): PingReceived,
-        _: &mut Self::Context,
-    ) -> Self::Result {
-        if let Some(info) = self.infos.get_mut(&id) {
-            info.last_active = time;
-        }
+    fn handle(&mut self, Receive(id, ping): Receive<Ping>, _: &mut Self::Context) -> Self::Result {
+        let now = Instant::now();
+        self.infos.insert(
+            id,
+            Info {
+                last_active: now,
+                last_round_trip_time: Duration::from_millis(ping.last_round_trip_time as u64),
+            },
+        );
         if let Some(addr) = self.connections.get(&id) {
             if let Some(addr) = addr.upgrade() {
                 Arbiter::spawn(

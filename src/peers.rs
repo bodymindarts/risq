@@ -1,5 +1,4 @@
 mod keep_alive;
-mod receiver;
 
 use crate::bisq::{
     constants::{self, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
@@ -128,10 +127,10 @@ impl Actor for Peers {
 }
 
 pub mod message {
-    use super::receiver;
+    use super::keep_alive::KeepAlive;
     use crate::bisq::{constants, payload::*};
     use crate::connection::{Connection, ConnectionId, Payload};
-    use crate::dispatch::*;
+    use crate::dispatch::{self, ActorDispatcher, Receive};
     use actix::{Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr};
     use rand::{seq::SliceRandom, thread_rng};
     use std::{
@@ -163,7 +162,11 @@ pub mod message {
             IncomingConnection(tcp): IncomingConnection,
             ctx: &mut Self::Context,
         ) -> Self::Result {
-            let dispatcher = ActorDispatcher::<Self, GetPeersRequest>::new(ctx.address());
+            let dispatcher =
+                dispatch::chain(ActorDispatcher::<Self, GetPeersRequest>::new(ctx.address()))
+                    .forward_to(ActorDispatcher::<KeepAlive, Ping>::new(
+                        self.keep_alive.clone(),
+                    ));
             let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
             self.add_connection(id, conn, None);
         }
