@@ -124,45 +124,13 @@ pub mod message {
     use crate::bisq::{constants, payload::*};
     use crate::connection::{Connection, ConnectionId, Payload};
     use crate::dispatch::{self, ActorDispatcher, Receive};
+    use crate::server::event::*;
     use actix::{Addr, Arbiter, AsyncContext, Handler, Message};
     use std::{
         iter::FromIterator,
         time::{SystemTime, UNIX_EPOCH},
     };
-    use tokio::{net::TcpStream, prelude::future::Future};
-
-    pub struct ServerStarted(pub NodeAddress);
-    impl Message for ServerStarted {
-        type Result = ();
-    }
-    impl Handler<ServerStarted> for super::Peers {
-        type Result = ();
-        fn handle(&mut self, msg: ServerStarted, _: &mut Self::Context) -> Self::Result {
-            self.local_addr = Some(msg.0);
-        }
-    }
-
-    pub struct IncomingConnection(pub TcpStream);
-    impl Message for IncomingConnection {
-        type Result = ();
-    }
-    impl Handler<IncomingConnection> for super::Peers {
-        type Result = ();
-
-        fn handle(
-            &mut self,
-            IncomingConnection(tcp): IncomingConnection,
-            ctx: &mut Self::Context,
-        ) -> Self::Result {
-            let dispatcher =
-                dispatch::chain(ActorDispatcher::<Self, GetPeersRequest>::new(ctx.address()))
-                    .forward_to(ActorDispatcher::<KeepAlive, Ping>::new(
-                        self.keep_alive.clone(),
-                    ));
-            let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
-            self.add_connection(id, conn, None);
-        }
-    }
+    use tokio::prelude::future::Future;
 
     pub struct SeedConnection(pub NodeAddress, pub ConnectionId, pub Addr<Connection>);
     impl Message for SeedConnection {
@@ -235,6 +203,34 @@ pub mod message {
                 };
                 Arbiter::spawn(addr.send(Payload(res)).then(|_| Ok(())))
             }
+        }
+    }
+
+    impl Handler<ServerStarted> for super::Peers {
+        type Result = ();
+        fn handle(
+            &mut self,
+            ServerStarted(addr): ServerStarted,
+            _: &mut Self::Context,
+        ) -> Self::Result {
+            self.local_addr = Some(addr);
+        }
+    }
+
+    impl Handler<IncomingConnection> for super::Peers {
+        type Result = ();
+
+        fn handle(
+            &mut self,
+            IncomingConnection(tcp): IncomingConnection,
+            ctx: &mut Self::Context,
+        ) -> Self::Result {
+            let dispatcher = dispatch::chain(ActorDispatcher::<KeepAlive, Ping>::new(
+                self.keep_alive.clone(),
+            ))
+            .forward_to(ActorDispatcher::<Self, GetPeersRequest>::new(ctx.address()));
+            let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
+            self.add_connection(id, conn, None);
         }
     }
 }

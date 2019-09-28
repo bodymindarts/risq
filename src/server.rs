@@ -1,8 +1,5 @@
 use crate::bisq::payload::*;
-use crate::peers::{
-    message::{IncomingConnection, ServerStarted},
-    Peers,
-};
+use crate::peers::Peers;
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, StreamHandler};
 use std::io;
 use tokio::{
@@ -24,7 +21,7 @@ impl Actor for Server {
         ctx.add_stream(tcp.incoming());
         Arbiter::spawn(
             self.peers
-                .send(ServerStarted(self.addr.clone()))
+                .send(event::ServerStarted(self.addr.clone()))
                 .then(|_| Ok(())),
         );
     }
@@ -33,8 +30,23 @@ impl StreamHandler<TcpStream, io::Error> for Server {
     fn handle(&mut self, connection: TcpStream, _ctx: &mut Self::Context) {
         Arbiter::spawn(
             self.peers
-                .send(IncomingConnection(connection))
+                .send(event::IncomingConnection(connection))
                 .then(|_| Ok(())),
         );
+    }
+}
+
+pub mod event {
+    use crate::bisq::payload::NodeAddress;
+    use actix::Message;
+    use tokio::net::TcpStream;
+
+    pub struct ServerStarted(pub NodeAddress);
+    impl Message for ServerStarted {
+        type Result = ();
+    }
+    pub struct IncomingConnection(pub TcpStream);
+    impl Message for IncomingConnection {
+        type Result = ();
     }
 }

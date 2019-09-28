@@ -34,13 +34,11 @@ fn main() {
     let network = BaseCurrencyNetwork::BtcRegtest.into();
     let sys = System::new("risq");
     let peers = Peers::start(network);
-    let _ = server::start(
-        NodeAddress {
-            host_name: "127.0.0.1".into(),
-            port: 8000,
-        },
-        peers.clone(),
-    );
+    let listen_addr = NodeAddress {
+        host_name: "127.0.0.1".into(),
+        port: 8000,
+    };
+    let _ = server::start(listen_addr, peers.clone());
     Arbiter::spawn(spawnable!(
         bootstrap::execute(bootstrap::Config {
             network: BaseCurrencyNetwork::BtcRegtest,
