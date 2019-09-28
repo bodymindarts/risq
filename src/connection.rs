@@ -2,8 +2,8 @@ use crate::bisq::{
     correlation::*,
     payload::{network_envelope, MessageVersion, NetworkEnvelope},
 };
+use crate::dispatch::{Dispatch, Dispatcher};
 use crate::error;
-use crate::listener::Listener;
 use actix::{
     self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
     ResponseActFuture, StreamHandler,
@@ -33,11 +33,10 @@ impl ConnectionId {
         ConnectionId(Uuid::new_v4())
     }
 }
-
 pub struct Connection {
     id: ConnectionId,
     writer: mpsc::Sender<network_envelope::Message>,
-    listener: Box<dyn Listener>,
+    dispatcher: Box<dyn Dispatcher>,
     response_channels: HashMap<CorrelationId, oneshot::Sender<network_envelope::Message>>,
 }
 impl Actor for Connection {
@@ -49,7 +48,11 @@ impl StreamHandler<network_envelope::Message, error::Error> for Connection {
         if let Some(id) = msg.correlation_id() {
             if let Some(channel) = self.response_channels.remove(&id) {
                 channel.send(msg).expect("Couldn't send response");
+                return;
             }
+        }
+        if let Dispatch::Retained(msg) = self.dispatcher.dispatch(self.id, msg) {
+            warn!("{:?} retained message: {:?}", self.id, msg)
         }
     }
 
@@ -60,20 +63,26 @@ impl StreamHandler<network_envelope::Message, error::Error> for Connection {
 }
 
 impl Connection {
-    pub fn open(
+    pub fn open<D>(
         addr: impl Into<SocketAddr>,
         message_version: MessageVersion,
-        listener: Box<dyn Listener>,
-    ) -> impl Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error> {
+        dispatcher: D,
+    ) -> impl Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error>
+    where
+        D: Dispatcher + 'static,
+    {
         TcpStream::connect(&addr.into())
-            .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, listener))
+            .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
             .map_err(|err| err.into())
     }
-    pub fn from_tcp_stream(
+    pub fn from_tcp_stream<D>(
         connection: TcpStream,
         message_version: MessageVersion,
-        listener: Box<dyn Listener>,
-    ) -> (ConnectionId, Addr<Connection>) {
+        dispatcher: D,
+    ) -> (ConnectionId, Addr<Connection>)
+    where
+        D: Dispatcher + 'static,
+    {
         let (reader, writer) = connection.split();
         let (send, rec) = mpsc::channel(10);
         let id = ConnectionId::new();
@@ -102,7 +111,7 @@ impl Connection {
                                 Err(e) => Ok(Loop::Break(e)),
                             })
                     })
-                    .map_err(|e| ())
+                    .map_err(|_| ())
             })
             .map(|_| ()),
         );
@@ -113,11 +122,22 @@ impl Connection {
                 Connection {
                     id,
                     writer: send,
-                    listener,
+                    dispatcher: Box::new(dispatcher),
                     response_channels: HashMap::new(),
                 }
             }),
         )
+    }
+}
+
+pub struct SetDispatcher<L: Dispatcher>(pub L);
+impl<L: Dispatcher> actix::Message for SetDispatcher<L> {
+    type Result = ();
+}
+impl<L: Dispatcher + 'static> Handler<SetDispatcher<L>> for Connection {
+    type Result = ();
+    fn handle(&mut self, SetDispatcher(dispatcher): SetDispatcher<L>, _ctx: &mut Self::Context) {
+        self.dispatcher = Box::new(dispatcher);
     }
 }
 

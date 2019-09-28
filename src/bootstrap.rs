@@ -1,20 +1,16 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
     payload::{
-        gen_nonce, GetDataResponse, GetPeersResponse, GetUpdatedDataRequest, NodeAddress,
-        PayloadEncoder, Peer, PreliminaryGetDataRequest,
+        gen_nonce, GetDataResponse, GetUpdatedDataRequest, NodeAddress, Peer,
+        PreliminaryGetDataRequest,
     },
 };
 use crate::connection::{Connection, ConnectionId, Request};
+use crate::dispatch::DummyDispatcher;
 use crate::error::Error;
-use crate::listener::{Accept, Listener};
 use actix::Addr;
 use rand::{seq::SliceRandom, thread_rng};
-use std::net::SocketAddr;
-use tokio::{
-    prelude::future::{Future, IntoFuture},
-    sync::oneshot,
-};
+use tokio::{prelude::future::Future, sync::oneshot};
 
 pub struct Config {
     pub network: BaseCurrencyNetwork,
@@ -24,8 +20,6 @@ pub struct Config {
 pub struct BootstrapResult {
     pub seed_connections: Vec<(NodeAddress, ConnectionId, Addr<Connection>)>,
 }
-pub struct DummyListener {}
-impl Listener for DummyListener {}
 
 pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Error> {
     let mut seed_nodes = seed_nodes(config.network);
@@ -61,7 +55,7 @@ fn bootstrap_from_seed(
         excluded_keys: Vec::new(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::open(seed_addr, network.into(), Box::new(DummyListener {}))
+    Connection::open(seed_addr, network.into(), DummyDispatcher {})
         .and_then(|(id, conn)| {
             debug!("Sending PreliminaryGetDataRequest to seed.");
             conn.send(Request(preliminary_get_data_request))

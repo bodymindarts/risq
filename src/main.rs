@@ -2,8 +2,8 @@
 mod bisq;
 mod bootstrap;
 mod connection;
+mod dispatch;
 mod error;
-mod listener;
 mod peers;
 mod server;
 
@@ -11,7 +11,6 @@ use crate::error::Error;
 use actix::{Arbiter, System};
 use bisq::{constants::BaseCurrencyNetwork, payload::*};
 use env_logger;
-use listener::{Accept, Listener};
 use peers::{message::SeedConnection, Peers};
 use std::{error::Error as StdError, process};
 use tokio::{

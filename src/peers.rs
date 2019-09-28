@@ -7,7 +7,6 @@ use crate::bisq::{
 };
 use crate::connection::{Connection, ConnectionId, Request};
 use crate::error::Error;
-use crate::listener::{Accept, Listener};
 use actix::{
     fut::{self, ActorFuture},
     Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,
@@ -22,9 +21,6 @@ use tokio::prelude::{
     future::{self, Future, Loop},
     stream::Stream,
 };
-
-pub struct DummyListener {}
-impl Listener for DummyListener {}
 
 const REQUEST_PERIODICALLY_INTERVAL_MIN: Duration = Duration::from_secs(10 * 60 * 60);
 
@@ -131,28 +127,11 @@ impl Actor for Peers {
     }
 }
 
-struct ReportedPeersListener {
-    pub peers: Addr<Peers>,
-    pub from: ConnectionId,
-}
-impl Listener for ReportedPeersListener {
-    fn get_peers_request(&mut self, msg: &GetPeersRequest) -> Accept {
-        Arbiter::spawn(
-            self.peers
-                .send(message::PeersExchange {
-                    request: msg.to_owned(),
-                    from: self.from,
-                })
-                .then(|_| Ok(())),
-        );
-        Accept::Processed
-    }
-}
-
 pub mod message {
     use super::receiver;
     use crate::bisq::{constants, payload::*};
-    use crate::connection::{Connection, ConnectionId};
+    use crate::connection::{Connection, ConnectionId, Payload};
+    use crate::dispatch::*;
     use actix::{Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr};
     use rand::{seq::SliceRandom, thread_rng};
     use std::{
@@ -172,56 +151,6 @@ pub mod message {
         }
     }
 
-    pub struct PeersExchange {
-        pub request: GetPeersRequest,
-        pub from: ConnectionId,
-    }
-    impl Message for PeersExchange {
-        type Result = ();
-    }
-    impl Handler<PeersExchange> for super::Peers {
-        type Result = ();
-        fn handle(&mut self, mut msg: PeersExchange, _: &mut Self::Context) -> Self::Result {
-            self.add_to_reported_peers(&mut msg.request.reported_peers);
-            if let Some(addr) = msg.request.sender_node_address {
-                self.reported_peers.insert(
-                    addr.clone(),
-                    Peer {
-                        node_address: Some(addr.clone()),
-                        supported_capabilities: msg.request.supported_capabilities,
-                        date: SystemTime::now()
-                            .duration_since(UNIX_EPOCH)
-                            .expect("Time went backwards")
-                            .as_millis() as i64,
-                    },
-                );
-                if let None = self.identified_connections.insert(msg.from, addr) {
-                    debug!("Identified connection {:?}", msg.from);
-                }
-            }
-            if let Some(addr) = self.connections.get(&msg.from) {
-                let from = msg.from;
-                let res = GetPeersResponse {
-                    request_nonce: msg.request.nonce,
-                    reported_peers: Vec::from_iter(
-                        self.identified_connections
-                            .iter()
-                            .filter_map(|(k, v)| {
-                                if *k == from {
-                                    None
-                                } else {
-                                    self.reported_peers.get(v)
-                                }
-                            })
-                            .cloned(),
-                    ),
-                    supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
-                };
-                // Arbiter::spawn(addr.send(SendPayload(res.into())).then(|_| Ok(())))
-            }
-        }
-    }
-
     pub struct IncomingConnection(pub TcpStream);
     impl Message for IncomingConnection {
         type Result = ();
@@ -231,15 +160,12 @@ pub mod message {
 
         fn handle(
             &mut self,
-            connection: IncomingConnection,
+            IncomingConnection(tcp): IncomingConnection,
             ctx: &mut Self::Context,
         ) -> Self::Result {
-            // let mut tcp = connection.0;
-            // let message_stream = connection.take_message_stream();
-            // let id = connection.id;
-            // let sender = Sender::start(connection);
-            // receiver::listen(message_stream, sender.downgrade(), ctx.address());
-            // self.connections.insert(id, sender);
+            let dispatcher = ActorDispatcher::<Self, GetPeersRequest>::new(ctx.address());
+            let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
+            self.add_connection(id, conn, None);
         }
     }
 
@@ -267,6 +193,53 @@ pub mod message {
                 },
             );
             self.request_peers_from(id, self.connections.get(&id).unwrap(), ctx);
+        }
+    }
+
+    impl Handler<Receive<GetPeersRequest>> for super::Peers {
+        type Result = ();
+        fn handle(
+            &mut self,
+            Receive(conn_id, mut request): Receive<GetPeersRequest>,
+            _: &mut Self::Context,
+        ) -> Self::Result {
+            self.add_to_reported_peers(&mut request.reported_peers);
+            if let Some(addr) = request.sender_node_address {
+                self.reported_peers.insert(
+                    addr.clone(),
+                    Peer {
+                        node_address: Some(addr.clone()),
+                        supported_capabilities: request.supported_capabilities,
+                        date: SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .expect("Time went backwards")
+                            .as_millis() as i64,
+                    },
+                );
+                if let None = self.identified_connections.insert(conn_id, addr) {
+                    debug!("Identified connection {:?}", conn_id);
+                }
+            }
+            if let Some(addr) = self.connections.get(&conn_id) {
+                let from = conn_id;
+                let res = GetPeersResponse {
+                    request_nonce: request.nonce,
+                    reported_peers: Vec::from_iter(
+                        self.identified_connections
+                            .iter()
+                            .filter_map(|(k, v)| {
+                                if *k == from {
+                                    None
+                                } else {
+                                    self.reported_peers.get(v)
+                                }
+                            })
+                            .cloned(),
+                    ),
+                    supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
+                };
+                Arbiter::spawn(addr.send(Payload(res)).then(|_| Ok(())))
+            }
         }
     }
 }

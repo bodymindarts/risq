@@ -11,33 +11,9 @@ use std::{
     net::{SocketAddr, ToSocketAddrs},
     vec,
 };
-use tokio::codec::Encoder;
 
 pub fn gen_nonce() -> i32 {
     thread_rng().gen()
-}
-
-pub struct PayloadEncoder {
-    message_version: MessageVersion,
-}
-impl PayloadEncoder {
-    pub fn from(network: BaseCurrencyNetwork) -> PayloadEncoder {
-        PayloadEncoder {
-            message_version: network.into(),
-        }
-    }
-}
-
-impl Encoder for PayloadEncoder {
-    type Item = network_envelope::Message;
-    type Error = error::Error;
-    fn encode(&mut self, msg: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        let envelope = NetworkEnvelope {
-            message_version: self.message_version.into(),
-            message: Some(msg),
-        };
-        envelope.encode_length_delimited(dst).map_err(|e| e.into())
-    }
 }
 
 impl ToSocketAddrs for NodeAddress {
@@ -79,3 +55,28 @@ macro_rules! into_message {
     };
 }
 for_all_payloads!(into_message);
+
+pub enum Extract<P> {
+    Succeeded(P),
+    Failed(network_envelope::Message),
+}
+pub trait PayloadExtractor {
+    type Payload: Send;
+    fn extract(msg: network_envelope::Message) -> Extract<Self::Payload>;
+}
+
+macro_rules! extractor {
+    ($caml:ident, $snake:ident) => {
+        impl PayloadExtractor for $caml {
+            type Payload = $caml;
+            fn extract(msg: network_envelope::Message) -> Extract<Self::Payload> {
+                if let network_envelope::Message::$caml(request) = msg {
+                    Extract::Succeeded(request)
+                } else {
+                    Extract::Failed(msg)
+                }
+            }
+        }
+    };
+}
+for_all_payloads!(extractor);

@@ -1,6 +1,5 @@
 use crate::bisq::payload::{gen_nonce, Ping, Pong};
 use crate::connection::{Connection, ConnectionId, Payload, Request};
-use crate::listener::{Accept, Listener};
 use actix::{
     fut::{self, ActorFuture},
     Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,
@@ -135,25 +134,5 @@ fn ping_peer(
         }
     } else {
         true
-    }
-}
-
-pub struct KeepAliveListener {
-    pub keep_alive: Addr<KeepAlive>,
-    pub connection_id: ConnectionId,
-}
-impl Listener for KeepAliveListener {
-    fn ping(&mut self, ping: &Ping) -> Accept {
-        Arbiter::spawn(
-            self.keep_alive
-                .clone()
-                .send(PingReceived(
-                    self.connection_id,
-                    Instant::now(),
-                    ping.to_owned(),
-                ))
-                .then(|_| Ok(())),
-        );
-        Accept::Processed
     }
 }
