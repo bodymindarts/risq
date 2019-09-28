@@ -6,7 +6,7 @@ use crate::dispatch::{Dispatch, Dispatcher};
 use crate::error;
 use actix::{
     self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
-    ResponseActFuture, StreamHandler,
+    StreamHandler,
 };
 use prost::Message;
 use std::{
@@ -15,10 +15,10 @@ use std::{
     net::SocketAddr,
 };
 use tokio::{
-    io::{flush, write_all, AsyncRead, ReadHalf, WriteHalf},
+    io::{flush, write_all, AsyncRead, ReadHalf},
     net::TcpStream,
     prelude::{
-        future::{self, Future, IntoFuture, Loop},
+        future::{self, Future, Loop},
         stream::Stream,
         Async, Sink,
     },

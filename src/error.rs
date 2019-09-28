@@ -1,6 +1,6 @@
 use actix::MailboxError;
 use prost::{DecodeError, EncodeError};
-use std::{io, result};
+use std::io;
 use tokio::sync::{
     mpsc::error::{RecvError, SendError},
     oneshot,
@@ -21,8 +21,6 @@ pub enum Error {
     ConnectionClosed,
     DidNotReceiveExpectedResponse,
 }
-
-pub type Result<T> = result::Result<T, Error>;
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {

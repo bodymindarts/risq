@@ -7,19 +7,13 @@ mod error;
 mod peers;
 mod server;
 
-use crate::error::Error;
 use actix::{Arbiter, System};
 use bisq::{constants::BaseCurrencyNetwork, payload::*};
 use env_logger;
 use peers::{message::SeedConnection, Peers};
-use std::{error::Error as StdError, process};
 use tokio::{
     self,
-    prelude::{
-        future::{self, ok, Future},
-        stream::Stream,
-    },
-    sync::{mpsc, oneshot},
+    prelude::future::{self, Future},
 };
 
 #[macro_use]

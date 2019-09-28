@@ -1,11 +1,10 @@
 use crate::bisq::payload::*;
-use crate::connection::Connection;
 use crate::peers::{
     message::{IncomingConnection, ServerStarted},
     Peers,
 };
-use actix::{Actor, Addr, Arbiter, AsyncContext, Context, Handler, StreamHandler};
-use std::{io, net::SocketAddr};
+use actix::{Actor, Addr, Arbiter, AsyncContext, Context, StreamHandler};
+use std::io;
 use tokio::{
     net::{TcpListener, TcpStream},
     prelude::future::Future,

@@ -1,8 +1,7 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
     payload::{
-        gen_nonce, GetDataResponse, GetUpdatedDataRequest, NodeAddress, Peer,
-        PreliminaryGetDataRequest,
+        gen_nonce, GetDataResponse, GetUpdatedDataRequest, NodeAddress, PreliminaryGetDataRequest,
     },
 };
 use crate::connection::{Connection, ConnectionId, Request};
@@ -10,7 +9,7 @@ use crate::dispatch::DummyDispatcher;
 use crate::error::Error;
 use actix::Addr;
 use rand::{seq::SliceRandom, thread_rng};
-use tokio::{prelude::future::Future, sync::oneshot};
+use tokio::prelude::future::Future;
 
 pub struct Config {
     pub network: BaseCurrencyNetwork,

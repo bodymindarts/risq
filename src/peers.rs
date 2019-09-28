@@ -1,25 +1,18 @@
 mod keep_alive;
 
 use crate::bisq::{
-    constants::{self, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
+    constants::{BaseCurrencyNetwork, LOCAL_CAPABILITIES},
     payload::*,
 };
 use crate::connection::{Connection, ConnectionId, Request};
-use crate::error::Error;
 use actix::{
     fut::{self, ActorFuture},
-    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,
+    Actor, Addr, Arbiter, AsyncContext, Context,
 };
 use core::time::Duration;
 use keep_alive::{AddConnection, KeepAlive};
-use std::{
-    collections::{HashMap, HashSet},
-    iter::FromIterator,
-};
-use tokio::prelude::{
-    future::{self, Future, Loop},
-    stream::Stream,
-};
+use std::{collections::HashMap, iter::FromIterator};
+use tokio::prelude::future::Future;
 
 const REQUEST_PERIODICALLY_INTERVAL_MIN: Duration = Duration::from_secs(10 * 60 * 60);
 
@@ -131,10 +124,9 @@ pub mod message {
     use crate::bisq::{constants, payload::*};
     use crate::connection::{Connection, ConnectionId, Payload};
     use crate::dispatch::{self, ActorDispatcher, Receive};
-    use actix::{Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr};
-    use rand::{seq::SliceRandom, thread_rng};
+    use actix::{Addr, Arbiter, AsyncContext, Handler, Message};
     use std::{
-        iter::{Extend, FromIterator},
+        iter::FromIterator,
         time::{SystemTime, UNIX_EPOCH},
     };
     use tokio::{net::TcpStream, prelude::future::Future};

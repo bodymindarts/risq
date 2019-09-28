@@ -2,9 +2,6 @@ include!("../generated/io.bisq.protobuffer.rs");
 include!("../generated/payload_macros.rs");
 
 use super::constants::*;
-use crate::error;
-use bytes::BytesMut;
-use prost::Message;
 use rand::{thread_rng, Rng};
 use std::{
     io,

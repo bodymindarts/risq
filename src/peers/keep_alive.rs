@@ -11,10 +11,7 @@ use std::{
     collections::HashMap,
     time::{Duration, Instant},
 };
-use tokio::{
-    prelude::future::{self, Future, IntoFuture, Loop},
-    timer::{self, Interval},
-};
+use tokio::prelude::future::Future;
 
 lazy_static! {
     static ref LOOP_INTERVAL_SEC: u64 = thread_rng().gen::<u64>() % 5 + 30;
