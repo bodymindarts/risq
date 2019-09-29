@@ -8,11 +8,13 @@ use actix::{
     self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
     StreamHandler,
 };
+use prost::encoding::decode_varint;
 use prost::Message;
-use socks::{Socks5Stream, ToTargetAddr};
+use socks::Socks5Stream;
 use std::{
     collections::{HashMap, VecDeque},
     io,
+    iter::FromIterator,
     net::IpAddr,
 };
 use tokio::{
@@ -228,7 +230,10 @@ enum MessageStreamState {
         pos: usize,
         buf: Vec<u8>,
     },
-    BetweenMessages,
+    BetweenMessages {
+        buf: [u8; 10],
+        pos: usize,
+    },
     Empty,
 }
 struct MessageStream {
@@ -240,7 +245,10 @@ impl MessageStream {
     fn new(reader: ReadHalf<TcpStream>) -> MessageStream {
         MessageStream {
             reader,
-            state: MessageStreamState::BetweenMessages,
+            state: MessageStreamState::BetweenMessages {
+                buf: [0; 10],
+                pos: 0,
+            },
             buffer: VecDeque::new(),
         }
     }
@@ -264,24 +272,33 @@ impl Stream for MessageStream {
     type Error = error::Error;
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
+        if let Some(msg) = self.next_from_buffer() {
+            return Ok(Async::Ready(Some(msg)));
+        }
         let next_read = match self.state {
             MessageStreamState::Empty => panic!("Stream is already finished"),
-            MessageStreamState::BetweenMessages => {
-                if let Some(msg) = self.next_from_buffer() {
-                    return Ok(Async::Ready(Some(msg)));
+            MessageStreamState::BetweenMessages {
+                ref mut buf,
+                ref mut pos,
+            } => {
+                while *pos < buf.len() {
+                    let n = try_ready!(self.reader.poll_read(&mut buf[*pos..]));
+                    *pos += n;
+                    if n == 0 {
+                        return Err(
+                            io::Error::new(io::ErrorKind::UnexpectedEof, "early eof").into()
+                        );
+                    }
                 }
-                let mut read_size = vec![0];
-                let n = try_ready!(self.reader.poll_read(&mut read_size));
-                if n == 0 {
-                    self.state = MessageStreamState::Empty;
-                    return Ok(Async::Ready(None));
-                }
-                let size = read_size[0].into();
-                self.state = MessageStreamState::MessageInProgress {
-                    size,
-                    pos: 0,
-                    buf: vec![0; size],
-                };
+                let mut size_reader = VecDeque::from_iter(buf.iter().cloned());
+                let size = decode_varint(&mut size_reader)? as usize;
+                let pos = size_reader.len();
+                let mut buf = vec![0; size];
+                size_reader
+                    .drain(..)
+                    .enumerate()
+                    .for_each(|(i, e)| buf[i] = e);
+                self.state = MessageStreamState::MessageInProgress { size, pos, buf };
                 return self.poll();
             }
             MessageStreamState::MessageInProgress {
@@ -298,11 +315,20 @@ impl Stream for MessageStream {
                         );
                     }
                 }
-                NetworkEnvelope::decode(&*buf)?
+                match NetworkEnvelope::decode(&*buf) {
+                    Ok(res) => res,
+                    Err(e) => {
+                        debug!("Decode error {:?}", e);
+                        return Err(e.into());
+                    }
+                }
             }
         };
         self.buffer.push_back(next_read);
-        self.state = MessageStreamState::BetweenMessages;
+        self.state = MessageStreamState::BetweenMessages {
+            buf: [0; 10],
+            pos: 0,
+        };
         self.poll()
     }
 }
