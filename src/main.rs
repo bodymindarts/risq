@@ -9,6 +9,7 @@ mod server;
 
 use actix::{Arbiter, System};
 use bisq::{constants::BaseCurrencyNetwork, payload::*};
+use bootstrap::Bootstrap;
 use env_logger;
 use peers::{message::SeedConnection, Peers};
 use tokio::{
@@ -34,30 +35,12 @@ fn main() {
     let network = BaseCurrencyNetwork::BtcRegtest.into();
     let sys = System::new("risq");
     let peers = Peers::start(network);
+    let bootstrap = Bootstrap::start(network, peers.clone());
     let listen_addr = NodeAddress {
         host_name: "127.0.0.1".into(),
         port: 8000,
     };
-    let _ = server::start(listen_addr, peers.clone());
-    Arbiter::spawn(spawnable!(
-        bootstrap::execute(bootstrap::Config {
-            network: BaseCurrencyNetwork::BtcRegtest,
-            local_node_address: NodeAddress {
-                host_name: "127.0.0.1".into(),
-                port: 8000,
-            },
-        })
-        .and_then(move |result| future::join_all(
-            result
-                .seed_connections
-                .into_iter()
-                .map(move |(addr, id, conn)| {
-                    peers
-                        .send(SeedConnection(addr, id, conn))
-                        .map_err(|e| e.into())
-                })
-        )),
-        "Error bootstrapping: {:?}"
-    ));
+    let _ = server::start(listen_addr, peers, bootstrap);
+    debug!("Bootstrap complete");
     let _ = sys.run();
 }

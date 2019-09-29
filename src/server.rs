@@ -1,4 +1,5 @@
 use crate::bisq::payload::*;
+use crate::bootstrap::Bootstrap;
 use crate::peers::Peers;
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, StreamHandler};
 use std::io;
@@ -10,15 +11,27 @@ use tokio::{
 pub struct Server {
     addr: NodeAddress,
     peers: Addr<Peers>,
+    bootstrap: Addr<Bootstrap>,
 }
-pub fn start(addr: NodeAddress, peers: Addr<Peers>) -> Addr<Server> {
-    Server { addr, peers }.start()
+pub fn start(addr: NodeAddress, peers: Addr<Peers>, bootstrap: Addr<Bootstrap>) -> Addr<Server> {
+    Server {
+        addr,
+        peers,
+        bootstrap,
+    }
+    .start()
 }
 impl Actor for Server {
     type Context = Context<Server>;
     fn started(&mut self, ctx: &mut Self::Context) {
         let tcp = TcpListener::bind(&self.addr.clone().into()).expect("Unable to bind port");
         ctx.add_stream(tcp.incoming());
+        debug!("Server started @ {:?}", self.addr);
+        Arbiter::spawn(
+            self.bootstrap
+                .send(event::ServerStarted(self.addr.clone()))
+                .then(|_| Ok(())),
+        );
         Arbiter::spawn(
             self.peers
                 .send(event::ServerStarted(self.addr.clone()))

@@ -7,28 +7,73 @@ use crate::bisq::{
 use crate::connection::{Connection, ConnectionId, Request};
 use crate::dispatch::DummyDispatcher;
 use crate::error::Error;
-use actix::Addr;
+use crate::peers::{message::SeedConnection, Peers};
+use crate::server::event::ServerStarted;
+use actix::{
+    fut::{self, ActorFuture},
+    Actor, ActorContext, Addr, Arbiter, AsyncContext, Context, Handler,
+};
 use rand::{seq::SliceRandom, thread_rng};
-use tokio::prelude::future::Future;
+use tokio::{prelude::future::Future, sync::oneshot};
 
-pub struct Config {
-    pub network: BaseCurrencyNetwork,
-    pub local_node_address: NodeAddress,
+pub struct Bootstrap {
+    network: BaseCurrencyNetwork,
+    addr_notify: Option<oneshot::Sender<NodeAddress>>,
+    addr_rec: Option<oneshot::Receiver<NodeAddress>>,
+    seed_nodes: Vec<NodeAddress>,
+    peers: Addr<Peers>,
 }
-
-pub struct BootstrapResult {
-    pub seed_connections: Vec<(NodeAddress, ConnectionId, Addr<Connection>)>,
+impl Actor for Bootstrap {
+    type Context = Context<Bootstrap>;
+    fn started(&mut self, ctx: &mut Self::Context) {
+        let addr = self.seed_nodes.pop().expect("No seed nodes defined");
+        ctx.spawn(
+            fut::wrap_future(bootstrap_from_seed(
+                addr.clone(),
+                self.addr_rec.take().expect("Receiver already removed"),
+                self.network,
+            ))
+            .map_err(|_, _, _| ())
+            .and_then(move |seed_result, bootstrap: &mut Bootstrap, _ctx| {
+                fut::wrap_future(
+                    bootstrap
+                        .peers
+                        .send(SeedConnection(
+                            addr,
+                            seed_result.connection_id,
+                            seed_result.connection,
+                        ))
+                        .map_err(|_| ()),
+                )
+            })
+            .map(|_, _, ctx| ctx.stop()),
+        );
+    }
 }
-
-pub fn execute(config: Config) -> impl Future<Item = BootstrapResult, Error = Error> {
-    let mut seed_nodes = seed_nodes(config.network);
-    seed_nodes.shuffle(&mut thread_rng());
-    let addr = seed_nodes.pop().expect("No seed nodes defined");
-    bootstrap_from_seed(addr.clone(), config.local_node_address, config.network).map(
-        |seed_result| BootstrapResult {
-            seed_connections: vec![(addr, seed_result.connection_id, seed_result.connection)],
-        },
-    )
+impl Handler<ServerStarted> for Bootstrap {
+    type Result = ();
+    fn handle(&mut self, ServerStarted(local_addr): ServerStarted, _ctx: &mut Self::Context) {
+        self.addr_notify
+            .take()
+            .expect("Local addr notifier already used")
+            .send(local_addr)
+            .expect("Couldn't send local address");
+    }
+}
+impl Bootstrap {
+    pub fn start(network: BaseCurrencyNetwork, peers: Addr<Peers>) -> Addr<Bootstrap> {
+        let mut seed_nodes = seed_nodes(&network);
+        seed_nodes.shuffle(&mut thread_rng());
+        let (addr_notify, addr_rec) = oneshot::channel();
+        Bootstrap {
+            network,
+            addr_notify: Some(addr_notify),
+            addr_rec: Some(addr_rec),
+            seed_nodes,
+            peers,
+        }
+        .start()
+    }
 }
 
 struct SeedResult {
@@ -40,18 +85,13 @@ struct SeedResult {
 
 fn bootstrap_from_seed(
     seed_addr: NodeAddress,
-    local_addr: NodeAddress,
+    local_addr: oneshot::Receiver<NodeAddress>,
     network: BaseCurrencyNetwork,
 ) -> impl Future<Item = SeedResult, Error = Error> {
     let preliminary_get_data_request = PreliminaryGetDataRequest {
         nonce: gen_nonce(),
         excluded_keys: Vec::new(),
         supported_capabilities: LOCAL_CAPABILITIES.clone(),
-    };
-    let get_updated_data_request = GetUpdatedDataRequest {
-        sender_node_address: local_addr.clone().into(),
-        nonce: gen_nonce(),
-        excluded_keys: Vec::new(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
     Connection::open(seed_addr, network.into(), DummyDispatcher {})
@@ -62,14 +102,30 @@ fn bootstrap_from_seed(
                 .map(move |response| (id, conn, response))
         })
         .and_then(|(id, conn, preliminary_data_response)| {
+            local_addr
+                .map(move |addr| {
+                    (
+                        GetUpdatedDataRequest {
+                            sender_node_address: addr.into(),
+                            nonce: gen_nonce(),
+                            excluded_keys: Vec::new(),
+                        },
+                        id,
+                        conn,
+                        preliminary_data_response,
+                    )
+                })
+                .map_err(|e| e.into())
+        })
+        .and_then(|(request, id, conn, preliminary_data_response)| {
             debug!("Sending GetUpdatedDataRequest to seed.");
-            conn.send(Request(get_updated_data_request)).flatten().map(
-                move |get_updated_data_response| SeedResult {
+            conn.send(Request(request))
+                .flatten()
+                .map(move |get_updated_data_response| SeedResult {
                     preliminary_data_response,
                     get_updated_data_response,
                     connection_id: id,
                     connection: conn,
-                },
-            )
+                })
         })
 }

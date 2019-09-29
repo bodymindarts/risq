@@ -15,7 +15,7 @@ pub const MAX_CONNECTIONS_DEFAULT: u8 = 12;
 pub const NUM_SEEDS_FOR_PRELIMINARY_REQUEST: u8 = 2;
 pub const NUM_ADDITIONAL_SEEDS_FOR_UPDATE_REQUEST: u8 = 1;
 
-pub fn seed_nodes(network: BaseCurrencyNetwork) -> Vec<NodeAddress> {
+pub fn seed_nodes(network: &BaseCurrencyNetwork) -> Vec<NodeAddress> {
     match network {
         BaseCurrencyNetwork::BtcRegtest => vec![
             NodeAddress {
