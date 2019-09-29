@@ -20,15 +20,6 @@ impl ToSocketAddrs for NodeAddress {
     }
 }
 
-impl From<NodeAddress> for SocketAddr {
-    fn from(addr: NodeAddress) -> SocketAddr {
-        addr.to_socket_addrs()
-            .expect("SocketAddr from NodeAddress")
-            .next()
-            .expect("SocketAddr from NodeAddress")
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct MessageVersion(i32);
 impl From<MessageVersion> for i32 {

@@ -1,6 +1,6 @@
 use crate::bisq::{
     correlation::*,
-    payload::{network_envelope, MessageVersion, NetworkEnvelope},
+    payload::{network_envelope, MessageVersion, NetworkEnvelope, NodeAddress},
 };
 use crate::dispatch::{Dispatch, Dispatcher};
 use crate::error;
@@ -9,19 +9,21 @@ use actix::{
     StreamHandler,
 };
 use prost::Message;
+use socks::{Socks5Stream, ToTargetAddr};
 use std::{
     collections::{HashMap, VecDeque},
     io,
-    net::SocketAddr,
+    net::IpAddr,
 };
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf},
     net::TcpStream,
     prelude::{
-        future::{self, Future, Loop},
+        future::{self, Future, IntoFuture, Loop},
         stream::Stream,
         Async, Sink,
     },
+    reactor::Handle,
     sync::{mpsc, oneshot},
 };
 use uuid::Uuid;
@@ -57,23 +59,46 @@ impl StreamHandler<network_envelope::Message, error::Error> for Connection {
     }
 
     fn finished(&mut self, ctx: &mut Self::Context) {
-        info!("{:?} closed", self.id);
+        info!("{:?} closed.", self.id);
         ctx.stop();
     }
 }
 
 impl Connection {
     pub fn open<D>(
-        addr: impl Into<SocketAddr>,
+        addr: NodeAddress,
         message_version: MessageVersion,
         dispatcher: D,
-    ) -> impl Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error>
+        proxy_port: Option<u16>,
+    ) -> Box<dyn Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error>>
     where
         D: Dispatcher + 'static,
     {
-        TcpStream::connect(&addr.into())
-            .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
-            .map_err(|err| err.into())
+        match proxy_port {
+            None => Box::new(
+                TcpStream::connect(
+                    &(
+                        addr.host_name
+                            .parse::<IpAddr>()
+                            .expect("Couldn't parse ip address"),
+                        addr.port as u16,
+                    )
+                        .into(),
+                )
+                .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
+                .map_err(|err| err.into()),
+            ),
+            Some(proxy_port) => Box::new(
+                Socks5Stream::connect(
+                    ("127.0.0.1", proxy_port),
+                    (addr.host_name.as_str(), addr.port as u16),
+                )
+                .and_then(|stream| TcpStream::from_std(stream.into_inner(), &Handle::default()))
+                .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
+                .map_err(|err| err.into())
+                .into_future(),
+            ),
+        }
     }
     pub fn from_tcp_stream<D>(
         connection: TcpStream,

@@ -165,7 +165,7 @@ impl TorControl {
         }
         Ok(OnionAddr {
             port: conf.virtual_port,
-            onion_service: service_id.to_owned() + ".onion",
+            onion_service: service_id.to_string() + ".onion",
         })
     }
 
@@ -259,8 +259,6 @@ impl TorControl {
         }
     }
 }
-
-pub trait AuthenticatedTorControl {}
 
 fn send_command(writer: &mut impl Write, command: String) -> Result<(), io::Error> {
     write!(writer, "{}\r\n", command)?;

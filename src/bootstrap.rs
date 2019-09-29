@@ -18,6 +18,7 @@ use tokio::{prelude::future::Future, sync::oneshot};
 
 pub struct Bootstrap {
     network: BaseCurrencyNetwork,
+    proxy_port: Option<u16>,
     addr_notify: Option<oneshot::Sender<NodeAddress>>,
     addr_rec: Option<oneshot::Receiver<NodeAddress>>,
     seed_nodes: Vec<NodeAddress>,
@@ -32,6 +33,7 @@ impl Actor for Bootstrap {
                 addr.clone(),
                 self.addr_rec.take().expect("Receiver already removed"),
                 self.network,
+                self.proxy_port,
             ))
             .map_err(|_, _, _| ())
             .and_then(move |seed_result, bootstrap: &mut Bootstrap, _ctx| {
@@ -57,18 +59,24 @@ impl Handler<ServerStarted> for Bootstrap {
             .take()
             .expect("Local addr notifier already used")
             .send(local_addr)
+            .map_err(|e| error!("ERR: {:?}", e))
             .expect("Couldn't send local address");
     }
 }
 impl Bootstrap {
-    pub fn start(network: BaseCurrencyNetwork, peers: Addr<Peers>) -> Addr<Bootstrap> {
+    pub fn start(
+        network: BaseCurrencyNetwork,
+        peers: Addr<Peers>,
+        proxy_port: Option<u16>,
+    ) -> Addr<Bootstrap> {
         let mut seed_nodes = seed_nodes(&network);
         seed_nodes.shuffle(&mut thread_rng());
         let (addr_notify, addr_rec) = oneshot::channel();
-        Bootstrap {
+        Self {
             network,
             addr_notify: Some(addr_notify),
             addr_rec: Some(addr_rec),
+            proxy_port,
             seed_nodes,
             peers,
         }
@@ -87,6 +95,7 @@ fn bootstrap_from_seed(
     seed_addr: NodeAddress,
     local_addr: oneshot::Receiver<NodeAddress>,
     network: BaseCurrencyNetwork,
+    proxy_port: Option<u16>,
 ) -> impl Future<Item = SeedResult, Error = Error> {
     let preliminary_get_data_request = PreliminaryGetDataRequest {
         nonce: gen_nonce(),
@@ -94,7 +103,7 @@ fn bootstrap_from_seed(
         supported_capabilities: LOCAL_CAPABILITIES.clone(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::open(seed_addr, network.into(), DummyDispatcher {})
+    Connection::open(seed_addr, network.into(), DummyDispatcher {}, proxy_port)
         .and_then(|(id, conn)| {
             debug!("Sending PreliminaryGetDataRequest to seed.");
             conn.send(Request(preliminary_get_data_request))

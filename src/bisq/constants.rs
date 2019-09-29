@@ -77,18 +77,20 @@ lazy_static! {
         vec
     };
 }
-static SUPPORTED_CAPABILITIES: [Capability; 10] = [
+static SUPPORTED_CAPABILITIES: [Capability; 11] = [
     Capability::TradeStatistics,
     Capability::TradeStatistics2,
     Capability::AccountAgeWitness,
-    Capability::AckMsg,
     Capability::Proposal,
     Capability::BlindVote,
+    Capability::AckMsg,
+    Capability::ReceiveBsqBlock,
     Capability::DaoState,
     Capability::BundleOfEnvelopes,
+    Capability::SignedAccountAgeWitness,
     Capability::Mediation,
-    Capability::ReceiveBsqBlock,
 ];
+
 #[derive(Debug, Clone, Copy)]
 pub enum Capability {
     TradeStatistics, // Not required anymore as no old clients out there not having that support
