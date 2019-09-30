@@ -1,7 +1,4 @@
-use crate::bisq::{
-    correlation::*,
-    payload::{network_envelope, MessageVersion, NetworkEnvelope, NodeAddress},
-};
+use crate::bisq::{correlation::*, payload::*};
 use crate::dispatch::{Dispatch, Dispatcher};
 use crate::error;
 use actix::{
@@ -127,11 +124,7 @@ impl Connection {
                             message_version: message_version.into(),
                             message: Some(msg),
                         };
-                        let mut serialized = Vec::with_capacity(envelope.encoded_len() + 1);
-                        envelope
-                            .encode_length_delimited(&mut serialized)
-                            .expect("Could not encode message");
-                        write_all(writer, serialized)
+                        write_all(writer, envelope.to_bytes())
                             .and_then(|(writer, _)| flush(writer))
                             .then(|writer| match writer {
                                 Ok(writer) => Ok(Loop::Continue((rec, writer))),
