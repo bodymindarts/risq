@@ -1,8 +1,6 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
-    payload::{
-        gen_nonce, GetDataResponse, GetUpdatedDataRequest, NodeAddress, PreliminaryGetDataRequest,
-    },
+    payload::*,
 };
 use crate::connection::{Connection, ConnectionId, Request};
 use crate::dispatch::DummyDispatcher;
@@ -13,7 +11,9 @@ use actix::{
     fut::{self, ActorFuture},
     Actor, ActorContext, Addr, Arbiter, AsyncContext, Context, Handler,
 };
+use bitcoin_hashes::{sha256, Hash};
 use rand::{seq::SliceRandom, thread_rng};
+use std::iter::FromIterator;
 use tokio::{prelude::future::Future, sync::oneshot};
 
 pub struct Bootstrap {
@@ -111,13 +111,35 @@ fn bootstrap_from_seed(
                 .map(move |response| (id, conn, response))
         })
         .and_then(|(id, conn, preliminary_data_response)| {
+            let excluded_keys = preliminary_data_response
+                .data_set
+                .iter()
+                .map(|w| w.message.as_ref().expect("Couldn't unwrap message"))
+                .map(|m| match m {
+                    storage_entry_wrapper::Message::ProtectedStorageEntry(entry) => entry,
+                    storage_entry_wrapper::Message::ProtectedMailboxStorageEntry(mailbox_entry) => {
+                        mailbox_entry
+                            .entry
+                            .as_ref()
+                            .expect("Couldnt unwrap StorageEntry")
+                    }
+                })
+                .map(|entry| {
+                    entry
+                        .storage_payload
+                        .as_ref()
+                        .expect("Couldn't unwrap storage_payload")
+                        .bisq_hash()
+                })
+                .collect();
+
             local_addr
                 .map(move |addr| {
                     (
                         GetUpdatedDataRequest {
                             sender_node_address: addr.into(),
                             nonce: gen_nonce(),
-                            excluded_keys: Vec::new(),
+                            excluded_keys,
                         },
                         id,
                         conn,

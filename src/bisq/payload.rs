@@ -4,7 +4,7 @@ include!("../generated/payload_macros.rs");
 use super::constants::*;
 use bitcoin_hashes::{sha256, Hash};
 use prost;
-use prost::encoding::encoded_len_varint;
+use prost::{encoding::encoded_len_varint, Message};
 use rand::{thread_rng, Rng};
 use std::{
     io,
@@ -47,21 +47,20 @@ macro_rules! into_message {
 }
 for_all_payloads!(into_message);
 
-pub trait ProtoStruct: prost::Message + Sized {
-    fn to_bytes(&self) -> Vec<u8> {
-        let len = self.encoded_len();
-        let required = len + encoded_len_varint(len as u64);
-        let mut serialized = Vec::with_capacity(required);
-        self.encode_length_delimited(&mut serialized)
+pub trait BisqHash {
+    fn bisq_hash(&self) -> Vec<u8>;
+}
+impl BisqHash for StoragePayload {
+    fn bisq_hash(&self) -> Vec<u8> {
+        let mut serialized = Vec::with_capacity(self.encoded_len());
+        self.encode(&mut serialized)
             .expect("Could not encode message");
-        serialized
-    }
-    fn sha256(&self) -> sha256::Hash {
-        sha256::Hash::hash(&self.to_bytes())
+        let hash = sha256::Hash::hash(&serialized);
+        let mut ret = Vec::with_capacity(sha256::Hash::LEN);
+        ret.extend_from_slice(&hash.into_inner());
+        ret
     }
 }
-
-impl<T> ProtoStruct for T where T: prost::Message + Sized {}
 
 pub enum Extract<P> {
     Succeeded(P),

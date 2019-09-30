@@ -5,7 +5,7 @@ use actix::{
     self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
     StreamHandler,
 };
-use prost::encoding::decode_varint;
+use prost::encoding::{decode_varint, encoded_len_varint};
 use prost::Message;
 use socks::Socks5Stream;
 use std::{
@@ -124,7 +124,13 @@ impl Connection {
                             message_version: message_version.into(),
                             message: Some(msg),
                         };
-                        write_all(writer, envelope.to_bytes())
+                        let len = envelope.encoded_len();
+                        let required = len + encoded_len_varint(len as u64);
+                        let mut serialized = Vec::with_capacity(required);
+                        envelope
+                            .encode_length_delimited(&mut serialized)
+                            .expect("Could not encode message");
+                        write_all(writer, serialized)
                             .and_then(|(writer, _)| flush(writer))
                             .then(|writer| match writer {
                                 Ok(writer) => Ok(Loop::Continue((rec, writer))),

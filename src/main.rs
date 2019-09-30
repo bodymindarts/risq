@@ -42,7 +42,7 @@ fn main() {
             peers,
             bootstrap,
             Some(TorConf {
-                hidden_service_port: 8000,
+                hidden_service_port: 9999,
                 tc_port: 9051,
                 private_key_path: dir,
             }),
