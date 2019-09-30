@@ -42,8 +42,8 @@ impl Actor for KeepAlive {
     fn started(&mut self, ctx: &mut Self::Context) {
         ctx.run_interval(LOOP_INTERVAL.to_owned(), |keep_alive, ctx| {
             let infos = &mut keep_alive.infos;
-            keep_alive.connections.retain(|id, addr| {
-                if ping_peer(id.to_owned(), addr, infos.get(id), ctx) {
+            keep_alive.connections.retain(|id, conn| {
+                if ping_peer(id.to_owned(), conn, infos.get(id), ctx) {
                     true
                 } else {
                     infos.remove(id);
@@ -61,10 +61,10 @@ impl Handler<AddConnection> for KeepAlive {
     type Result = ();
     fn handle(
         &mut self,
-        AddConnection(id, addr): AddConnection,
+        AddConnection(id, conn): AddConnection,
         _: &mut Self::Context,
     ) -> Self::Result {
-        self.connections.insert(id, addr);
+        self.connections.insert(id, conn);
     }
 }
 
@@ -79,10 +79,10 @@ impl Handler<Receive<Ping>> for KeepAlive {
                 last_round_trip_time: Duration::from_millis(ping.last_round_trip_time as u64),
             },
         );
-        if let Some(addr) = self.connections.get(&id) {
-            if let Some(addr) = addr.upgrade() {
+        if let Some(conn) = self.connections.get(&id) {
+            if let Some(conn) = conn.upgrade() {
                 Arbiter::spawn(
-                    addr.send(Payload(Pong {
+                    conn.send(Payload(Pong {
                         request_nonce: ping.nonce,
                     }))
                     .then(|_| Ok(())),
@@ -94,7 +94,7 @@ impl Handler<Receive<Ping>> for KeepAlive {
 
 fn ping_peer(
     id: ConnectionId,
-    addr: &WeakAddr<Connection>,
+    conn: &WeakAddr<Connection>,
     info: Option<&Info>,
     ctx: &mut Context<KeepAlive>,
 ) -> bool {
@@ -105,13 +105,13 @@ fn ping_peer(
         _ => false,
     };
     if should_ping {
-        if let Some(addr) = addr.upgrade() {
+        if let Some(conn) = conn.upgrade() {
             let ping = Ping {
                 nonce: gen_nonce(),
                 last_round_trip_time: info.map_or(0, |i| i.last_round_trip_time.as_millis() as i32),
             };
             ctx.spawn(
-                fut::wrap_future(addr.send(Request(ping)).flatten().map(move |_pong| {
+                fut::wrap_future(conn.send(Request(ping)).flatten().map(move |_pong| {
                     let ret = Instant::now();
                     Info {
                         last_active: ret,
