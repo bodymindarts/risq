@@ -9,55 +9,6 @@ pub trait Correlated {
     fn correlation_id(&self) -> Option<CorrelationId>;
 }
 
-pub trait ResponseExtractor {
-    type Response: Send;
-    fn extract(msg: Message) -> Self::Response;
-}
-impl ResponseExtractor for PreliminaryGetDataRequest {
-    type Response = GetDataResponse;
-
-    fn extract(msg: Message) -> Self::Response {
-        match msg {
-            Message::GetDataResponse(response) => Some(response),
-            _ => None,
-        }
-        .expect("Msg was not the extpected response type")
-    }
-}
-impl ResponseExtractor for GetUpdatedDataRequest {
-    type Response = GetDataResponse;
-
-    fn extract(msg: Message) -> Self::Response {
-        match msg {
-            Message::GetDataResponse(response) => Some(response),
-            _ => None,
-        }
-        .expect("Msg was not the extpected response type")
-    }
-}
-impl ResponseExtractor for GetPeersRequest {
-    type Response = GetPeersResponse;
-
-    fn extract(msg: Message) -> Self::Response {
-        match msg {
-            Message::GetPeersResponse(response) => Some(response),
-            _ => None,
-        }
-        .expect("Msg was not the extpected response type")
-    }
-}
-impl ResponseExtractor for Ping {
-    type Response = Pong;
-
-    fn extract(msg: Message) -> Self::Response {
-        match msg {
-            Message::Pong(response) => Some(response),
-            _ => None,
-        }
-        .expect("Msg was not the extpected response type")
-    }
-}
-
 impl Correlated for Message {
     fn correlation_id(&self) -> Option<CorrelationId> {
         match self {
@@ -120,5 +71,54 @@ impl Correlated for Message {
             Message::MediatedPayoutTxSignatureMessage(_) => None,
             Message::MediatedPayoutTxPublishedMessage(_) => None,
         }
+    }
+}
+
+pub trait ResponseExtractor {
+    type Response: Send;
+    fn extract(msg: Message) -> Self::Response;
+}
+impl ResponseExtractor for PreliminaryGetDataRequest {
+    type Response = GetDataResponse;
+
+    fn extract(msg: Message) -> Self::Response {
+        match msg {
+            Message::GetDataResponse(response) => Some(response),
+            _ => None,
+        }
+        .expect("Msg was not the extpected response type")
+    }
+}
+impl ResponseExtractor for GetUpdatedDataRequest {
+    type Response = GetDataResponse;
+
+    fn extract(msg: Message) -> Self::Response {
+        match msg {
+            Message::GetDataResponse(response) => Some(response),
+            _ => None,
+        }
+        .expect("Msg was not the extpected response type")
+    }
+}
+impl ResponseExtractor for GetPeersRequest {
+    type Response = GetPeersResponse;
+
+    fn extract(msg: Message) -> Self::Response {
+        match msg {
+            Message::GetPeersResponse(response) => Some(response),
+            _ => None,
+        }
+        .expect("Msg was not the extpected response type")
+    }
+}
+impl ResponseExtractor for Ping {
+    type Response = Pong;
+
+    fn extract(msg: Message) -> Self::Response {
+        match msg {
+            Message::Pong(response) => Some(response),
+            _ => None,
+        }
+        .expect("Msg was not the extpected response type")
     }
 }
