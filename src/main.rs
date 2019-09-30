@@ -29,24 +29,29 @@ fn main() {
     fs::create_dir_all(&dir).expect("Couldn't create risq dir");
     dir.push("service.key");
 
-    let network = BaseCurrencyNetwork::BtcMainnet;
-    let sys = System::new("risq");
-    let peers = Peers::start(network);
-    let proxy_port = Some(9050);
-    let bootstrap = Bootstrap::start(network, peers.clone(), proxy_port);
+    // Uncomment for mainnet
+    //
+    // let network = BaseCurrencyNetwork::BtcMainnet;
+    // let tor_proxy_port = Some(9050);
+    // let tor_conf = Some(TorConf {
+    //     hidden_service_port: 9999,
+    //     tc_port: 9051,
+    //     private_key_path: dir,
+    // });
+
+    // Uncomment for regtest
+    let network = BaseCurrencyNetwork::BtcRegtest;
+    let tor_proxy_port = None;
+    let tor_conf = None;
+
     let local_port = 5000;
 
+    let sys = System::new("risq");
+    let peers = Peers::start(network);
+    let bootstrap = Bootstrap::start(network, peers.clone(), tor_proxy_port);
+
     Arbiter::new().exec_fn(move || {
-        server::start(
-            local_port,
-            peers,
-            bootstrap,
-            Some(TorConf {
-                hidden_service_port: 9999,
-                tc_port: 9051,
-                private_key_path: dir,
-            }),
-        );
+        server::start(local_port, peers, bootstrap, tor_conf);
     });
     let _ = sys.run();
 }
