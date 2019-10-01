@@ -46,7 +46,7 @@ impl Actor for Connection {
 impl StreamHandler<network_envelope::Message, error::Error> for Connection {
     fn handle(&mut self, msg: network_envelope::Message, _ctx: &mut Self::Context) {
         // debug!("{:?} received: {:?}", self.id, msg);
-        if let Some(id) = msg.correlation_id() {
+        if let Some(id) = Option::<CorrelationId>::from(&msg) {
             if let Some(channel) = self.response_channels.remove(&id) {
                 channel.send(msg).expect("Couldn't send response");
                 return;
@@ -204,9 +204,8 @@ where
     type Result = Box<dyn Future<Item = <M as ResponseExtractor>::Response, Error = error::Error>>;
     fn handle(&mut self, request: Request<M>, _: &mut Self::Context) -> Self::Result {
         let msg: network_envelope::Message = request.0.into();
-        let correlation_id = msg
-            .correlation_id()
-            .expect("Request without correlation_id");
+        let correlation_id =
+            Option::<CorrelationId>::from(&msg).expect("Request without correlation_id");
         let (send, receive) = oneshot::channel::<network_envelope::Message>();
         self.response_channels.insert(correlation_id.clone(), send);
         Box::new(

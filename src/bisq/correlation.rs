@@ -5,13 +5,10 @@ pub enum CorrelationId {
     S(String),
     I(i32),
 }
-pub trait Correlated {
-    fn correlation_id(&self) -> Option<CorrelationId>;
-}
 
-impl Correlated for Message {
-    fn correlation_id(&self) -> Option<CorrelationId> {
-        match self {
+impl From<&Message> for Option<CorrelationId> {
+    fn from(msg: &Message) -> Option<CorrelationId> {
+        match msg {
             Message::PreliminaryGetDataRequest(request) => Some(CorrelationId::I(request.nonce)),
             Message::GetDataResponse(response) => Some(CorrelationId::I(response.request_nonce)),
             Message::GetUpdatedDataRequest(request) => Some(CorrelationId::I(request.nonce)),
