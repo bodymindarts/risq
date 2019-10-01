@@ -1,14 +1,21 @@
-use crate::bisq::payload::*;
+use crate::bisq::{payload::*, BisqHash};
 use crate::dispatch::Receive;
-use actix::{Actor, Addr, Context, Handler, Message};
+use crate::domain::{offer_book::*, OpenOffer};
+use actix::{Actor, Addr, Arbiter, Context, Handler};
+use tokio::prelude::future::Future;
 
-pub struct DataRouter {}
+pub struct DataRouter {
+    offer_book: Addr<OfferBook>,
+}
 impl Actor for DataRouter {
     type Context = Context<Self>;
 }
 impl DataRouter {
     pub fn start() -> Addr<DataRouter> {
-        DataRouter {}.start()
+        DataRouter {
+            offer_book: OfferBook::start(),
+        }
+        .start()
     }
     pub fn distribute_bootstrap_data(&self, data: Vec<StorageEntryWrapper>) {
         data.into_iter().for_each(|w| {
@@ -29,15 +36,19 @@ impl DataRouter {
         })
     }
     pub fn distribute_protected_storage_entry(&self, entry: ProtectedStorageEntry) {
-        match entry
+        let storage_payload = entry
             .storage_payload
-            .expect("Couldn't unwrap ProtectedStorageEntry.storage_payload")
+            .expect("Couldn't unwrap ProtectedStorageEntry.storage_payload");
+        let hash: BisqHash = (&storage_payload).into();
+        match storage_payload
             .message
             .expect("Couldn't unwrap StoragePayload.message")
         {
-            storage_payload::Message::OfferPayload(offer_payload) => {
-                debug!("Received offer payload {:?}", offer_payload)
-            }
+            storage_payload::Message::OfferPayload(payload) => Arbiter::spawn(
+                self.offer_book
+                    .send(AddOffer(OpenOffer::new(hash, payload)))
+                    .then(|_| Ok(())),
+            ),
             _ => (),
         }
     }

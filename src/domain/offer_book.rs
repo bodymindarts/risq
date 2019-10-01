@@ -18,7 +18,7 @@ impl OfferBook {
     }
 }
 
-pub struct AddOffer(OpenOffer);
+pub struct AddOffer(pub OpenOffer);
 impl Message for AddOffer {
     type Result = ();
 }
@@ -26,5 +26,6 @@ impl Handler<AddOffer> for OfferBook {
     type Result = ();
     fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) {
         self.open_offers.insert(offer.bisq_hash, offer);
+        debug!("Inserted offer into OfferBook");
     }
 }
