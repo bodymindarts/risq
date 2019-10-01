@@ -45,7 +45,6 @@ impl Actor for Connection {
 }
 impl StreamHandler<network_envelope::Message, error::Error> for Connection {
     fn handle(&mut self, msg: network_envelope::Message, _ctx: &mut Self::Context) {
-        // debug!("{:?} received: {:?}", self.id, msg);
         if let Some(id) = Option::<CorrelationId>::from(&msg) {
             if let Some(channel) = self.response_channels.remove(&id) {
                 channel.send(msg).expect("Couldn't send response");
@@ -119,7 +118,6 @@ impl Connection {
                             .map(|msg| (msg, rec))
                     })
                     .and_then(move |(msg, rec)| {
-                        debug!("{:?} sending: {:?}", id, msg);
                         let envelope = NetworkEnvelope {
                             message_version: message_version.into(),
                             message: Some(msg),
