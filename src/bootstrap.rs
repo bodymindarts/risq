@@ -1,6 +1,7 @@
 use crate::bisq::{
     constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
     payload::*,
+    BisqHash,
 };
 use crate::connection::{Connection, ConnectionId, Request};
 use crate::dispatch::Dispatcher;
@@ -9,11 +10,9 @@ use crate::peers::{message::SeedConnection, Peers};
 use crate::server::event::ServerStarted;
 use actix::{
     fut::{self, ActorFuture},
-    Actor, ActorContext, Addr, Arbiter, AsyncContext, Context, Handler,
+    Actor, ActorContext, Addr, AsyncContext, Context, Handler,
 };
-use bitcoin_hashes::{sha256, Hash};
 use rand::{seq::SliceRandom, thread_rng};
-use std::iter::FromIterator;
 use tokio::{prelude::future::Future, sync::oneshot};
 
 pub struct Bootstrap<D: Dispatcher + Clone> {
@@ -184,19 +183,18 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
             }
         })
         .map(|entry| {
-            BisqHash::from(
-                entry
-                    .storage_payload
-                    .as_ref()
-                    .expect("Couldn't unwrap storage_payload"),
-            )
-            .into_inner()
+            entry
+                .storage_payload
+                .as_ref()
+                .expect("Couldn't unwrap storage_payload")
+                .into()
         })
         .chain(
             preliminary_data_response
                 .persistable_network_payload_items
                 .iter()
-                .map(|i| BisqHash::from(i).into_inner()),
+                .map(|i| i.into()),
         )
+        .map(|entry: BisqHash| entry.into_inner())
         .collect()
 }
