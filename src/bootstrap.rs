@@ -111,27 +111,14 @@ fn bootstrap_from_seed(
                 .map(move |response| (id, conn, response))
         })
         .and_then(|(id, conn, preliminary_data_response)| {
-            let excluded_keys = preliminary_data_response
-                .data_set
-                .iter()
-                .map(|w| w.message.as_ref().expect("Couldn't unwrap message"))
-                .map(|m| match m {
-                    storage_entry_wrapper::Message::ProtectedStorageEntry(entry) => entry,
-                    storage_entry_wrapper::Message::ProtectedMailboxStorageEntry(mailbox_entry) => {
-                        mailbox_entry
-                            .entry
-                            .as_ref()
-                            .expect("Couldnt unwrap StorageEntry")
-                    }
-                })
-                .map(|entry| {
-                    entry
-                        .storage_payload
-                        .as_ref()
-                        .expect("Couldn't unwrap storage_payload")
-                        .bisq_hash()
-                })
-                .collect();
+            debug!(
+                "Preliminary data response has {} items",
+                preliminary_data_response.data_set.len()
+                    + preliminary_data_response
+                        .persistable_network_payload_items
+                        .len()
+            );
+            let excluded_keys = get_excluded_keys(&preliminary_data_response);
 
             local_addr
                 .map(move |addr| {
@@ -152,11 +139,51 @@ fn bootstrap_from_seed(
             debug!("Sending GetUpdatedDataRequest to seed.");
             conn.send(Request(request))
                 .flatten()
-                .map(move |get_updated_data_response| SeedResult {
-                    preliminary_data_response,
-                    get_updated_data_response,
-                    connection_id: id,
-                    connection: conn,
+                .map(move |get_updated_data_response| {
+                    debug!(
+                        "Update data response has {} items",
+                        get_updated_data_response.data_set.len()
+                            + get_updated_data_response
+                                .persistable_network_payload_items
+                                .len()
+                    );
+
+                    SeedResult {
+                        preliminary_data_response,
+                        get_updated_data_response,
+                        connection_id: id,
+                        connection: conn,
+                    }
                 })
         })
+}
+
+fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>> {
+    preliminary_data_response
+        .data_set
+        .iter()
+        .map(|w| w.message.as_ref().expect("Couldn't unwrap message"))
+        .map(|m| match m {
+            storage_entry_wrapper::Message::ProtectedStorageEntry(entry) => entry,
+            storage_entry_wrapper::Message::ProtectedMailboxStorageEntry(mailbox_entry) => {
+                mailbox_entry
+                    .entry
+                    .as_ref()
+                    .expect("Couldnt unwrap StorageEntry")
+            }
+        })
+        .map(|entry| {
+            entry
+                .storage_payload
+                .as_ref()
+                .expect("Couldn't unwrap storage_payload")
+                .bisq_hash()
+        })
+        .chain(
+            preliminary_data_response
+                .persistable_network_payload_items
+                .iter()
+                .map(|i| i.bisq_hash()),
+        )
+        .collect()
 }

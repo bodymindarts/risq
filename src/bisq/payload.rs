@@ -2,9 +2,8 @@ include!("../generated/io.bisq.protobuffer.rs");
 include!("../generated/payload_macros.rs");
 
 use super::constants::*;
-use bitcoin_hashes::{sha256, Hash};
-use prost;
-use prost::{encoding::encoded_len_varint, Message};
+use bitcoin_hashes::{ripemd160, sha256, Hash};
+use prost::Message;
 use rand::{thread_rng, Rng};
 use std::{
     io,
@@ -59,6 +58,31 @@ impl BisqHash for StoragePayload {
         let mut ret = Vec::with_capacity(sha256::Hash::LEN);
         ret.extend_from_slice(&hash.into_inner());
         ret
+    }
+}
+impl BisqHash for PersistableNetworkPayload {
+    fn bisq_hash(&self) -> Vec<u8> {
+        match self
+            .message
+            .as_ref()
+            .expect("PersistableNetworkPayload doesn't have message attached")
+        {
+            persistable_network_payload::Message::AccountAgeWitness(witness) => {
+                witness.hash.clone()
+            }
+            persistable_network_payload::Message::TradeStatistics2(stats) => stats.hash.clone(),
+            persistable_network_payload::Message::ProposalPayload(prop) => prop.hash.clone(),
+            persistable_network_payload::Message::BlindVotePayload(vote) => vote.hash.clone(),
+            persistable_network_payload::Message::SignedWitness(witness) => {
+                let mut data = witness.witness_hash.clone();
+                data.append(&mut witness.signature.clone());
+                data.append(&mut witness.signer_pub_key.clone());
+                let hash = sha256::Hash::hash(&data);
+                let mut ret = Vec::with_capacity(20);
+                ret.extend_from_slice(&ripemd160::Hash::hash(&hash.into_inner()).into_inner());
+                ret
+            }
+        }
     }
 }
 
