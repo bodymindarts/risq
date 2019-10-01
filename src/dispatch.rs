@@ -20,7 +20,7 @@ impl<M> Message for Receive<M> {
 pub struct ActorDispatcher<A, M>
 where
     M: PayloadExtractor,
-    A: Actor + Handler<Receive<<M as PayloadExtractor>::Payload>>,
+    A: Actor + Handler<Receive<<M as PayloadExtractor>::Extraction>>,
 {
     addr: Addr<A>,
     phantom: PhantomData<M>,
@@ -28,7 +28,7 @@ where
 impl<A, M> ActorDispatcher<A, M>
 where
     M: PayloadExtractor,
-    A: Actor + Handler<Receive<<M as PayloadExtractor>::Payload>>,
+    A: Actor + Handler<Receive<<M as PayloadExtractor>::Extraction>>,
 {
     pub fn new(addr: Addr<A>) -> Self {
         ActorDispatcher {
@@ -40,13 +40,13 @@ where
 impl<A, M> Dispatcher for ActorDispatcher<A, M>
 where
     M: PayloadExtractor + 'static,
-    A: Actor + Handler<Receive<<M as PayloadExtractor>::Payload>>,
-    <A as Actor>::Context: ToEnvelope<A, Receive<<M as PayloadExtractor>::Payload>>,
+    A: Actor + Handler<Receive<<M as PayloadExtractor>::Extraction>>,
+    <A as Actor>::Context: ToEnvelope<A, Receive<<M as PayloadExtractor>::Extraction>>,
 {
     fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch {
         match <M as PayloadExtractor>::extract(msg) {
-            Extract::Succeeded(payload) => {
-                Arbiter::spawn(self.addr.send(Receive(conn, payload)).then(|_| Ok(())));
+            Extract::Succeeded(extraction) => {
+                Arbiter::spawn(self.addr.send(Receive(conn, extraction)).then(|_| Ok(())));
                 Dispatch::Forwarded
             }
             Extract::Failed(msg) => Dispatch::Retained(msg),
