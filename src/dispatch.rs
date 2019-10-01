@@ -53,6 +53,18 @@ where
         }
     }
 }
+impl<A, M> Clone for ActorDispatcher<A, M>
+where
+    M: PayloadExtractor,
+    A: Actor + Handler<Receive<<M as PayloadExtractor>::Extraction>>,
+{
+    fn clone(&self) -> Self {
+        Self {
+            addr: self.addr.clone(),
+            phantom: PhantomData,
+        }
+    }
+}
 
 pub struct Chain<F: Dispatcher + Sized> {
     first: F,
@@ -86,12 +98,5 @@ impl<F: Dispatcher + Sized, N: Dispatcher + Sized> Dispatcher for ForwardTo<F, N
             Dispatch::Forwarded => Dispatch::Forwarded,
             Dispatch::Retained(msg) => self.next.dispatch(conn, msg),
         }
-    }
-}
-
-pub struct DummyDispatcher {}
-impl Dispatcher for DummyDispatcher {
-    fn dispatch(&self, _conn: ConnectionId, msg: network_envelope::Message) -> Dispatch {
-        Dispatch::Retained(msg)
     }
 }

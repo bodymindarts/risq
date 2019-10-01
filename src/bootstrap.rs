@@ -3,7 +3,7 @@ use crate::bisq::{
     payload::*,
 };
 use crate::connection::{Connection, ConnectionId, Request};
-use crate::dispatch::DummyDispatcher;
+use crate::dispatch::Dispatcher;
 use crate::error::Error;
 use crate::peers::{message::SeedConnection, Peers};
 use crate::server::event::ServerStarted;
@@ -16,27 +16,38 @@ use rand::{seq::SliceRandom, thread_rng};
 use std::iter::FromIterator;
 use tokio::{prelude::future::Future, sync::oneshot};
 
-pub struct Bootstrap {
+pub struct Bootstrap<D: Dispatcher + Clone> {
     network: BaseCurrencyNetwork,
     proxy_port: Option<u16>,
     addr_notify: Option<oneshot::Sender<NodeAddress>>,
     addr_rec: Option<oneshot::Receiver<NodeAddress>>,
     seed_nodes: Vec<NodeAddress>,
     peers: Addr<Peers>,
+    dispatcher: D,
 }
-impl Actor for Bootstrap {
-    type Context = Context<Bootstrap>;
+impl<D: Dispatcher + Clone + 'static> Actor for Bootstrap<D> {
+    type Context = Context<Bootstrap<D>>;
     fn started(&mut self, ctx: &mut Self::Context) {
         let addr = self.seed_nodes.pop().expect("No seed nodes defined");
+        let dispatcher = self.dispatcher.clone();
         ctx.spawn(
             fut::wrap_future(bootstrap_from_seed(
                 addr.clone(),
                 self.addr_rec.take().expect("Receiver already removed"),
                 self.network,
+                self.dispatcher.clone(),
                 self.proxy_port,
             ))
             .map_err(|_, _, _| ())
-            .and_then(move |seed_result, bootstrap: &mut Bootstrap, _ctx| {
+            .and_then(move |seed_result, bootstrap: &mut Bootstrap<D>, _ctx| {
+                dispatcher.dispatch(
+                    seed_result.connection_id,
+                    seed_result.preliminary_data_response.into(),
+                );
+                dispatcher.dispatch(
+                    seed_result.connection_id,
+                    seed_result.get_updated_data_response.into(),
+                );
                 fut::wrap_future(
                     bootstrap
                         .peers
@@ -52,7 +63,7 @@ impl Actor for Bootstrap {
         );
     }
 }
-impl Handler<ServerStarted> for Bootstrap {
+impl<D: Dispatcher + Clone + 'static> Handler<ServerStarted> for Bootstrap<D> {
     type Result = ();
     fn handle(&mut self, ServerStarted(local_addr): ServerStarted, _ctx: &mut Self::Context) {
         self.addr_notify
@@ -63,12 +74,13 @@ impl Handler<ServerStarted> for Bootstrap {
             .expect("Couldn't send local address");
     }
 }
-impl Bootstrap {
+impl<D: Dispatcher + Clone + 'static> Bootstrap<D> {
     pub fn start(
         network: BaseCurrencyNetwork,
         peers: Addr<Peers>,
+        dispatcher: D,
         proxy_port: Option<u16>,
-    ) -> Addr<Bootstrap> {
+    ) -> Addr<Bootstrap<D>> {
         let mut seed_nodes = seed_nodes(&network);
         seed_nodes.shuffle(&mut thread_rng());
         let (addr_notify, addr_rec) = oneshot::channel();
@@ -79,22 +91,22 @@ impl Bootstrap {
             proxy_port,
             seed_nodes,
             peers,
+            dispatcher,
         }
         .start()
     }
 }
-
 struct SeedResult {
     preliminary_data_response: GetDataResponse,
     get_updated_data_response: GetDataResponse,
     connection: Addr<Connection>,
     connection_id: ConnectionId,
 }
-
-fn bootstrap_from_seed(
+fn bootstrap_from_seed<D: Dispatcher + 'static>(
     seed_addr: NodeAddress,
     local_addr: oneshot::Receiver<NodeAddress>,
     network: BaseCurrencyNetwork,
+    dispatcher: D,
     proxy_port: Option<u16>,
 ) -> impl Future<Item = SeedResult, Error = Error> {
     let preliminary_get_data_request = PreliminaryGetDataRequest {
@@ -103,7 +115,7 @@ fn bootstrap_from_seed(
         supported_capabilities: LOCAL_CAPABILITIES.clone(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::open(seed_addr, network.into(), DummyDispatcher {}, proxy_port)
+    Connection::open(seed_addr, network.into(), dispatcher, proxy_port)
         .and_then(|(id, conn)| {
             debug!("Sending PreliminaryGetDataRequest to seed.");
             conn.send(Request(preliminary_get_data_request))
@@ -157,7 +169,6 @@ fn bootstrap_from_seed(
                 })
         })
 }
-
 fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>> {
     preliminary_data_response
         .data_set

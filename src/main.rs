@@ -6,14 +6,17 @@ mod dispatch;
 mod error;
 mod peers;
 mod server;
+mod shared_data;
 mod tor;
 
 use actix::{Arbiter, System};
 use bisq::constants::BaseCurrencyNetwork;
 use bootstrap::Bootstrap;
+use dispatch::ActorDispatcher;
 use env_logger;
 use peers::Peers;
 use server::TorConf;
+use shared_data::*;
 use std::{fs, path::PathBuf};
 
 #[macro_use]
@@ -47,8 +50,10 @@ fn main() {
     let local_port = 5000;
 
     let sys = System::new("risq");
+    let shared_data = SharedData::start();
+    let dispatcher = ActorDispatcher::<SharedData, SharedDataDispatch>::new(shared_data);
     let peers = Peers::start(network);
-    let bootstrap = Bootstrap::start(network, peers.clone(), tor_proxy_port);
+    let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
 
     Arbiter::new().exec_fn(move || {
         server::start(local_port, peers, bootstrap, tor_conf);
