@@ -179,12 +179,12 @@ where
     M: Into<network_envelope::Message>,
 {
     type Result = Box<dyn Future<Item = (), Error = error::Error>>;
-    fn handle(&mut self, msg: Payload<M>, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, Payload(msg): Payload<M>, _ctx: &mut Self::Context) -> Self::Result {
         Box::new(
             self.writer
                 .clone()
                 .sink_from_err::<error::Error>()
-                .send(msg.0.into())
+                .send(msg.into())
                 .map(|_| ())
                 .map_err(|e| e.into()),
         )
