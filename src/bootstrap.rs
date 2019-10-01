@@ -195,6 +195,6 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
                 .iter()
                 .map(|i| i.into()),
         )
-        .map(|hash: BisqHash| hash.into_inner())
+        .map(|ref hash: BisqHash| hash.into())
         .collect()
 }
