@@ -14,7 +14,7 @@ use tokio::{
     prelude::future::Future,
 };
 
-pub struct TorConf {
+pub struct TorConfig {
     pub hidden_service_port: u16,
     pub tc_port: u16,
     pub private_key_path: PathBuf,
@@ -22,7 +22,7 @@ pub struct TorConf {
 
 pub struct Server<D: Dispatcher + Clone + 'static> {
     listen_port: u16,
-    tor_conf: Option<TorConf>,
+    tor_conf: Option<TorConfig>,
     peers: Addr<Peers>,
     bootstrap: Addr<Bootstrap<D>>,
 }
@@ -30,7 +30,7 @@ pub fn start<D: Dispatcher + Clone>(
     listen_port: u16,
     peers: Addr<Peers>,
     bootstrap: Addr<Bootstrap<D>>,
-    tor_conf: Option<TorConf>,
+    tor_conf: Option<TorConfig>,
 ) -> Addr<Server<D>> {
     Server {
         listen_port,

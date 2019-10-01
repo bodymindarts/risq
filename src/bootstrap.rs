@@ -179,7 +179,7 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
                 mailbox_entry
                     .entry
                     .as_ref()
-                    .expect("Couldnt unwrap StorageEntry")
+                    .expect("Couldn't unwrap StorageEntry")
             }
         })
         .map(|entry| {
@@ -195,6 +195,6 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
                 .iter()
                 .map(|i| i.into()),
         )
-        .map(|entry: BisqHash| entry.into_inner())
+        .map(|hash: BisqHash| hash.into_inner())
         .collect()
 }
