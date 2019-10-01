@@ -46,23 +46,29 @@ macro_rules! into_message {
 }
 for_all_payloads!(into_message);
 
-pub trait BisqHash {
-    fn bisq_hash(&self) -> Vec<u8>;
+#[derive(PartialEq, Eq, Hash)]
+pub struct BisqHash(Vec<u8>);
+impl BisqHash {
+    pub fn into_inner(self) -> Vec<u8> {
+        self.0
+    }
 }
-impl BisqHash for StoragePayload {
-    fn bisq_hash(&self) -> Vec<u8> {
-        let mut serialized = Vec::with_capacity(self.encoded_len());
-        self.encode(&mut serialized)
+impl From<&StoragePayload> for BisqHash {
+    fn from(payload: &StoragePayload) -> BisqHash {
+        let mut serialized = Vec::with_capacity(payload.encoded_len());
+        payload
+            .encode(&mut serialized)
             .expect("Could not encode message");
         let hash = sha256::Hash::hash(&serialized);
         let mut ret = Vec::with_capacity(sha256::Hash::LEN);
         ret.extend_from_slice(&hash.into_inner());
-        ret
+        BisqHash(ret)
     }
 }
-impl BisqHash for PersistableNetworkPayload {
-    fn bisq_hash(&self) -> Vec<u8> {
-        match self
+
+impl From<&PersistableNetworkPayload> for BisqHash {
+    fn from(payload: &PersistableNetworkPayload) -> BisqHash {
+        let inner = match payload
             .message
             .as_ref()
             .expect("PersistableNetworkPayload doesn't have message attached")
@@ -82,7 +88,8 @@ impl BisqHash for PersistableNetworkPayload {
                 ret.extend_from_slice(&ripemd160::Hash::hash(&hash.into_inner()).into_inner());
                 ret
             }
-        }
+        };
+        BisqHash(inner)
     }
 }
 
