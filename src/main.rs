@@ -2,21 +2,21 @@
 mod bisq;
 mod bootstrap;
 mod connection;
+mod data_router;
 mod dispatch;
 mod error;
 mod peers;
 mod server;
-mod shared_data;
 mod tor;
 
 use actix::{Arbiter, System};
 use bisq::constants::BaseCurrencyNetwork;
 use bootstrap::Bootstrap;
+use data_router::*;
 use dispatch::ActorDispatcher;
 use env_logger;
 use peers::Peers;
 use server::TorConf;
-use shared_data::*;
 use std::{fs, path::PathBuf};
 
 #[macro_use]
@@ -34,24 +34,24 @@ fn main() {
 
     // Uncomment for mainnet
     //
-    // let network = BaseCurrencyNetwork::BtcMainnet;
-    // let tor_proxy_port = Some(9050);
-    // let tor_conf = Some(TorConf {
-    //     hidden_service_port: 9999,
-    //     tc_port: 9051,
-    //     private_key_path: dir,
-    // });
+    let network = BaseCurrencyNetwork::BtcMainnet;
+    let tor_proxy_port = Some(9050);
+    let tor_conf = Some(TorConf {
+        hidden_service_port: 9999,
+        tc_port: 9051,
+        private_key_path: dir,
+    });
 
     // Uncomment for regtest
-    let network = BaseCurrencyNetwork::BtcRegtest;
-    let tor_proxy_port = None;
-    let tor_conf = None;
+    // let network = BaseCurrencyNetwork::BtcRegtest;
+    // let tor_proxy_port = None;
+    // let tor_conf = None;
 
     let local_port = 5000;
 
     let sys = System::new("risq");
-    let shared_data = SharedData::start();
-    let dispatcher = ActorDispatcher::<SharedData, SharedDataDispatch>::new(shared_data);
+    let data_router = DataRouter::start();
+    let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
     let peers = Peers::start(network);
     let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
 

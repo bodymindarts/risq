@@ -2,13 +2,13 @@ use crate::bisq::payload::*;
 use crate::dispatch::Receive;
 use actix::{Actor, Addr, Context, Handler, Message};
 
-pub struct SharedData {}
-impl Actor for SharedData {
+pub struct DataRouter {}
+impl Actor for DataRouter {
     type Context = Context<Self>;
 }
-impl SharedData {
-    pub fn start() -> Addr<SharedData> {
-        SharedData {}.start()
+impl DataRouter {
+    pub fn start() -> Addr<DataRouter> {
+        DataRouter {}.start()
     }
     pub fn distribute_bootstrap_data(&self, data: Vec<StorageEntryWrapper>) {
         data.into_iter().for_each(|w| {
@@ -43,31 +43,31 @@ impl SharedData {
     }
 }
 
-impl Handler<Receive<SharedDataDispatch>> for SharedData {
+impl Handler<Receive<DataRouterDispatch>> for DataRouter {
     type Result = ();
     fn handle(
         &mut self,
-        Receive(_, dispatch): Receive<SharedDataDispatch>,
+        Receive(_, dispatch): Receive<DataRouterDispatch>,
         _ctx: &mut Self::Context,
     ) {
         match dispatch {
-            SharedDataDispatch::Bootstrap(data, _) => self.distribute_bootstrap_data(data),
+            DataRouterDispatch::Bootstrap(data, _) => self.distribute_bootstrap_data(data),
         }
     }
 }
 
-pub enum SharedDataDispatch {
+pub enum DataRouterDispatch {
     Bootstrap(Vec<StorageEntryWrapper>, Vec<PersistableNetworkPayload>),
 }
-impl PayloadExtractor for SharedDataDispatch {
-    type Extraction = SharedDataDispatch;
+impl PayloadExtractor for DataRouterDispatch {
+    type Extraction = DataRouterDispatch;
     fn extract(msg: network_envelope::Message) -> Extract<Self::Extraction> {
         match msg {
             network_envelope::Message::GetDataResponse(GetDataResponse {
                 data_set,
                 persistable_network_payload_items,
                 ..
-            }) => Extract::Succeeded(SharedDataDispatch::Bootstrap(
+            }) => Extract::Succeeded(DataRouterDispatch::Bootstrap(
                 data_set,
                 persistable_network_payload_items,
             )),
