@@ -52,12 +52,12 @@ impl Handler<RefreshOffer> for OfferBook {
     fn handle(
         &mut self,
         RefreshOffer {
-            bisq_hash,
+            ref bisq_hash,
             sequence,
         }: RefreshOffer,
         _ctx: &mut Self::Context,
     ) {
-        if let Some(offer) = self.open_offers.get_mut(&bisq_hash) {
+        if let Some(offer) = self.open_offers.get_mut(bisq_hash) {
             offer.refresh(sequence);
         }
     }

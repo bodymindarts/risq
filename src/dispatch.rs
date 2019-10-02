@@ -12,6 +12,8 @@ pub enum Dispatch {
 pub trait Dispatcher {
     fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch;
 }
+pub trait SendableDispatcher: Dispatcher + Clone + Send + 'static {}
+impl<T: Dispatcher + Clone + Send + 'static> SendableDispatcher for T {}
 
 pub struct Receive<M>(pub ConnectionId, pub M);
 impl<M> Message for Receive<M> {
@@ -80,12 +82,13 @@ impl<F: Dispatcher + Sized> Chain<F> {
         }
     }
 }
+#[derive(Clone)]
 pub struct ForwardTo<F: Dispatcher + Sized, N: Dispatcher + Sized> {
     first: F,
     next: N,
 }
 impl<F: Dispatcher + Sized, N: Dispatcher + Sized> ForwardTo<F, N> {
-    fn forward_to<O: Dispatcher + Sized>(self, next: O) -> ForwardTo<Self, O> {
+    pub fn forward_to<O: Dispatcher + Sized>(self, next: O) -> ForwardTo<Self, O> {
         ForwardTo {
             first: self,
             next: next,

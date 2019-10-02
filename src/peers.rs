@@ -5,6 +5,7 @@ use crate::bisq::{
     payload::*,
 };
 use crate::connection::{Connection, ConnectionId, Request};
+use crate::dispatch::{self, ActorDispatcher, Dispatcher, SendableDispatcher};
 use actix::{
     fut::{self, ActorFuture},
     Actor, Addr, Arbiter, AsyncContext, Context,
@@ -16,17 +17,18 @@ use tokio::prelude::future::Future;
 
 const REQUEST_PERIODICALLY_INTERVAL_MIN: Duration = Duration::from_secs(10 * 60 * 60);
 
-pub struct Peers {
+pub struct Peers<D: SendableDispatcher> {
     keep_alive: Addr<KeepAlive>,
     network: BaseCurrencyNetwork,
     connections: HashMap<ConnectionId, Addr<Connection>>,
     reported_peers: HashMap<NodeAddress, Peer>,
     identified_connections: HashMap<ConnectionId, NodeAddress>,
     local_addr: Option<NodeAddress>,
+    dispatcher: D,
 }
 
-impl Peers {
-    pub fn start(network: BaseCurrencyNetwork) -> Addr<Self> {
+impl<D: SendableDispatcher> Peers<D> {
+    pub fn start(network: BaseCurrencyNetwork, dispatcher: D) -> Addr<Self> {
         Self {
             keep_alive: KeepAlive::start(),
             network,
@@ -34,8 +36,17 @@ impl Peers {
             reported_peers: HashMap::new(),
             identified_connections: HashMap::new(),
             local_addr: None,
+            dispatcher,
         }
         .start()
+    }
+
+    fn get_dispatcher(&self, addr: Addr<Peers<D>>) -> impl SendableDispatcher {
+        dispatch::chain(self.dispatcher.clone())
+            .forward_to(ActorDispatcher::<KeepAlive, Ping>::new(
+                self.keep_alive.clone(),
+            ))
+            .forward_to(ActorDispatcher::<Self, GetPeersRequest>::new(addr))
     }
 
     fn add_connection(
@@ -75,7 +86,7 @@ impl Peers {
         };
         ctx.spawn(
             fut::wrap_future(conn.send(Request(request)).flatten())
-                .map(move |mut res, peers: &mut Peers, _ctx| {
+                .map(move |mut res, peers: &mut Peers<D>, _ctx| {
                     if let Some(node) = peers.identified_connections.get(&id) {
                         if let Some((node, mut peer)) = peers.reported_peers.remove_entry(node) {
                             peer.supported_capabilities = res.supported_capabilities;
@@ -109,8 +120,8 @@ impl Peers {
             }));
     }
 }
-impl Actor for Peers {
-    type Context = Context<Peers>;
+impl<D: SendableDispatcher> Actor for Peers<D> {
+    type Context = Context<Peers<D>>;
     fn started(&mut self, ctx: &mut Self::Context) {
         ctx.run_interval(REQUEST_PERIODICALLY_INTERVAL_MIN, |peers, ctx| {
             peers.request_peers(ctx);
@@ -121,8 +132,8 @@ impl Actor for Peers {
 pub mod message {
     use super::keep_alive::KeepAlive;
     use crate::bisq::{constants, payload::*};
-    use crate::connection::{Connection, ConnectionId, Payload};
-    use crate::dispatch::{self, ActorDispatcher, Receive};
+    use crate::connection::{Connection, ConnectionId, Payload, SetDispatcher};
+    use crate::dispatch::{Receive, SendableDispatcher};
     use crate::server::event::*;
     use actix::{Addr, Arbiter, AsyncContext, Handler, Message};
     use std::{
@@ -135,13 +146,19 @@ pub mod message {
     impl Message for SeedConnection {
         type Result = ();
     }
-    impl Handler<SeedConnection> for super::Peers {
+    impl<D: SendableDispatcher> Handler<SeedConnection> for super::Peers<D> {
         type Result = ();
         fn handle(
             &mut self,
             SeedConnection(addr, id, connection): SeedConnection,
             ctx: &mut Self::Context,
         ) -> Self::Result {
+            Arbiter::spawn(
+                connection
+                    .clone()
+                    .send(SetDispatcher(self.get_dispatcher(ctx.address())))
+                    .then(|_| Ok(())),
+            );
             self.add_connection(id, connection, Some(&addr));
             self.reported_peers.insert(
                 addr.clone(),
@@ -158,7 +175,7 @@ pub mod message {
         }
     }
 
-    impl Handler<Receive<GetPeersRequest>> for super::Peers {
+    impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for super::Peers<D> {
         type Result = ();
         fn handle(
             &mut self,
@@ -205,7 +222,7 @@ pub mod message {
         }
     }
 
-    impl Handler<ServerStarted> for super::Peers {
+    impl<D: SendableDispatcher> Handler<ServerStarted> for super::Peers<D> {
         type Result = ();
         fn handle(
             &mut self,
@@ -216,7 +233,7 @@ pub mod message {
         }
     }
 
-    impl Handler<IncomingConnection> for super::Peers {
+    impl<D: SendableDispatcher> Handler<IncomingConnection> for super::Peers<D> {
         type Result = ();
 
         fn handle(
@@ -224,10 +241,7 @@ pub mod message {
             IncomingConnection(tcp): IncomingConnection,
             ctx: &mut Self::Context,
         ) -> Self::Result {
-            let dispatcher = dispatch::chain(ActorDispatcher::<KeepAlive, Ping>::new(
-                self.keep_alive.clone(),
-            ))
-            .forward_to(ActorDispatcher::<Self, GetPeersRequest>::new(ctx.address()));
+            let dispatcher = self.get_dispatcher(ctx.address());
             let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
             self.add_connection(id, conn, None);
         }

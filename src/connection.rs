@@ -1,5 +1,5 @@
 use crate::bisq::{correlation::*, payload::*};
-use crate::dispatch::{Dispatch, Dispatcher};
+use crate::dispatch::{Dispatch, Dispatcher, SendableDispatcher};
 use crate::error;
 use actix::{
     self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
@@ -63,15 +63,12 @@ impl StreamHandler<network_envelope::Message, error::Error> for Connection {
 }
 
 impl Connection {
-    pub fn open<D>(
+    pub fn open<D: SendableDispatcher>(
         addr: NodeAddress,
         message_version: MessageVersion,
         dispatcher: D,
         proxy_port: Option<u16>,
-    ) -> Box<dyn Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error>>
-    where
-        D: Dispatcher + 'static,
-    {
+    ) -> Box<dyn Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error>> {
         match proxy_port {
             None => Box::new(
                 TcpStream::connect(
@@ -98,14 +95,11 @@ impl Connection {
             ),
         }
     }
-    pub fn from_tcp_stream<D>(
+    pub fn from_tcp_stream<D: SendableDispatcher>(
         connection: TcpStream,
         message_version: MessageVersion,
         dispatcher: D,
-    ) -> (ConnectionId, Addr<Connection>)
-    where
-        D: Dispatcher + 'static,
-    {
+    ) -> (ConnectionId, Addr<Connection>) {
         let (reader, writer) = connection.split();
         let (send, rec) = mpsc::channel(10);
         let id = ConnectionId::new();
@@ -154,13 +148,13 @@ impl Connection {
     }
 }
 
-pub struct SetDispatcher<L: Dispatcher>(pub L);
-impl<L: Dispatcher> actix::Message for SetDispatcher<L> {
+pub struct SetDispatcher<D: SendableDispatcher>(pub D);
+impl<D: SendableDispatcher> actix::Message for SetDispatcher<D> {
     type Result = ();
 }
-impl<L: Dispatcher + 'static> Handler<SetDispatcher<L>> for Connection {
+impl<D: SendableDispatcher> Handler<SetDispatcher<D>> for Connection {
     type Result = ();
-    fn handle(&mut self, SetDispatcher(dispatcher): SetDispatcher<L>, _ctx: &mut Self::Context) {
+    fn handle(&mut self, SetDispatcher(dispatcher): SetDispatcher<D>, _ctx: &mut Self::Context) {
         self.dispatcher = Box::new(dispatcher);
     }
 }

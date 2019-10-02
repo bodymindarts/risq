@@ -1,6 +1,6 @@
 use crate::bisq::payload::NodeAddress;
 use crate::bootstrap::Bootstrap;
-use crate::dispatch::Dispatcher;
+use crate::dispatch::SendableDispatcher;
 use crate::peers::Peers;
 use crate::tor::{AddOnionConfig, TorControl};
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, StreamHandler};
@@ -20,15 +20,15 @@ pub struct TorConfig {
     pub private_key_path: PathBuf,
 }
 
-pub struct Server<D: Dispatcher + Clone + 'static> {
+pub struct Server<D: SendableDispatcher> {
     listen_port: u16,
     tor_conf: Option<TorConfig>,
-    peers: Addr<Peers>,
+    peers: Addr<Peers<D>>,
     bootstrap: Addr<Bootstrap<D>>,
 }
-pub fn start<D: Dispatcher + Clone>(
+pub fn start<D: SendableDispatcher>(
     listen_port: u16,
-    peers: Addr<Peers>,
+    peers: Addr<Peers<D>>,
     bootstrap: Addr<Bootstrap<D>>,
     tor_conf: Option<TorConfig>,
 ) -> Addr<Server<D>> {
@@ -40,7 +40,7 @@ pub fn start<D: Dispatcher + Clone>(
     }
     .start()
 }
-impl<D: Dispatcher + Clone + 'static> Actor for Server<D> {
+impl<D: SendableDispatcher> Actor for Server<D> {
     type Context = Context<Server<D>>;
     fn started(&mut self, ctx: &mut Self::Context) {
         let listen_socket =
@@ -78,7 +78,7 @@ impl<D: Dispatcher + Clone + 'static> Actor for Server<D> {
         Arbiter::spawn(self.peers.send(event::ServerStarted(addr)).then(|_| Ok(())));
     }
 }
-impl<D: Dispatcher + Clone + 'static> StreamHandler<TcpStream, io::Error> for Server<D> {
+impl<D: SendableDispatcher> StreamHandler<TcpStream, io::Error> for Server<D> {
     fn handle(&mut self, connection: TcpStream, _ctx: &mut Self::Context) {
         Arbiter::spawn(
             self.peers

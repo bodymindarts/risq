@@ -4,7 +4,7 @@ use crate::bisq::{
     BisqHash,
 };
 use crate::connection::{Connection, ConnectionId, Request};
-use crate::dispatch::Dispatcher;
+use crate::dispatch::SendableDispatcher;
 use crate::error::Error;
 use crate::peers::{message::SeedConnection, Peers};
 use crate::server::event::ServerStarted;
@@ -15,16 +15,16 @@ use actix::{
 use rand::{seq::SliceRandom, thread_rng};
 use tokio::{prelude::future::Future, sync::oneshot};
 
-pub struct Bootstrap<D: Dispatcher + Clone> {
+pub struct Bootstrap<D: SendableDispatcher> {
     network: BaseCurrencyNetwork,
     proxy_port: Option<u16>,
     addr_notify: Option<oneshot::Sender<NodeAddress>>,
     addr_rec: Option<oneshot::Receiver<NodeAddress>>,
     seed_nodes: Vec<NodeAddress>,
-    peers: Addr<Peers>,
+    peers: Addr<Peers<D>>,
     dispatcher: D,
 }
-impl<D: Dispatcher + Clone + 'static> Actor for Bootstrap<D> {
+impl<D: SendableDispatcher> Actor for Bootstrap<D> {
     type Context = Context<Bootstrap<D>>;
     fn started(&mut self, ctx: &mut Self::Context) {
         let addr = self.seed_nodes.pop().expect("No seed nodes defined");
@@ -62,7 +62,7 @@ impl<D: Dispatcher + Clone + 'static> Actor for Bootstrap<D> {
         );
     }
 }
-impl<D: Dispatcher + Clone + 'static> Handler<ServerStarted> for Bootstrap<D> {
+impl<D: SendableDispatcher> Handler<ServerStarted> for Bootstrap<D> {
     type Result = ();
     fn handle(&mut self, ServerStarted(local_addr): ServerStarted, _ctx: &mut Self::Context) {
         self.addr_notify
@@ -73,10 +73,10 @@ impl<D: Dispatcher + Clone + 'static> Handler<ServerStarted> for Bootstrap<D> {
             .expect("Couldn't send local address");
     }
 }
-impl<D: Dispatcher + Clone + 'static> Bootstrap<D> {
+impl<D: SendableDispatcher> Bootstrap<D> {
     pub fn start(
         network: BaseCurrencyNetwork,
-        peers: Addr<Peers>,
+        peers: Addr<Peers<D>>,
         dispatcher: D,
         proxy_port: Option<u16>,
     ) -> Addr<Bootstrap<D>> {
@@ -101,7 +101,7 @@ struct SeedResult {
     connection: Addr<Connection>,
     connection_id: ConnectionId,
 }
-fn bootstrap_from_seed<D: Dispatcher + 'static>(
+fn bootstrap_from_seed<D: SendableDispatcher>(
     seed_addr: NodeAddress,
     local_addr: oneshot::Receiver<NodeAddress>,
     network: BaseCurrencyNetwork,

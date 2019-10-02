@@ -4,14 +4,14 @@ use crate::bisq::{
     payload::{storage_payload, ProtectedStorageEntry, RefreshOfferMessage},
     BisqHash,
 };
-use bitcoin_hashes::{ripemd160, Hash};
+use bitcoin_hashes::{sha256, Hash};
 use std::time::{Duration, SystemTime};
 
 pub fn refresh_offer(msg: RefreshOfferMessage) -> RefreshOffer {
     RefreshOffer {
         sequence: msg.sequence_number,
-        bisq_hash: BisqHash::RIPEMD160(
-            ripemd160::Hash::from_slice(&msg.hash_of_payload)
+        bisq_hash: BisqHash::Sha256(
+            sha256::Hash::from_slice(&msg.hash_of_payload)
                 .expect("Couldn't unwrap RefreshOfferMessage.hash_of_data"),
         ),
     }
