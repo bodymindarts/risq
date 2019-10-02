@@ -1,6 +1,8 @@
 include!("../generated/io.bisq.protobuffer.rs");
 include!("../generated/payload_macros.rs");
 
+pub mod kind;
+
 use super::constants::*;
 use rand::{thread_rng, Rng};
 use std::{

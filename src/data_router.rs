@@ -1,4 +1,4 @@
-use crate::bisq::{payload::*, BisqHash};
+use crate::bisq::payload::{kind::*, *};
 use crate::dispatch::Receive;
 use crate::domain::{conversion, offer_book::*, OpenOffer};
 use actix::{Actor, Addr, Arbiter, Context, Handler};
@@ -25,36 +25,28 @@ impl DataRouter {
                 .expect("Couldn't unwrap StorageEntryWrapper.message")
             {
                 storage_entry_wrapper::Message::ProtectedStorageEntry(entry) => {
-                    self.distribute_protected_storage_entry(entry)
+                    self.distribute_protected_storage_entry(entry);
                 }
-                storage_entry_wrapper::Message::ProtectedMailboxStorageEntry(entry) => self
-                    .distribute_protected_storage_entry(
+                storage_entry_wrapper::Message::ProtectedMailboxStorageEntry(entry) => {
+                    self.distribute_protected_storage_entry(
                         entry
                             .entry
                             .expect("Couldn't unwrap ProtectedMailboxStorageEntry.entry"),
-                    ),
+                    );
+                }
             }
         })
     }
-    pub fn distribute_protected_storage_entry(&self, entry: ProtectedStorageEntry) {
-        let created_at =
-            SystemTime::UNIX_EPOCH + Duration::from_millis(entry.creation_time_stamp as u64);
-        let storage_payload = entry
-            .storage_payload
-            .expect("Couldn't unwrap ProtectedStorageEntry.storage_payload");
-        let hash: BisqHash = (&storage_payload).into();
-
-        match storage_payload
-            .message
-            .expect("Couldn't unwrap StoragePayload.message")
-        {
-            storage_payload::Message::OfferPayload(payload) => Arbiter::spawn(
+    pub fn distribute_protected_storage_entry(&self, entry: ProtectedStorageEntry) -> Option<()> {
+        match (&entry).into() {
+            StoragePayloadKind::OfferPayload => Arbiter::spawn(
                 self.offer_book
-                    .send(AddOffer(OpenOffer::new(hash, created_at, payload)))
+                    .send(AddOffer(conversion::open_offer(entry).unwrap()))
                     .then(|_| Ok(())),
             ),
             _ => (),
         }
+        .into()
     }
 }
 
