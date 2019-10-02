@@ -23,7 +23,7 @@ fn main() {
     };
 
     let regtest_conf = DaemonConfig {
-        network: BaseCurrencyNetwork::BtcMainnet,
+        network: BaseCurrencyNetwork::BtcRegtest,
         server_port: local_port,
         tor_proxy_port: None,
         tor_config: None,
