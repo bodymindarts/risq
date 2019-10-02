@@ -12,11 +12,8 @@ impl Actor for DataRouter {
     type Context = Context<Self>;
 }
 impl DataRouter {
-    pub fn start() -> Addr<DataRouter> {
-        DataRouter {
-            offer_book: OfferBook::start(),
-        }
-        .start()
+    pub fn start(offer_book: Addr<OfferBook>) -> Addr<DataRouter> {
+        DataRouter { offer_book }.start()
     }
     pub fn route_bootstrap_data(&self, data: Vec<StorageEntryWrapper>) {
         data.into_iter().for_each(|w| {

@@ -13,13 +13,18 @@ pub struct OpenOffer {
 }
 
 impl OpenOffer {
-    pub fn new(bisq_hash: BisqHash, created_at: SystemTime, payload: OfferPayload) -> OpenOffer {
+    pub fn new(
+        bisq_hash: BisqHash,
+        created_at: SystemTime,
+        sequence: i32,
+        payload: OfferPayload,
+    ) -> OpenOffer {
         Self {
             bisq_hash,
             created_at,
             expires_at: created_at + OFFER_TTL,
             payload,
-            latest_sequence: 0,
+            latest_sequence: sequence,
         }
     }
 
@@ -29,7 +34,6 @@ impl OpenOffer {
 
     pub fn refresh(&mut self, sequence: i32) {
         if sequence > self.latest_sequence {
-            debug!("Refreshing offer");
             self.expires_at = SystemTime::now() + OFFER_TTL;
             self.latest_sequence = sequence;
         }

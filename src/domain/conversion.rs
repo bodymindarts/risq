@@ -23,7 +23,12 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
     let storage_payload = entry.storage_payload?;
     let hash: BisqHash = (&storage_payload).into();
     if let storage_payload::Message::OfferPayload(payload) = storage_payload.message? {
-        Some(OpenOffer::new(hash, created_at, payload))
+        Some(OpenOffer::new(
+            hash,
+            created_at,
+            entry.sequence_number,
+            payload,
+        ))
     } else {
         None
     }

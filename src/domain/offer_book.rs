@@ -35,8 +35,9 @@ impl Handler<AddOffer> for OfferBook {
     type Result = ();
     fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) {
         if !offer.is_expired() {
-            debug!("Inserted offer into OfferBook");
-            self.open_offers.insert(offer.bisq_hash, offer);
+            if !offer.is_expired() {
+                self.open_offers.insert(offer.bisq_hash, offer);
+            }
         }
     }
 }

@@ -21,6 +21,8 @@ log = "*"
 prost = "*"
 prost-types = "*"
 rand = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
 socks = "*"
 tokio = "*"
 uuid = { version = "*", features = ["v4"] }
