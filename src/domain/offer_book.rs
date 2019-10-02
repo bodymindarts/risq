@@ -1,13 +1,22 @@
 use super::open_offer::OpenOffer;
 use crate::bisq::BisqHash;
-use actix::{Actor, Addr, Context, Handler, Message};
-use std::collections::HashMap;
+use actix::{Actor, Addr, AsyncContext, Context, Handler, Message};
+use std::{collections::HashMap, time::Duration};
+
+const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(60);
 
 pub struct OfferBook {
     open_offers: HashMap<BisqHash, OpenOffer>,
 }
 impl Actor for OfferBook {
     type Context = Context<Self>;
+    fn started(&mut self, ctx: &mut Self::Context) {
+        ctx.run_interval(CHECK_TTL_INTERVAL, |offer_book, _ctx| {
+            offer_book
+                .open_offers
+                .retain(|_, offer| !offer.is_expired());
+        });
+    }
 }
 impl OfferBook {
     pub fn start() -> Addr<OfferBook> {
@@ -25,7 +34,31 @@ impl Message for AddOffer {
 impl Handler<AddOffer> for OfferBook {
     type Result = ();
     fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) {
-        self.open_offers.insert(offer.bisq_hash, offer);
-        debug!("Inserted offer into OfferBook");
+        if !offer.is_expired() {
+            debug!("Inserted offer into OfferBook");
+            self.open_offers.insert(offer.bisq_hash, offer);
+        }
+    }
+}
+pub struct RefreshOffer {
+    pub bisq_hash: BisqHash,
+    pub sequence: i32,
+}
+impl Message for RefreshOffer {
+    type Result = ();
+}
+impl Handler<RefreshOffer> for OfferBook {
+    type Result = ();
+    fn handle(
+        &mut self,
+        RefreshOffer {
+            bisq_hash,
+            sequence,
+        }: RefreshOffer,
+        _ctx: &mut Self::Context,
+    ) {
+        if let Some(offer) = self.open_offers.get_mut(&bisq_hash) {
+            offer.refresh(sequence);
+        }
     }
 }

@@ -40,7 +40,7 @@ impl Actor for KeepAlive {
     type Context = Context<KeepAlive>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(LOOP_INTERVAL.to_owned(), |keep_alive, ctx| {
+        ctx.run_interval(*LOOP_INTERVAL, |keep_alive, ctx| {
             let infos = &mut keep_alive.infos;
             keep_alive.connections.retain(|id, conn| {
                 if ping_peer(id.to_owned(), conn, infos.get(id), ctx) {

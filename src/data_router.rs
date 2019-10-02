@@ -1,7 +1,8 @@
 use crate::bisq::{payload::*, BisqHash};
 use crate::dispatch::Receive;
-use crate::domain::{offer_book::*, OpenOffer};
+use crate::domain::{conversion, offer_book::*, OpenOffer};
 use actix::{Actor, Addr, Arbiter, Context, Handler};
+use std::time::{Duration, SystemTime};
 use tokio::prelude::future::Future;
 
 pub struct DataRouter {
@@ -36,22 +37,30 @@ impl DataRouter {
         })
     }
     pub fn distribute_protected_storage_entry(&self, entry: ProtectedStorageEntry) {
+        let created_at =
+            SystemTime::UNIX_EPOCH + Duration::from_millis(entry.creation_time_stamp as u64);
         let storage_payload = entry
             .storage_payload
             .expect("Couldn't unwrap ProtectedStorageEntry.storage_payload");
         let hash: BisqHash = (&storage_payload).into();
+
         match storage_payload
             .message
             .expect("Couldn't unwrap StoragePayload.message")
         {
             storage_payload::Message::OfferPayload(payload) => Arbiter::spawn(
                 self.offer_book
-                    .send(AddOffer(OpenOffer::new(hash, payload)))
+                    .send(AddOffer(OpenOffer::new(hash, created_at, payload)))
                     .then(|_| Ok(())),
             ),
             _ => (),
         }
     }
+}
+
+pub enum DataRouterDispatch {
+    Bootstrap(Vec<StorageEntryWrapper>, Vec<PersistableNetworkPayload>),
+    RefreshOffer(RefreshOfferMessage),
 }
 
 impl Handler<Receive<DataRouterDispatch>> for DataRouter {
@@ -63,13 +72,15 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
     ) {
         match dispatch {
             DataRouterDispatch::Bootstrap(data, _) => self.distribute_bootstrap_data(data),
+            DataRouterDispatch::RefreshOffer(msg) => Arbiter::spawn(
+                self.offer_book
+                    .send(conversion::refresh_offer(msg))
+                    .then(|_| Ok(())),
+            ),
         }
     }
 }
 
-pub enum DataRouterDispatch {
-    Bootstrap(Vec<StorageEntryWrapper>, Vec<PersistableNetworkPayload>),
-}
 impl PayloadExtractor for DataRouterDispatch {
     type Extraction = DataRouterDispatch;
     fn extract(msg: network_envelope::Message) -> Extract<Self::Extraction> {
@@ -82,6 +93,9 @@ impl PayloadExtractor for DataRouterDispatch {
                 data_set,
                 persistable_network_payload_items,
             )),
+            network_envelope::Message::RefreshOfferMessage(msg) => {
+                Extract::Succeeded(DataRouterDispatch::RefreshOffer(msg))
+            }
             _ => Extract::Failed(msg),
         }
     }

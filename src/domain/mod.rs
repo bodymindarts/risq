@@ -1,3 +1,4 @@
+pub mod conversion;
 pub mod offer_book;
 mod open_offer;
 
