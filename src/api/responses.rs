@@ -32,7 +32,7 @@ impl From<OpenOffer> for Offer {
         Offer {
             created_at: offer.created_at,
             expires_at: offer.expires_at,
-            id: offer.id().clone(),
+            id: offer.id.into(),
         }
     }
 }

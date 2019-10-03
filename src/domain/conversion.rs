@@ -25,9 +25,9 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
     if let storage_payload::Message::OfferPayload(payload) = storage_payload.message? {
         Some(OpenOffer::new(
             hash,
+            payload.id.into(),
             created_at,
             entry.sequence_number.into(),
-            payload,
         ))
     } else {
         None
