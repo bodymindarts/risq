@@ -24,13 +24,20 @@ impl From<i32> for OfferSequence {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum OfferDirection {
+    Buy,
+    Sell,
+}
+
 #[derive(Clone)]
 pub struct OpenOffer {
     pub bisq_hash: BisqHash,
     pub id: OfferId,
-    pub expires_at: SystemTime,
-    pub created_at: SystemTime,
+    pub direction: OfferDirection,
 
+    expires_at: SystemTime,
+    created_at: SystemTime,
     latest_sequence: OfferSequence,
 }
 
@@ -38,12 +45,14 @@ impl OpenOffer {
     pub fn new(
         bisq_hash: BisqHash,
         id: OfferId,
+        direction: OfferDirection,
         created_at: SystemTime,
         sequence: OfferSequence,
     ) -> OpenOffer {
         Self {
             bisq_hash,
             id,
+            direction,
             created_at,
             expires_at: created_at + OFFER_TTL,
             latest_sequence: sequence,

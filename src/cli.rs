@@ -106,7 +106,7 @@ fn offers(matches: &ArgMatches) {
                 get_offers
                     .offers
                     .into_iter()
-                    .for_each(|o| println!("{}", o.id))
+                    .for_each(|o| println!("{}", o.direction))
             } else {
                 println!("<currently no offers available>")
             }

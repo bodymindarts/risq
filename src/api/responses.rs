@@ -22,17 +22,15 @@ impl From<Vec<OpenOffer>> for GetOffers {
 
 #[derive(Serialize, Deserialize)]
 pub struct Offer {
-    pub created_at: SystemTime,
-    pub expires_at: SystemTime,
     pub id: String,
+    pub direction: String,
 }
 
 impl From<OpenOffer> for Offer {
     fn from(offer: OpenOffer) -> Offer {
         Offer {
-            created_at: offer.created_at,
-            expires_at: offer.expires_at,
             id: offer.id.into(),
+            direction: format!("{:?}", offer.direction),
         }
     }
 }

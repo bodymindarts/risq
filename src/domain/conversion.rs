@@ -1,7 +1,6 @@
-use super::offer_book::RefreshOffer;
-use super::open_offer::*;
+use super::{offer_book::RefreshOffer, open_offer::*};
 use crate::bisq::{
-    payload::{storage_payload, ProtectedStorageEntry, RefreshOfferMessage},
+    payload::{offer_payload, storage_payload, ProtectedStorageEntry, RefreshOfferMessage},
     BisqHash,
 };
 use bitcoin_hashes::{sha256, Hash};
@@ -23,9 +22,15 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
     let storage_payload = entry.storage_payload?;
     let hash: BisqHash = (&storage_payload).into();
     if let storage_payload::Message::OfferPayload(payload) = storage_payload.message? {
+        let direction = match offer_payload::Direction::from_i32(payload.direction) {
+            Some(offer_payload::Direction::Buy) => Some(OfferDirection::Buy),
+            Some(offer_payload::Direction::Sell) => Some(OfferDirection::Sell),
+            _ => None,
+        }?;
         Some(OpenOffer::new(
             hash,
             payload.id.into(),
+            direction,
             created_at,
             entry.sequence_number.into(),
         ))
