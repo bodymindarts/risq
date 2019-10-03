@@ -1,4 +1,4 @@
-use super::open_offer::OpenOffer;
+use super::open_offer::*;
 use crate::bisq::BisqHash;
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
 use std::{collections::HashMap, time::Duration};
@@ -43,7 +43,7 @@ impl Handler<AddOffer> for OfferBook {
 }
 pub struct RefreshOffer {
     pub bisq_hash: BisqHash,
-    pub sequence: i32,
+    pub sequence: OfferSequence,
 }
 impl Message for RefreshOffer {
     type Result = ();
@@ -53,12 +53,12 @@ impl Handler<RefreshOffer> for OfferBook {
     fn handle(
         &mut self,
         RefreshOffer {
-            ref bisq_hash,
+            bisq_hash,
             sequence,
         }: RefreshOffer,
         _ctx: &mut Self::Context,
     ) {
-        if let Some(offer) = self.open_offers.get_mut(bisq_hash) {
+        if let Some(offer) = self.open_offers.get_mut(&bisq_hash) {
             offer.refresh(sequence);
         }
     }

@@ -9,7 +9,7 @@ use std::time::{Duration, SystemTime};
 
 pub fn refresh_offer(msg: RefreshOfferMessage) -> RefreshOffer {
     RefreshOffer {
-        sequence: msg.sequence_number,
+        sequence: msg.sequence_number.into(),
         bisq_hash: BisqHash::Sha256(
             sha256::Hash::from_slice(&msg.hash_of_payload)
                 .expect("Couldn't unwrap RefreshOfferMessage.hash_of_data"),
@@ -26,7 +26,7 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
         Some(OpenOffer::new(
             hash,
             created_at,
-            entry.sequence_number,
+            entry.sequence_number.into(),
             payload,
         ))
     } else {
