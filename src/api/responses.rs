@@ -1,10 +1,10 @@
 use crate::domain::OpenOffer;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GetOffers {
-    offers: Vec<Offer>,
+    pub offers: Vec<Offer>,
 }
 impl From<Vec<OpenOffer>> for GetOffers {
     fn from(offers: Vec<OpenOffer>) -> GetOffers {
@@ -14,11 +14,11 @@ impl From<Vec<OpenOffer>> for GetOffers {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Offer {
-    created_at: SystemTime,
-    expires_at: SystemTime,
-    id: String,
+    pub created_at: SystemTime,
+    pub expires_at: SystemTime,
+    pub id: String,
 }
 
 impl From<OpenOffer> for Offer {

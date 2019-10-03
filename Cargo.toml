@@ -21,6 +21,7 @@ log = "*"
 prost = "*"
 prost-types = "*"
 rand = "*"
+reqwest = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 socks = "*"
