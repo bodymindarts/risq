@@ -1,6 +1,5 @@
 use env_logger;
-use risq::{cli, daemon, BaseCurrencyNetwork, DaemonConfig, TorConfig};
-use std::fs;
+use risq::cli;
 
 fn main() {
     env_logger::init();
