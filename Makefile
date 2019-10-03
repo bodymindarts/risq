@@ -5,7 +5,7 @@ build:
 	cargo build
 
 run: build
-	RUST_LOG=debug target/debug/risq
+	RUST_LOG=debug target/debug/risq daemon
 
 check:
 	cargo watch -x check

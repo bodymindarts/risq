@@ -6,6 +6,12 @@ use std::time::SystemTime;
 pub struct GetOffers {
     pub offers: Vec<Offer>,
 }
+impl GetOffers {
+    pub fn any(&self) -> bool {
+        self.offers.len() > 0
+    }
+}
+
 impl From<Vec<OpenOffer>> for GetOffers {
     fn from(offers: Vec<OpenOffer>) -> GetOffers {
         GetOffers {

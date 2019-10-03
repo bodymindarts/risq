@@ -101,11 +101,15 @@ fn offers(matches: &ArgMatches) {
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
     match Client::new(api_port).get_offers() {
         Ok(get_offers) => {
-            println!("OPEN OFFERS:");
-            get_offers
-                .offers
-                .into_iter()
-                .for_each(|o| println!("{}", o.id))
+            println!("OPEN OFFERS");
+            if get_offers.any() {
+                get_offers
+                    .offers
+                    .into_iter()
+                    .for_each(|o| println!("{}", o.id))
+            } else {
+                println!("<currently no offers available>")
+            }
         }
         Err(_) => println!("Error trying to reach api"),
     }
