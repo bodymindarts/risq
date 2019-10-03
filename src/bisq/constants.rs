@@ -1,11 +1,24 @@
 use super::payload::NodeAddress;
 use lazy_static::lazy_static;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy)]
 pub enum BaseCurrencyNetwork {
     BtcMainnet,
     BtcTestnet,
     BtcRegtest,
+}
+
+impl FromStr for BaseCurrencyNetwork {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "BtcMainnet" | "Mainnet" => Ok(BaseCurrencyNetwork::BtcMainnet),
+            "BtcTestnet" | "Testnet" => Ok(BaseCurrencyNetwork::BtcTestnet),
+            "BtcRegtest" | "Regtest" => Ok(BaseCurrencyNetwork::BtcRegtest),
+            _ => Err(()),
+        }
+    }
 }
 
 pub(super) const P2P_NETWORK_VERSION: i32 = 1;

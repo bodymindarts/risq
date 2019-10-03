@@ -3,12 +3,13 @@ use std::time::{Duration, SystemTime};
 
 const OFFER_TTL: Duration = Duration::from_secs(9 * 60);
 
+#[derive(Clone)]
 pub struct OpenOffer {
     pub bisq_hash: BisqHash,
+    pub expires_at: SystemTime,
+    pub created_at: SystemTime,
 
-    created_at: SystemTime,
     latest_sequence: i32,
-    expires_at: SystemTime,
     payload: OfferPayload,
 }
 
@@ -30,6 +31,9 @@ impl OpenOffer {
 
     pub fn is_expired(&self) -> bool {
         self.expires_at.elapsed().is_ok()
+    }
+    pub fn id(&self) -> &String {
+        &self.payload.id
     }
 
     pub fn refresh(&mut self, sequence: i32) {

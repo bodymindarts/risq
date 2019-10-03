@@ -4,7 +4,7 @@ use crate::domain::offer_book::*;
 use actix::Addr;
 use actix_web::{
     web::{self, Data},
-    App, HttpServer, Result,
+    App, Error, HttpServer, Result,
 };
 use responses::*;
 use std::io;
@@ -23,8 +23,13 @@ pub fn listen(port: u16, offer_book: Addr<OfferBook>) -> Result<(), io::Error> {
     Ok(())
 }
 
-fn get_offers(Data: Data<Addr<OfferBook>>) -> Result<web::Json<GetOffers>> {
-    Ok(web::Json(GetOffers {
-        id: "ashoten".into(),
-    }))
+type FutureJsonResponse<T> = Box<dyn Future<Item = web::Json<T>, Error = Error>>;
+
+fn get_offers(data: Data<Addr<OfferBook>>) -> FutureJsonResponse<GetOffers> {
+    Box::new(
+        data.get_ref()
+            .send(GetOpenOffers)
+            .map(|offers| web::Json(GetOffers::from(offers)))
+            .map_err(|e| e.into()),
+    )
 }

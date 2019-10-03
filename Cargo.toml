@@ -27,5 +27,9 @@ socks = "*"
 tokio = "*"
 uuid = { version = "*", features = ["v4"] }
 
+[dependencies.clap]
+version = "*"
+features = [ "suggestions", "color", "unstable"] 
+
 [build-dependencies]
 prost-build = "*"
