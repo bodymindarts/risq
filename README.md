@@ -62,7 +62,7 @@ $ make run-tor
 $ RUST_LOG=debug ./target/debug/risq d
 ```
 
-It will take a while to bootstrap the current data from the seed node (currently no data is persisted so bootstrap must execute every time you start the daemon).
+It will take a while to bootstrap the data from the seed node (currently no data is persisted so bootstrap must execute every time you start the daemon).
 
 From a different console you can check that the api is running via:
 ```
