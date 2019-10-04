@@ -90,3 +90,4 @@ As this is a proof of concept there are a number of imitations.
 - No data is persisted so bootstrap is required for each run.
 - Only 1 connection to a seed node is currently established. If that connection goes away then the daemon will not receive new data.
 - Currently only 1 read-only endpoint is provided (offers).
+- Not much effort has been made to make the output look pretty or be perticularly usefull other than seeing that things are alive.
