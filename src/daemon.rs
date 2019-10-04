@@ -1,11 +1,13 @@
+mod data_router;
+
 use crate::{
     api,
     bisq::constants::BaseCurrencyNetwork,
-    data_router::*,
     domain::offer_book::*,
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Peers, TorConfig},
 };
 use actix::{Arbiter, System};
+use data_router::*;
 use std::fs;
 
 pub struct DaemonConfig {

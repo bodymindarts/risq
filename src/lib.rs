@@ -1,5 +1,4 @@
 mod api;
-mod data_router;
 #[macro_use]
 mod bisq;
 mod daemon;
