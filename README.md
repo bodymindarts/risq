@@ -86,7 +86,7 @@ Buy market -0.0111 1110000(1110000)
 
 ## Limitations
 
-As this is a proof of concept there are a number of imitations.
+As this is a proof of concept there are a number of limitations.
 - No data is persisted so bootstrap is required for each run.
 - Only 1 connection to a seed node is currently established. If that connection goes away then the daemon will not receive new data.
 - Currently only 1 read-only endpoint is provided (offers).
