@@ -15,23 +15,78 @@ to shed some light on the following questions
 - how high would the remaining effort be to achieve production rediness with an alternative implementation?
 - does it make sense as a strategic approach to write V2 from scratch vs adapt the existing code?
 
-## Discussion
-
-discussion of the individual points pending
-
 ## Setup
 
 You need to install [rust](https://www.rust-lang.org/tools/install) and [tor](https://people.torproject.org/~sysrqb/webwml/docs/installguide.html.en)
 
 Eg for mac:
 ```
-curl https://sh.rustup.rs -sSf | sh
-brew install tor
+$ curl https://sh.rustup.rs -sSf | sh
+$ brew install tor
 ```
 
 Then use the [make](./Makefile) commands for building / testing / running
 Eg:
 ```
-make run-tor
-make run
+$ make build
 ```
+
+## Demo
+
+Once the project has been built with `make build` a binary will be under `./target/debug/risq`
+
+```
+$ ./target/debug/risq help
+USAGE:
+risq [OPTIONS] <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    daemon    Runs the risq p2p node [aliases: d]
+    help      Prints this message or the help of the given subcommand(s)
+    offers    Subcomand to interact with offers
+```
+
+You can see help for the individual subcommands via:
+```
+$ ./target/debug/risq help daemon
+<omitted>
+```
+
+Run the daemon after starting tor:
+```
+$ make run-tor
+$ RUST_LOG=debug ./target/debug/risq d
+```
+
+It will take a while to bootstrap the current data from the seed node (currently no data is persisted so bootstrap must execute every time you start the daemon).
+
+From a different console you can check that the api is running via:
+```
+$ curl localhost:7477/ping
+pong
+$ curl -s localhost:7477/offers | jq
+{
+  "offers": []
+}
+```
+
+Or use the cli to print the offers (once its bootstraped)
+```
+$ ./target/debug/risq offers
+OPEN OFFERS
+Sell fixed 5000 25000000(10000000)
+Buy fixed 303000000 1000000(1000000)
+Buy market 0.0099 1000000(1000000)
+Buy market -0.0111 1110000(1110000)
+```
+
+## Limitations
+
+As this is a proof of concept there are a number of imitations.
+- No data is persisted so bootstrap is required for each run.
+- Only 1 connection to a seed node is currently established. If that connection goes away then the daemon will not receive new data.
+- Currently only 1 read-only endpoint is provided (offers).
