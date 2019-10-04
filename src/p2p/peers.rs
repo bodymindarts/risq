@@ -1,11 +1,13 @@
 mod keep_alive;
 
+use super::{
+    connection::{Connection, ConnectionId, Request},
+    dispatch::{self, ActorDispatcher, SendableDispatcher},
+};
 use crate::bisq::{
     constants::{BaseCurrencyNetwork, LOCAL_CAPABILITIES},
     payload::*,
 };
-use crate::connection::{Connection, ConnectionId, Request};
-use crate::dispatch::{self, ActorDispatcher, SendableDispatcher};
 use actix::{
     fut::{self, ActorFuture},
     Actor, Addr, Arbiter, AsyncContext, Context,
@@ -130,10 +132,14 @@ impl<D: SendableDispatcher> Actor for Peers<D> {
 }
 
 pub mod message {
-    use crate::bisq::{constants, payload::*};
-    use crate::connection::{Connection, ConnectionId, Payload, SetDispatcher};
-    use crate::dispatch::{Receive, SendableDispatcher};
-    use crate::server::event::*;
+    use crate::{
+        bisq::{constants, payload::*},
+        p2p::{
+            connection::{Connection, ConnectionId, Payload, SetDispatcher},
+            dispatch::{Receive, SendableDispatcher},
+            server::event::*,
+        },
+    };
     use actix::{Addr, Arbiter, AsyncContext, Handler, Message};
     use std::{
         iter::FromIterator,

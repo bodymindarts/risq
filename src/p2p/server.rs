@@ -1,10 +1,10 @@
-use crate::{
-    bisq::payload::NodeAddress,
+use super::{
     bootstrap::Bootstrap,
     dispatch::SendableDispatcher,
     peers::Peers,
     tor::{AddOnionConfig, TorControl},
 };
+use crate::bisq::payload::NodeAddress;
 use actix::{Actor, Addr, Arbiter, AsyncContext, Context, StreamHandler};
 use std::io;
 use std::{

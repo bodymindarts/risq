@@ -1,5 +1,5 @@
+use super::connection::ConnectionId;
 use crate::bisq::payload::*;
-use crate::connection::ConnectionId;
 use actix::{dev::ToEnvelope, Actor, Addr, Arbiter, Handler, Message};
 use std::marker::PhantomData;
 use tokio::prelude::future::Future;

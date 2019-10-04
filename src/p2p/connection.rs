@@ -1,6 +1,8 @@
-use crate::bisq::{correlation::*, payload::*};
-use crate::dispatch::{Dispatch, Dispatcher, SendableDispatcher};
-use crate::error;
+use super::dispatch::{Dispatch, Dispatcher, SendableDispatcher};
+use crate::{
+    bisq::{correlation::*, payload::*},
+    error,
+};
 use actix::{
     self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
     StreamHandler,

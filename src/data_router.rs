@@ -1,6 +1,8 @@
-use crate::bisq::payload::{kind::*, *};
-use crate::dispatch::Receive;
-use crate::domain::{conversion, offer_book::*};
+use crate::{
+    bisq::payload::{kind::*, *},
+    domain::{conversion, offer_book::*},
+    p2p::dispatch::Receive,
+};
 use actix::{Actor, Addr, Arbiter, Context, Handler};
 use tokio::prelude::future::Future;
 

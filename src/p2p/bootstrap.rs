@@ -1,13 +1,17 @@
-use crate::bisq::{
-    constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
-    payload::*,
-    BisqHash,
+use super::{
+    connection::{Connection, ConnectionId, Request},
+    dispatch::SendableDispatcher,
+    peers::{message::SeedConnection, Peers},
+    server::event::ServerStarted,
 };
-use crate::connection::{Connection, ConnectionId, Request};
-use crate::dispatch::SendableDispatcher;
-use crate::error::Error;
-use crate::peers::{message::SeedConnection, Peers};
-use crate::server::event::ServerStarted;
+use crate::{
+    bisq::{
+        constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
+        payload::*,
+        BisqHash,
+    },
+    error::Error,
+};
 use actix::{
     fut::{self, ActorFuture},
     Actor, ActorContext, Addr, AsyncContext, Context, Handler,

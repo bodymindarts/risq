@@ -2,23 +2,14 @@ mod api;
 mod data_router;
 #[macro_use]
 mod bisq;
-mod bootstrap;
-mod connection;
-mod dispatch;
+mod daemon;
 mod domain;
 mod error;
-mod peers;
-mod server;
-mod tor;
+mod p2p;
+
+pub mod cli;
 
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate futures;
-
-pub mod cli;
-pub mod daemon;
-
-pub use bisq::constants::BaseCurrencyNetwork;
-pub use daemon::DaemonConfig;
-pub use server::TorConfig;

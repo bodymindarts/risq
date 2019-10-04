@@ -2,7 +2,7 @@ use crate::{
     api::{responses::*, Client},
     bisq::constants::*,
     daemon::{self, DaemonConfig},
-    server::TorConfig,
+    p2p::TorConfig,
 };
 use clap::{clap_app, crate_version, App, ArgMatches};
 use std::str::FromStr;

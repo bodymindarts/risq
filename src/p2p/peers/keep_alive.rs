@@ -1,6 +1,10 @@
-use crate::bisq::payload::{gen_nonce, Ping, Pong};
-use crate::connection::{Connection, ConnectionId, Payload, Request};
-use crate::dispatch::Receive;
+use crate::{
+    bisq::payload::{gen_nonce, Ping, Pong},
+    p2p::{
+        connection::{Connection, ConnectionId, Payload, Request},
+        dispatch::Receive,
+    },
+};
 use actix::{
     fut::{self, ActorFuture},
     Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,

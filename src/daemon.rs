@@ -1,12 +1,9 @@
 use crate::{
     api,
     bisq::constants::BaseCurrencyNetwork,
-    bootstrap::Bootstrap,
     data_router::*,
-    dispatch::ActorDispatcher,
     domain::offer_book::*,
-    peers::Peers,
-    server::{self, TorConfig},
+    p2p::{dispatch::ActorDispatcher, server, Bootstrap, Peers, TorConfig},
 };
 use actix::{Arbiter, System};
 use std::fs;
