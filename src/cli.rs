@@ -12,10 +12,10 @@ fn app() -> App<'static, 'static> {
         (version: crate_version!())
         (@setting VersionlessSubcommands)
         (@setting SubcommandRequiredElseHelp)
-        (@arg API_PORT: --("api-port") default_value("7477") +global {port} "API port")
         (@subcommand daemon =>
          (about: "Runs the risq p2p node")
          (visible_alias: "d")
+         (@arg API_PORT: --("api-port") default_value("7477") {port} "API port")
          (@arg NETWORK: -n --network default_value[BtcMainnet] {network} "(BtcRegtest|BtcTestnet|BtcMainnet)")
          (@arg P2P_PORT: -p --("p2p-port") default_value("5000") {port} "Port of p2p node")
          (@arg TOR_ACTIVE: --("tor-active") default_value("true") {boolean} "Run daemon behind tor")
@@ -25,7 +25,7 @@ fn app() -> App<'static, 'static> {
         )
         (@subcommand offers =>
          (about: "Subcomand to interact with offers")
-         (visible_alias: "o")
+         (@arg API_PORT: --("api-port") default_value("7477") {port} "API port")
         )
     )
 }
