@@ -1,5 +1,5 @@
 use crate::{
-    api::Client,
+    api::{responses::*, Client},
     bisq::constants::*,
     daemon::{self, DaemonConfig},
     server::TorConfig,
@@ -106,11 +106,21 @@ fn offers(matches: &ArgMatches) {
                 get_offers
                     .offers
                     .into_iter()
-                    .for_each(|o| println!("{}", o.direction))
+                    .for_each(display_offer_summary)
             } else {
                 println!("<currently no offers available>")
             }
         }
         Err(_) => println!("Error trying to reach api"),
     }
+}
+
+fn display_offer_summary(offer: Offer) {
+    let mut dis = format!("{} {} ", offer.direction, offer.price.r#type);
+    dis.push_str(&if offer.price.r#type == "fixed" {
+        format!("{}", offer.price.fixed.unwrap())
+    } else {
+        format!("{}", offer.price.market_margin.unwrap())
+    });
+    println!("{} {}({})", dis, offer.amount, offer.min_amount)
 }

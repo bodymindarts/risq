@@ -30,11 +30,25 @@ pub enum OfferDirection {
     Sell,
 }
 
+#[derive(Clone, Copy)]
+pub enum OfferPrice {
+    Fixed(i64),
+    MarketWithMargin(f64),
+}
+
+#[derive(Clone, Copy)]
+pub struct OfferAmount {
+    pub total: i64,
+    pub min: i64,
+}
+
 #[derive(Clone)]
 pub struct OpenOffer {
     pub bisq_hash: BisqHash,
     pub id: OfferId,
     pub direction: OfferDirection,
+    pub price: OfferPrice,
+    pub amount: OfferAmount,
 
     expires_at: SystemTime,
     created_at: SystemTime,
@@ -46,6 +60,8 @@ impl OpenOffer {
         bisq_hash: BisqHash,
         id: OfferId,
         direction: OfferDirection,
+        price: OfferPrice,
+        amount: OfferAmount,
         created_at: SystemTime,
         sequence: OfferSequence,
     ) -> OpenOffer {
@@ -53,6 +69,8 @@ impl OpenOffer {
             bisq_hash,
             id,
             direction,
+            price,
+            amount,
             created_at,
             expires_at: created_at + OFFER_TTL,
             latest_sequence: sequence,

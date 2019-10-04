@@ -1,5 +1,5 @@
 mod client;
-mod responses;
+pub mod responses;
 mod server;
 
 pub use client::Client;

@@ -27,10 +27,20 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             Some(offer_payload::Direction::Sell) => Some(OfferDirection::Sell),
             _ => None,
         }?;
+        let price = if payload.use_market_based_price {
+            OfferPrice::MarketWithMargin(payload.market_price_margin)
+        } else {
+            OfferPrice::Fixed(payload.price)
+        };
         Some(OpenOffer::new(
             hash,
             payload.id.into(),
             direction,
+            price,
+            OfferAmount {
+                total: payload.amount,
+                min: payload.min_amount,
+            },
             created_at,
             entry.sequence_number.into(),
         ))
