@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
 use std::{
     collections::HashMap,
-    time::{Duration, Instant},
+    time::{Duration, SystemTime},
 };
 use tokio::prelude::future::Future;
 
@@ -24,7 +24,7 @@ lazy_static! {
 }
 
 struct Info {
-    last_active: Instant,
+    last_active: SystemTime,
     last_round_trip_time: Duration,
 }
 pub struct KeepAlive {
@@ -75,7 +75,7 @@ impl Handler<AddConnection> for KeepAlive {
 impl Handler<Receive<Ping>> for KeepAlive {
     type Result = ();
     fn handle(&mut self, Receive(id, ping): Receive<Ping>, _: &mut Self::Context) -> Self::Result {
-        let now = Instant::now();
+        let now = SystemTime::now();
         self.infos.insert(
             id,
             Info {
@@ -102,9 +102,16 @@ fn ping_peer(
     info: Option<&Info>,
     ctx: &mut Context<KeepAlive>,
 ) -> bool {
-    let send_time = Instant::now();
+    let send_time = SystemTime::now();
     let should_ping = match info {
-        Some(info) if send_time.duration_since(info.last_active) > *LAST_ACTIVITY_AGE => true,
+        Some(info)
+            if send_time
+                .duration_since(info.last_active)
+                .map(|t| t > *LAST_ACTIVITY_AGE)
+                .unwrap_or(false) =>
+        {
+            true
+        }
         None => true,
         _ => false,
     };
@@ -116,10 +123,12 @@ fn ping_peer(
             };
             ctx.spawn(
                 fut::wrap_future(conn.send(Request(ping)).flatten().map(move |_pong| {
-                    let ret = Instant::now();
+                    let ret = SystemTime::now();
                     Info {
                         last_active: ret,
-                        last_round_trip_time: ret - send_time,
+                        last_round_trip_time: ret
+                            .duration_since(send_time)
+                            .expect("Pong before Ping"),
                     }
                 }))
                 .map(move |info, keep_alive: &mut KeepAlive, _ctx| {
