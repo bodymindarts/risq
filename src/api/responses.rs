@@ -1,6 +1,5 @@
 use crate::domain::{OfferPrice, OpenOffer};
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
 
 #[derive(Serialize, Deserialize)]
 pub struct GetOffers {

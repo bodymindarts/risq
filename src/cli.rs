@@ -4,10 +4,8 @@ use crate::{
     daemon::{self, DaemonConfig},
     server::TorConfig,
 };
-use std::fs;
-use std::str::FromStr;
-#[macro_use]
 use clap::{clap_app, crate_version, App, ArgMatches};
+use std::str::FromStr;
 
 fn app() -> App<'static, 'static> {
     clap_app!(risq =>

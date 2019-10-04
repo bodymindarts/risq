@@ -1,4 +1,4 @@
-use crate::bisq::{payload::OfferPayload, BisqHash};
+use crate::bisq::BisqHash;
 use std::time::{Duration, SystemTime};
 
 const OFFER_TTL: Duration = Duration::from_secs(9 * 60);

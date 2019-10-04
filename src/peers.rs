@@ -5,7 +5,7 @@ use crate::bisq::{
     payload::*,
 };
 use crate::connection::{Connection, ConnectionId, Request};
-use crate::dispatch::{self, ActorDispatcher, Dispatcher, SendableDispatcher};
+use crate::dispatch::{self, ActorDispatcher, SendableDispatcher};
 use actix::{
     fut::{self, ActorFuture},
     Actor, Addr, Arbiter, AsyncContext, Context,
@@ -130,7 +130,6 @@ impl<D: SendableDispatcher> Actor for Peers<D> {
 }
 
 pub mod message {
-    use super::keep_alive::KeepAlive;
     use crate::bisq::{constants, payload::*};
     use crate::connection::{Connection, ConnectionId, Payload, SetDispatcher};
     use crate::dispatch::{Receive, SendableDispatcher};

@@ -1,8 +1,7 @@
 use crate::bisq::payload::{kind::*, *};
 use crate::dispatch::Receive;
-use crate::domain::{conversion, offer_book::*, OpenOffer};
+use crate::domain::{conversion, offer_book::*};
 use actix::{Actor, Addr, Arbiter, Context, Handler};
-use std::time::{Duration, SystemTime};
 use tokio::prelude::future::Future;
 
 pub struct DataRouter {
