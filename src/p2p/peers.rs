@@ -24,8 +24,8 @@ use tokio::prelude::{
 };
 
 const CONSOLIDATE_CONNECTIONS: Duration = Duration::from_secs(60);
-const MAX_CONNECTIONS: usize = 1;
-const MIN_CONNECTIONS: usize = 1; //MAX_CONNECTIONS / 7 * 10;
+const MAX_CONNECTIONS: usize = 12;
+const MIN_CONNECTIONS: usize = MAX_CONNECTIONS / 7 * 10;
 
 pub struct PeerInfo {
     reported_alive_at: SystemTime,
