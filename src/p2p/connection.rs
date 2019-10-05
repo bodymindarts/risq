@@ -1,11 +1,13 @@
 use super::dispatch::{Dispatch, Dispatcher, SendableDispatcher};
 use crate::{
-    bisq::{correlation::*, payload::*},
+    bisq::{constants::CloseConnectionReason, correlation::*, payload::*},
     error,
 };
 use actix::{
-    self, prelude::ActorContext, Actor, Addr, Arbiter, AsyncContext, Context, Handler,
-    StreamHandler,
+    self,
+    fut::{self, ActorFuture},
+    prelude::ActorContext,
+    Actor, Addr, Arbiter, AsyncContext, Context, Handler, StreamHandler,
 };
 use prost::encoding::{decode_varint, encoded_len_varint};
 use prost::Message;
@@ -212,6 +214,31 @@ where
                         .map_err(|e| e.into())
                 }),
         )
+    }
+}
+pub struct Shutdown(pub CloseConnectionReason);
+impl actix::Message for Shutdown {
+    type Result = ();
+}
+impl Handler<Shutdown> for Connection {
+    type Result = ();
+    fn handle(&mut self, Shutdown(reason): Shutdown, ctx: &mut Self::Context) {
+        info!("Shutting down {:?}", self.id);
+        ctx.spawn(
+            fut::wrap_future(
+                self.writer
+                    .clone()
+                    .sink_from_err::<error::Error>()
+                    .send(
+                        CloseConnectionMessage {
+                            reason: reason.into(),
+                        }
+                        .into(),
+                    )
+                    .then(|_| Ok(())),
+            )
+            .then(|_: Result<(), ()>, _, ctx: &mut Self::Context| fut::ok(ctx.stop())),
+        );
     }
 }
 

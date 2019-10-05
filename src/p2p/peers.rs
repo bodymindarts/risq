@@ -1,11 +1,11 @@
 mod keep_alive;
 
 use super::{
-    connection::{Connection, ConnectionId, Request},
+    connection::{Connection, ConnectionId, Request, Shutdown},
     dispatch::{self, ActorDispatcher, SendableDispatcher},
 };
 use crate::bisq::{
-    constants::{BaseCurrencyNetwork, Capability, LOCAL_CAPABILITIES},
+    constants::{BaseCurrencyNetwork, Capability, CloseConnectionReason, LOCAL_CAPABILITIES},
     payload::*,
 };
 use actix::{
@@ -16,7 +16,6 @@ use keep_alive::*;
 use std::{
     collections::{HashMap, HashSet},
     convert::TryInto,
-    iter::FromIterator,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::prelude::{
@@ -24,9 +23,9 @@ use tokio::prelude::{
     stream::{self, Stream},
 };
 
-const REQUEST_PERIODICALLY_INTERVAL_MIN: Duration = Duration::from_secs(10 * 60);
-const MAX_CONNECTIONS: usize = 12;
-const MIN_CONNECTIONS: usize = MAX_CONNECTIONS / 7 * 10;
+const CONSOLIDATE_CONNECTIONS: Duration = Duration::from_secs(60);
+const MAX_CONNECTIONS: usize = 1;
+const MIN_CONNECTIONS: usize = 1; //MAX_CONNECTIONS / 7 * 10;
 
 pub struct PeerInfo {
     reported_alive_at: SystemTime,
@@ -143,22 +142,39 @@ impl<D: SendableDispatcher> Peers<D> {
         }
     }
 
-    fn consolidate_connections(&self, ctx: &mut <Self as Actor>::Context) {
+    fn consolidate_connections(&mut self, ctx: &mut <Self as Actor>::Context) {
         info!("Consolidating peer connections");
+        let remove_ids: Vec<ConnectionId> = self
+            .connections
+            .iter()
+            .filter_map(|(id, conn)| if conn.connected() { None } else { Some(id) })
+            .cloned()
+            .collect();
+        remove_ids.into_iter().for_each(|id| {
+            self.connections.remove(&id);
+            self.identified_connections.remove(&id);
+        });
+
         ctx.spawn(self.update_alive_times().then(|_, peers, ctx| {
-            if peers.connections.len() < MIN_CONNECTIONS {
-                let candidates = peers.new_connection_candidates();
-                ctx.spawn(
-                    if candidates.len() + peers.connections.len() < MIN_CONNECTIONS * 2 {
-                        Either::A(peers.request_peers())
-                    } else {
-                        Either::B(fut::ok(()))
-                    }
-                    .then(|_, peers, ctx| fut::ok(peers.do_consolidate_connections(ctx))),
-                );
+            let candidates = peers.new_connection_candidates();
+            if candidates.len() + peers.connections.len() < MIN_CONNECTIONS * 2 {
+                Either::A(peers.request_peers())
+            } else {
+                Either::B(fut::ok(()))
             }
-            fut::ok(())
+            .then(|_, peers, ctx| fut::ok(peers.do_consolidate_connections(ctx)))
         }));
+    }
+    fn drop_connection(&mut self, id: ConnectionId) {
+        self.identified_connections.remove(&id);
+        if let Some(addr) = self.connections.remove(&id) {
+            if addr.connected() {
+                Arbiter::spawn(
+                    addr.send(Shutdown(CloseConnectionReason::TooManyConnectionsOpen))
+                        .then(|_| Ok(())),
+                )
+            }
+        }
     }
     fn new_connection_candidates(&self) -> HashSet<&NodeAddress> {
         let mut candidates: HashSet<&NodeAddress> = self.peer_infos.keys().collect();
@@ -167,7 +183,8 @@ impl<D: SendableDispatcher> Peers<D> {
         });
         candidates
     }
-    fn do_consolidate_connections(&self, ctx: &mut <Self as Actor>::Context) {
+
+    fn do_consolidate_connections(&mut self, ctx: &mut <Self as Actor>::Context) {
         if self.connections.len() < MIN_CONNECTIONS {
             self.new_connection_candidates()
                 .into_iter()
@@ -190,6 +207,14 @@ impl<D: SendableDispatcher> Peers<D> {
                         }),
                     );
                 });
+        } else if self.connections.len() > MAX_CONNECTIONS {
+            let to_drop: Vec<ConnectionId> = self
+                .connections
+                .keys()
+                .take(self.connections.len() - MAX_CONNECTIONS)
+                .cloned()
+                .collect();
+            to_drop.into_iter().for_each(|id| self.drop_connection(id));
         }
     }
 
@@ -296,7 +321,7 @@ impl<D: SendableDispatcher> Peers<D> {
 impl<D: SendableDispatcher> Actor for Peers<D> {
     type Context = Context<Peers<D>>;
     fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(REQUEST_PERIODICALLY_INTERVAL_MIN, |peers, ctx| {
+        ctx.run_interval(CONSOLIDATE_CONNECTIONS, |peers, ctx| {
             peers.consolidate_connections(ctx);
         });
     }

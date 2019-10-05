@@ -144,3 +144,66 @@ impl TryFrom<i32> for Capability {
         }
     }
 }
+
+pub enum CloseConnectionReason {
+    SocketClosed,
+    Reset,
+    SocketTimeout,
+    Terminated,
+    // EOFException
+    CorruptedData,
+    NoProtoBufferData,
+    NoProtoBufferEnv,
+    UnknownException,
+
+    // Planned
+    AppShutDown,
+    CloseRequestedByPeer,
+
+    // send msg
+    SendMsgFailure,
+    SendMsgTimeout,
+
+    // maintenance
+    TooManyConnectionsOpen,
+    TooManySeedNodesConnected,
+    UnknownPeerAddress,
+
+    // illegal requests
+    RuleViolation,
+    PeerBanned,
+    InvalidClassReceived,
+    MandatoryCapabilitiesNotSupported,
+}
+
+impl From<CloseConnectionReason> for String {
+    fn from(reason: CloseConnectionReason) -> String {
+        match reason {
+            CloseConnectionReason::SocketClosed => "SOCKET_CLOSED".to_string(),
+            CloseConnectionReason::Reset => "RESET".to_string(),
+            CloseConnectionReason::SocketTimeout => "SOCKET_TIMEOUT".to_string(),
+            CloseConnectionReason::Terminated => "TERMINATED".to_string(),
+            CloseConnectionReason::CorruptedData => "CORRUPTED_DATA".to_string(),
+            CloseConnectionReason::NoProtoBufferData => "NO_PROTO_BUFFER_DATA".to_string(),
+            CloseConnectionReason::NoProtoBufferEnv => "NO_PROTO_BUFFER_ENV".to_string(),
+            CloseConnectionReason::UnknownException => "UNKNOWN_EXCEPTION".to_string(),
+            CloseConnectionReason::AppShutDown => "APP_SHUT_DOWN".to_string(),
+            CloseConnectionReason::CloseRequestedByPeer => "CLOSE_REQUESTED_BY_PEER".to_string(),
+            CloseConnectionReason::SendMsgFailure => "SEND_MSG_FAILURE".to_string(),
+            CloseConnectionReason::SendMsgTimeout => "SEND_MSG_TIMEOUT".to_string(),
+            CloseConnectionReason::TooManyConnectionsOpen => {
+                "TOO_MANY_CONNECTIONS_OPEN".to_string()
+            }
+            CloseConnectionReason::TooManySeedNodesConnected => {
+                "TOO_MANY_SEED_NODES_CONNECTED".to_string()
+            }
+            CloseConnectionReason::UnknownPeerAddress => "UNKNOWN_PEER_ADDRESS".to_string(),
+            CloseConnectionReason::RuleViolation => "RULE_VIOLATION".to_string(),
+            CloseConnectionReason::PeerBanned => "PEER_BANNED".to_string(),
+            CloseConnectionReason::InvalidClassReceived => "INVALID_CLASS_RECEIVED".to_string(),
+            CloseConnectionReason::MandatoryCapabilitiesNotSupported => {
+                "MANDATORY_CAPABILITIES_NOT_SUPPORTED".to_string()
+            }
+        }
+    }
+}
