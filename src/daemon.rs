@@ -35,10 +35,10 @@ pub fn run(
     let offer_book = OfferBook::start();
     let data_router = DataRouter::start(offer_book.clone());
     let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
-    let peers = Peers::start(network, dispatcher.clone());
-    let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
 
     Arbiter::new().exec_fn(move || {
+        let peers = Peers::start(network, dispatcher.clone(), tor_proxy_port);
+        let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
         server::start(server_port, peers, bootstrap, tor_config);
     });
     Arbiter::new().exec_fn(move || {

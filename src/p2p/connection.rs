@@ -14,7 +14,7 @@ use std::{
     collections::{HashMap, VecDeque},
     io,
     iter::FromIterator,
-    net::IpAddr,
+    net::ToSocketAddrs,
 };
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf},
@@ -74,13 +74,11 @@ impl Connection {
         match proxy_port {
             None => Box::new(
                 TcpStream::connect(
-                    &(
-                        addr.host_name
-                            .parse::<IpAddr>()
-                            .expect("Couldn't parse ip address"),
-                        addr.port as u16,
-                    )
-                        .into(),
+                    &(addr.host_name.as_str(), addr.port as u16)
+                        .to_socket_addrs()
+                        .unwrap()
+                        .next()
+                        .unwrap(),
                 )
                 .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
                 .map_err(|err| err.into()),
@@ -114,6 +112,7 @@ impl Connection {
                             .map(|msg| (msg, rec))
                     })
                     .and_then(move |(msg, rec)| {
+                        debug!("Sending message {:?}", msg);
                         let envelope = NetworkEnvelope {
                             message_version: message_version.into(),
                             message: Some(msg),
@@ -265,6 +264,7 @@ impl Stream for MessageStream {
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
         if let Some(msg) = self.next_from_buffer() {
+            debug!("Receiving msg: {:?}", msg);
             return Ok(Async::Ready(Some(msg)));
         }
         let next_read = match self.state {

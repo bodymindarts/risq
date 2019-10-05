@@ -1,6 +1,6 @@
 use super::payload::NodeAddress;
 use lazy_static::lazy_static;
-use std::str::FromStr;
+use std::{convert::TryFrom, str::FromStr};
 
 #[derive(Debug, Clone, Copy)]
 pub enum BaseCurrencyNetwork {
@@ -122,4 +122,25 @@ pub enum Capability {
     BundleOfEnvelopes, // Supports bundling of messages if many messages are sent in short interval
     SignedAccountAgeWitness, // Supports the signed account age witness feature
     Mediation,         // Supports mediation feature
+}
+impl TryFrom<i32> for Capability {
+    type Error = ();
+    fn try_from(n: i32) -> Result<Capability, ()> {
+        match n {
+            0 => Ok(Capability::TradeStatistics),
+            1 => Ok(Capability::TradeStatistics2),
+            2 => Ok(Capability::AccountAgeWitness),
+            3 => Ok(Capability::SeedNode),
+            4 => Ok(Capability::DaoFullNode),
+            5 => Ok(Capability::Proposal),
+            6 => Ok(Capability::BlindVote),
+            7 => Ok(Capability::AckMsg),
+            8 => Ok(Capability::ReceiveBsqBlock),
+            9 => Ok(Capability::DaoState),
+            10 => Ok(Capability::BundleOfEnvelopes),
+            11 => Ok(Capability::SignedAccountAgeWitness),
+            12 => Ok(Capability::Mediation),
+            _ => Err(()),
+        }
+    }
 }

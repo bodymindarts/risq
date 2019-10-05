@@ -7,7 +7,7 @@ use crate::{
 };
 use actix::{
     fut::{self, ActorFuture},
-    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, WeakAddr,
+    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr,
 };
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
@@ -19,7 +19,7 @@ use tokio::prelude::future::Future;
 
 lazy_static! {
     static ref LOOP_INTERVAL_SEC: u64 = thread_rng().gen::<u64>() % 5 + 30;
-    static ref LOOP_INTERVAL: Duration = Duration::from_secs(*LOOP_INTERVAL_SEC);
+    pub static ref LOOP_INTERVAL: Duration = Duration::from_secs(*LOOP_INTERVAL_SEC);
     static ref LAST_ACTIVITY_AGE: Duration = Duration::from_secs(*LOOP_INTERVAL_SEC / 2);
 }
 
@@ -69,6 +69,22 @@ impl Handler<AddConnection> for KeepAlive {
         _: &mut Self::Context,
     ) -> Self::Result {
         self.connections.insert(id, conn);
+    }
+}
+pub struct ReportLastActive;
+impl Message for ReportLastActive {
+    type Result = HashMap<ConnectionId, SystemTime>;
+}
+impl Handler<ReportLastActive> for KeepAlive {
+    type Result = MessageResult<ReportLastActive>;
+
+    fn handle(&mut self, _: ReportLastActive, _: &mut Self::Context) -> Self::Result {
+        MessageResult(
+            self.infos
+                .iter()
+                .map(|(id, info)| (*id, info.last_active.clone()))
+                .collect(),
+        )
     }
 }
 
