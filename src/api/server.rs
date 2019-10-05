@@ -16,6 +16,7 @@ pub fn listen(port: u16, offer_book: Addr<OfferBook>) -> Result<(), io::Error> {
             .route("/ping", web::get().to(|| "pong"))
             .route("/offers", web::get().to(get_offers))
     })
+    .workers(1)
     .bind(("127.0.0.1", port))?
     .start();
     Ok(())
