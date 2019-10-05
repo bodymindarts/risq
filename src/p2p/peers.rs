@@ -315,10 +315,7 @@ pub mod message {
         fut::{self, ActorFuture},
         Addr, Arbiter, AsyncContext, Handler, Message,
     };
-    use std::{
-        iter::FromIterator,
-        time::{SystemTime, UNIX_EPOCH},
-    };
+    use std::time::SystemTime;
     use tokio::prelude::future::Future;
 
     pub struct SeedConnection(pub NodeAddress, pub ConnectionId, pub Addr<Connection>);
