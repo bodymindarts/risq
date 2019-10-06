@@ -1,4 +1,5 @@
 use bitcoin_hashes as hashes;
+use bufstream::BufStream;
 use hashes::{
     hex::{FromHex, ToHex},
     hmac::{Hmac, HmacEngine},
@@ -13,37 +14,6 @@ use std::{
     path::PathBuf,
     str::FromStr,
 };
-
-use socks::{Socks5Stream, ToTargetAddr};
-
-use bufstream::BufStream;
-
-pub struct TorStream(TcpStream);
-
-impl TorStream {
-    pub fn connect(
-        tor_proxy: impl ToSocketAddrs,
-        destination: impl ToTargetAddr,
-    ) -> io::Result<TorStream> {
-        Socks5Stream::connect(tor_proxy, destination).map(|stream| TorStream(stream.into_inner()))
-    }
-}
-
-impl Read for TorStream {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.0.read(buf)
-    }
-}
-
-impl Write for TorStream {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.flush()
-    }
-}
 
 const PROTOCOL_INFO_VERSION: i32 = 1;
 const COOKIE_LENGTH: usize = 32;
@@ -323,14 +293,14 @@ fn handle_code(status: u32) -> TCResult<()> {
 
 #[cfg(test)]
 mod tests {
-
-    use super::{TCResult, TorControl, TorStream};
+    use super::{TCResult, TorControl};
+    use socks::Socks5Stream;
     use std::io::{Read, Write};
     use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 
     #[test]
     fn check_clear_web() -> std::io::Result<()> {
-        let mut stream = TorStream::connect("localhost:9050", "www.example.com:80")?;
+        let mut stream = Socks5Stream::connect("localhost:9050", "www.example.com:80")?;
 
         stream
             .write_all(b"GET / HTTP/1.1\r\nConnection: Close\r\nHost: www.example.com\r\n\r\n")
@@ -347,7 +317,7 @@ mod tests {
 
     #[test]
     fn check_hidden_service() -> std::io::Result<()> {
-        let mut stream = TorStream::connect(
+        let mut stream = Socks5Stream::connect(
             "localhost:9050",
             (
                 "p53lf57qovyuvwsc6xnrppyply3vtqm7l6pcobkmyqsiofyeznfu5uqd.onion",
