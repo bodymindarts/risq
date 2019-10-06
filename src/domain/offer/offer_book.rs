@@ -28,15 +28,20 @@ impl OfferBook {
 }
 
 impl Handler<AddOffer> for OfferBook {
-    type Result = ();
-    fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) {
-        if !offer.is_expired() {
-            self.open_offers.insert(offer.bisq_hash, offer);
+    type Result = MessageResult<AddOffer>;
+    fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) -> Self::Result {
+        if let None = self.open_offers.get(&offer.bisq_hash) {
+            if !offer.is_expired() {
+                info!("Adding offer");
+                self.open_offers.insert(offer.bisq_hash, offer);
+                return MessageResult(CommandResult::Accepted);
+            }
         }
+        MessageResult(CommandResult::Ignored)
     }
 }
 impl Handler<RefreshOffer> for OfferBook {
-    type Result = ();
+    type Result = MessageResult<RefreshOffer>;
     fn handle(
         &mut self,
         RefreshOffer {
@@ -44,10 +49,13 @@ impl Handler<RefreshOffer> for OfferBook {
             sequence,
         }: RefreshOffer,
         _ctx: &mut Self::Context,
-    ) {
+    ) -> Self::Result {
         if let Some(offer) = self.open_offers.get_mut(&bisq_hash) {
-            offer.refresh(sequence);
+            if offer.refresh(sequence) {
+                return MessageResult(CommandResult::Accepted);
+            }
         }
+        MessageResult(CommandResult::Ignored)
     }
 }
 

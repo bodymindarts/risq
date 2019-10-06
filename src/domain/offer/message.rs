@@ -2,9 +2,14 @@ use super::{open_offer::OfferSequence, OpenOffer};
 use crate::bisq::BisqHash;
 use actix::Message;
 
+pub enum CommandResult {
+    Accepted,
+    Ignored,
+}
+
 pub struct AddOffer(pub OpenOffer);
 impl Message for AddOffer {
-    type Result = ();
+    type Result = CommandResult;
 }
 
 pub struct RefreshOffer {
@@ -12,7 +17,7 @@ pub struct RefreshOffer {
     pub sequence: OfferSequence,
 }
 impl Message for RefreshOffer {
-    type Result = ();
+    type Result = CommandResult;
 }
 
 pub struct GetOpenOffers;

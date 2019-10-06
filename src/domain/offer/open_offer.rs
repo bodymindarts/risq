@@ -81,10 +81,12 @@ impl OpenOffer {
         self.expires_at.elapsed().is_ok()
     }
 
-    pub fn refresh(&mut self, sequence: OfferSequence) {
+    pub fn refresh(&mut self, sequence: OfferSequence) -> bool {
         if sequence > self.latest_sequence {
             self.expires_at = SystemTime::now() + OFFER_TTL;
             self.latest_sequence = sequence;
+            return true;
         }
+        false
     }
 }
