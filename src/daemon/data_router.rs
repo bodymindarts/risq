@@ -92,11 +92,11 @@ impl PayloadExtractor for DataRouterDispatch {
                 data_set,
                 persistable_network_payload_items,
             )),
-            network_envelope::Message::RefreshOfferMessage(msg) => {
-                Extract::Succeeded(DataRouterDispatch::RefreshOffer(msg))
-            }
             network_envelope::Message::AddDataMessage(msg) => {
                 Extract::Succeeded(DataRouterDispatch::AddData(msg))
+            }
+            network_envelope::Message::RefreshOfferMessage(msg) => {
+                Extract::Succeeded(DataRouterDispatch::RefreshOffer(msg))
             }
             _ => Extract::Failed(msg),
         }
