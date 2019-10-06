@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use tokio::prelude::future::Future;
 
 pub enum Dispatch {
-    Forwarded,
+    Consumed,
     Retained(network_envelope::Message),
 }
 
@@ -49,7 +49,7 @@ where
         match <M as PayloadExtractor>::extract(msg) {
             Extract::Succeeded(extraction) => {
                 Arbiter::spawn(self.addr.send(Receive(conn, extraction)).then(|_| Ok(())));
-                Dispatch::Forwarded
+                Dispatch::Consumed
             }
             Extract::Failed(msg) => Dispatch::Retained(msg),
         }
@@ -98,7 +98,7 @@ impl<F: Dispatcher + Sized, N: Dispatcher + Sized> ForwardTo<F, N> {
 impl<F: Dispatcher + Sized, N: Dispatcher + Sized> Dispatcher for ForwardTo<F, N> {
     fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch {
         match self.first.dispatch(conn, msg) {
-            Dispatch::Forwarded => Dispatch::Forwarded,
+            Dispatch::Consumed => Dispatch::Consumed,
             Dispatch::Retained(msg) => self.next.dispatch(conn, msg),
         }
     }
