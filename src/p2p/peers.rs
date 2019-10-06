@@ -1,6 +1,7 @@
 mod keep_alive;
 
 use super::{
+    broadcast::Broadcaster,
     connection::*,
     dispatch::{self, ActorDispatcher, Receive, SendableDispatcher},
     server::event::*,
@@ -51,6 +52,7 @@ impl From<(NodeAddress, &PeerInfo)> for Peer {
 
 pub struct Peers<D: SendableDispatcher> {
     keep_alive: Addr<KeepAlive>,
+    broadcaster: Addr<Broadcaster>,
     network: BaseCurrencyNetwork,
     connections: HashMap<ConnectionId, Addr<Connection>>,
     identified_connections: HashMap<ConnectionId, NodeAddress>,
@@ -63,11 +65,13 @@ pub struct Peers<D: SendableDispatcher> {
 impl<D: SendableDispatcher> Peers<D> {
     pub fn start(
         network: BaseCurrencyNetwork,
+        broadcaster: Addr<Broadcaster>,
         dispatcher: D,
         proxy_port: Option<u16>,
     ) -> Addr<Self> {
         Self {
             keep_alive: KeepAlive::start(),
+            broadcaster: broadcaster.clone(),
             network,
             connections: HashMap::new(),
             identified_connections: HashMap::new(),

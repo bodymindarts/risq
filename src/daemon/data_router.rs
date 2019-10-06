@@ -2,20 +2,25 @@ use super::convert;
 use crate::{
     bisq::payload::{kind::*, *},
     domain::offer::{message::*, OfferBook},
-    p2p::dispatch::Receive,
+    p2p::{dispatch::Receive, Broadcaster},
 };
 use actix::{Actor, Addr, Arbiter, Context, Handler};
 use tokio::prelude::future::Future;
 
 pub struct DataRouter {
     offer_book: Addr<OfferBook>,
+    broadcaster: Addr<Broadcaster>,
 }
 impl Actor for DataRouter {
     type Context = Context<Self>;
 }
 impl DataRouter {
-    pub fn start(offer_book: Addr<OfferBook>) -> Addr<DataRouter> {
-        DataRouter { offer_book }.start()
+    pub fn start(offer_book: Addr<OfferBook>, broadcaster: Addr<Broadcaster>) -> Addr<DataRouter> {
+        DataRouter {
+            offer_book,
+            broadcaster,
+        }
+        .start()
     }
     pub fn route_bootstrap_data(&self, data: Vec<StorageEntryWrapper>) {
         data.into_iter().for_each(|w| {
