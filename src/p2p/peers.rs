@@ -1,16 +1,17 @@
 mod keep_alive;
 
 use super::{
-    connection::{Connection, ConnectionId, Request, Shutdown},
-    dispatch::{self, ActorDispatcher, SendableDispatcher},
+    connection::*,
+    dispatch::{self, ActorDispatcher, Receive, SendableDispatcher},
+    server::event::*,
 };
 use crate::bisq::{
-    constants::{BaseCurrencyNetwork, Capability, CloseConnectionReason, LOCAL_CAPABILITIES},
+    constants::{self, BaseCurrencyNetwork, Capability, CloseConnectionReason, LOCAL_CAPABILITIES},
     payload::*,
 };
 use actix::{
     fut::{self, ActorFuture, ActorStream, Either},
-    Actor, Addr, Arbiter, AsyncContext, Context,
+    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message,
 };
 use keep_alive::*;
 use std::{
@@ -83,7 +84,8 @@ impl<D: SendableDispatcher> Peers<D> {
             .forward_to(ActorDispatcher::<KeepAlive, Ping>::new(
                 self.keep_alive.clone(),
             ))
-            .forward_to(ActorDispatcher::<Self, GetPeersRequest>::new(addr))
+            .forward_to(ActorDispatcher::<Self, GetPeersRequest>::new(addr.clone()))
+            .forward_to(ActorDispatcher::<Self, CloseConnectionMessage>::new(addr))
     }
 
     fn add_connection(
@@ -162,14 +164,11 @@ impl<D: SendableDispatcher> Peers<D> {
             .then(|_, peers, ctx| fut::ok(peers.do_consolidate_connections(ctx)))
         }));
     }
-    fn drop_connection(&mut self, id: ConnectionId) {
+    fn drop_connection(&mut self, id: ConnectionId, reason: CloseConnectionReason) {
         self.identified_connections.remove(&id);
         if let Some(addr) = self.connections.remove(&id) {
             if addr.connected() {
-                Arbiter::spawn(
-                    addr.send(Shutdown(CloseConnectionReason::TooManyConnectionsOpen))
-                        .then(|_| Ok(())),
-                )
+                Arbiter::spawn(addr.send(Shutdown(reason)).then(|_| Ok(())))
             }
         }
     }
@@ -211,7 +210,9 @@ impl<D: SendableDispatcher> Peers<D> {
                 .take(self.connections.len() - MAX_CONNECTIONS)
                 .cloned()
                 .collect();
-            to_drop.into_iter().for_each(|id| self.drop_connection(id));
+            to_drop.into_iter().for_each(|id| {
+                self.drop_connection(id, CloseConnectionReason::TooManyConnectionsOpen)
+            });
         }
     }
 
@@ -324,99 +325,92 @@ impl<D: SendableDispatcher> Actor for Peers<D> {
     }
 }
 
-pub mod message {
-    use crate::{
-        bisq::{constants, payload::*},
-        p2p::{
-            connection::{Connection, ConnectionId, Payload, SetDispatcher},
-            dispatch::{Receive, SendableDispatcher},
-            server::event::*,
-        },
-    };
-    use actix::{
-        fut::{self, ActorFuture},
-        Addr, Arbiter, AsyncContext, Handler, Message,
-    };
-    use std::time::SystemTime;
-    use tokio::prelude::future::Future;
-
-    pub struct SeedConnection(pub NodeAddress, pub ConnectionId, pub Addr<Connection>);
-    impl Message for SeedConnection {
-        type Result = ();
+pub struct SeedConnection(pub NodeAddress, pub ConnectionId, pub Addr<Connection>);
+impl Message for SeedConnection {
+    type Result = ();
+}
+impl<D: SendableDispatcher> Handler<SeedConnection> for super::Peers<D> {
+    type Result = ();
+    fn handle(
+        &mut self,
+        SeedConnection(addr, id, connection): SeedConnection,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        Arbiter::spawn(
+            connection
+                .clone()
+                .send(SetDispatcher(self.get_dispatcher(ctx.address())))
+                .then(|_| Ok(())),
+        );
+        self.add_connection(id, connection, Some(addr));
+        self.consolidate_connections(ctx);
     }
-    impl<D: SendableDispatcher> Handler<SeedConnection> for super::Peers<D> {
-        type Result = ();
-        fn handle(
-            &mut self,
-            SeedConnection(addr, id, connection): SeedConnection,
-            ctx: &mut Self::Context,
-        ) -> Self::Result {
-            Arbiter::spawn(
-                connection
-                    .clone()
-                    .send(SetDispatcher(self.get_dispatcher(ctx.address())))
-                    .then(|_| Ok(())),
-            );
-            self.add_connection(id, connection, Some(addr));
-            self.consolidate_connections(ctx);
+}
+
+impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for super::Peers<D> {
+    type Result = ();
+    fn handle(
+        &mut self,
+        Receive(
+            conn_id,
+            GetPeersRequest {
+                nonce,
+                sender_node_address,
+                supported_capabilities,
+                reported_peers,
+            },
+        ): Receive<GetPeersRequest>,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.add_to_peer_infos(reported_peers);
+        if let Some(addr) = sender_node_address {
+            self.update_peer_info(&addr, SystemTime::now(), None, Some(supported_capabilities));
+            self.identified_connections.insert(conn_id, addr);
+        }
+        if let Some(conn) = self.connections.get(&conn_id).map(Addr::clone) {
+            ctx.spawn(self.update_alive_times().then(move |_, peers, _| {
+                let res = GetPeersResponse {
+                    request_nonce: nonce,
+                    reported_peers: peers.peers_to_report(&conn_id),
+                    supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
+                };
+                fut::wrap_future(conn.send(Payload(res)).then(|_| Ok(())))
+            }));
         }
     }
-
-    impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for super::Peers<D> {
-        type Result = ();
-        fn handle(
-            &mut self,
-            Receive(
-                conn_id,
-                GetPeersRequest {
-                    nonce,
-                    sender_node_address,
-                    supported_capabilities,
-                    reported_peers,
-                },
-            ): Receive<GetPeersRequest>,
-            ctx: &mut Self::Context,
-        ) -> Self::Result {
-            self.add_to_peer_infos(reported_peers);
-            if let Some(addr) = sender_node_address {
-                self.update_peer_info(&addr, SystemTime::now(), None, Some(supported_capabilities));
-                self.identified_connections.insert(conn_id, addr);
-            }
-            if let Some(conn) = self.connections.get(&conn_id).map(Addr::clone) {
-                ctx.spawn(self.update_alive_times().then(move |_, peers, _| {
-                    let res = GetPeersResponse {
-                        request_nonce: nonce,
-                        reported_peers: peers.peers_to_report(&conn_id),
-                        supported_capabilities: constants::LOCAL_CAPABILITIES.clone(),
-                    };
-                    fut::wrap_future(conn.send(Payload(res)).then(|_| Ok(())))
-                }));
-            }
-        }
+}
+impl<D: SendableDispatcher> Handler<Receive<CloseConnectionMessage>> for super::Peers<D> {
+    type Result = ();
+    fn handle(
+        &mut self,
+        Receive(conn_id, CloseConnectionMessage { reason }): Receive<CloseConnectionMessage>,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        self.drop_connection(conn_id, CloseConnectionReason::CloseRequestedByPeer)
     }
+}
 
-    impl<D: SendableDispatcher> Handler<ServerStarted> for super::Peers<D> {
-        type Result = ();
-        fn handle(
-            &mut self,
-            ServerStarted(addr): ServerStarted,
-            _: &mut Self::Context,
-        ) -> Self::Result {
-            self.local_addr = Some(addr);
-        }
+impl<D: SendableDispatcher> Handler<ServerStarted> for super::Peers<D> {
+    type Result = ();
+    fn handle(
+        &mut self,
+        ServerStarted(addr): ServerStarted,
+        _: &mut Self::Context,
+    ) -> Self::Result {
+        self.local_addr = Some(addr);
     }
+}
 
-    impl<D: SendableDispatcher> Handler<IncomingConnection> for super::Peers<D> {
-        type Result = ();
+impl<D: SendableDispatcher> Handler<IncomingConnection> for super::Peers<D> {
+    type Result = ();
 
-        fn handle(
-            &mut self,
-            IncomingConnection(tcp): IncomingConnection,
-            ctx: &mut Self::Context,
-        ) -> Self::Result {
-            let dispatcher = self.get_dispatcher(ctx.address());
-            let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
-            self.add_connection(id, conn, None);
-        }
+    fn handle(
+        &mut self,
+        IncomingConnection(tcp): IncomingConnection,
+        ctx: &mut Self::Context,
+    ) -> Self::Result {
+        let dispatcher = self.get_dispatcher(ctx.address());
+        let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
+        self.add_connection(id, conn, None);
     }
 }

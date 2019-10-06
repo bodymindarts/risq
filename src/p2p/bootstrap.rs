@@ -1,7 +1,7 @@
 use super::{
     connection::{Connection, ConnectionId, Request},
     dispatch::SendableDispatcher,
-    peers::{message::SeedConnection, Peers},
+    peers::{Peers, SeedConnection},
     server::event::ServerStarted,
 };
 use crate::{
