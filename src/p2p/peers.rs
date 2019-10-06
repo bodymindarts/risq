@@ -346,8 +346,31 @@ impl<D: SendableDispatcher> Handler<SeedConnection> for super::Peers<D> {
         self.consolidate_connections(ctx);
     }
 }
+pub struct Broadcast<M: Into<network_envelope::Message>>(pub M, pub Option<ConnectionId>);
+impl<M> Message for Broadcast<M>
+where
+    M: Into<network_envelope::Message>,
+{
+    type Result = ();
+}
+impl<M: 'static, D: SendableDispatcher> Handler<Broadcast<M>> for Peers<D>
+where
+    M: Into<network_envelope::Message> + Send + Clone,
+{
+    type Result = ();
+    fn handle(&mut self, Broadcast(message, exclude): Broadcast<M>, _ctx: &mut Self::Context) {
+        self.connections
+            .iter()
+            .filter_map(|(id, conn)| match exclude {
+                Some(exclude) if id == &exclude => None,
+                _ => Some(conn),
+            })
+            .for_each(|conn| Arbiter::spawn(conn.send(Payload(message.clone())).then(|_| Ok(()))));
+        ()
+    }
+}
 
-impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for super::Peers<D> {
+impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for Peers<D> {
     type Result = ();
     fn handle(
         &mut self,
@@ -379,7 +402,7 @@ impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for super::Peers<D
         }
     }
 }
-impl<D: SendableDispatcher> Handler<Receive<CloseConnectionMessage>> for super::Peers<D> {
+impl<D: SendableDispatcher> Handler<Receive<CloseConnectionMessage>> for Peers<D> {
     type Result = ();
     fn handle(
         &mut self,
@@ -390,7 +413,7 @@ impl<D: SendableDispatcher> Handler<Receive<CloseConnectionMessage>> for super::
     }
 }
 
-impl<D: SendableDispatcher> Handler<ServerStarted> for super::Peers<D> {
+impl<D: SendableDispatcher> Handler<ServerStarted> for Peers<D> {
     type Result = ();
     fn handle(
         &mut self,
@@ -401,7 +424,7 @@ impl<D: SendableDispatcher> Handler<ServerStarted> for super::Peers<D> {
     }
 }
 
-impl<D: SendableDispatcher> Handler<IncomingConnection> for super::Peers<D> {
+impl<D: SendableDispatcher> Handler<IncomingConnection> for Peers<D> {
     type Result = ();
 
     fn handle(

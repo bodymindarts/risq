@@ -2,7 +2,7 @@ use super::convert;
 use crate::{
     bisq::payload::{kind::*, *},
     domain::offer::{message::*, OfferBook},
-    p2p::{dispatch::Receive, Peers},
+    p2p::dispatch::Receive,
 };
 use actix::{Actor, Addr, Arbiter, Context, Handler};
 use tokio::prelude::future::Future;
