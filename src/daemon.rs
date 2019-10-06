@@ -4,7 +4,7 @@ mod data_router;
 use crate::{
     api,
     bisq::constants::BaseCurrencyNetwork,
-    domain::offer_book::*,
+    domain::offer::*,
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Peers, TorConfig},
 };
 use actix::{Arbiter, System};

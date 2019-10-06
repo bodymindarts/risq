@@ -1,4 +1,4 @@
-use crate::domain::{OfferPrice, OpenOffer};
+use crate::domain::offer::{OfferPrice, OpenOffer};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

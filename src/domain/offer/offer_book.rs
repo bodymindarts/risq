@@ -1,4 +1,4 @@
-use super::open_offer::*;
+use super::{message::*, *};
 use crate::bisq::BisqHash;
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
 use std::{collections::HashMap, time::Duration};
@@ -27,10 +27,6 @@ impl OfferBook {
     }
 }
 
-pub struct AddOffer(pub OpenOffer);
-impl Message for AddOffer {
-    type Result = ();
-}
 impl Handler<AddOffer> for OfferBook {
     type Result = ();
     fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) {
@@ -38,13 +34,6 @@ impl Handler<AddOffer> for OfferBook {
             self.open_offers.insert(offer.bisq_hash, offer);
         }
     }
-}
-pub struct RefreshOffer {
-    pub bisq_hash: BisqHash,
-    pub sequence: OfferSequence,
-}
-impl Message for RefreshOffer {
-    type Result = ();
 }
 impl Handler<RefreshOffer> for OfferBook {
     type Result = ();
@@ -62,10 +51,6 @@ impl Handler<RefreshOffer> for OfferBook {
     }
 }
 
-pub struct GetOpenOffers;
-impl Message for GetOpenOffers {
-    type Result = Vec<OpenOffer>;
-}
 impl Handler<GetOpenOffers> for OfferBook {
     type Result = MessageResult<GetOpenOffers>;
     fn handle(&mut self, _: GetOpenOffers, _ctx: &mut Self::Context) -> Self::Result {

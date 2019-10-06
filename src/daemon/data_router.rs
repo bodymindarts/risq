@@ -1,7 +1,7 @@
 use super::convert;
 use crate::{
     bisq::payload::{kind::*, *},
-    domain::offer_book::*,
+    domain::offer::{message::*, OfferBook},
     p2p::dispatch::Receive,
 };
 use actix::{Actor, Addr, Arbiter, Context, Handler};

@@ -1,5 +1,5 @@
 use super::responses::*;
-use crate::domain::offer_book::*;
+use crate::domain::offer::{message::GetOpenOffers, OfferBook};
 use actix::Addr;
 use actix_web::{
     web::{self, Data},

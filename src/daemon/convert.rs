@@ -3,7 +3,7 @@ use crate::{
         payload::{offer_payload, storage_payload, ProtectedStorageEntry, RefreshOfferMessage},
         BisqHash,
     },
-    domain::{offer_book::RefreshOffer, *},
+    domain::offer::{message::*, *},
 };
 use bitcoin_hashes::{sha256, Hash};
 use std::time::{Duration, SystemTime};
