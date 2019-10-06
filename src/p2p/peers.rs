@@ -103,7 +103,7 @@ impl<D: SendableDispatcher> Peers<D> {
         }
         Arbiter::spawn(
             self.keep_alive
-                .send(AddConnection(id, downgraded))
+                .send(event::ConnectionAdded(id, downgraded))
                 .then(|_| Ok(())),
         );
     }
@@ -346,29 +346,6 @@ impl<D: SendableDispatcher> Handler<SeedConnection> for super::Peers<D> {
         self.consolidate_connections(ctx);
     }
 }
-pub struct Broadcast<M: Into<network_envelope::Message>>(pub M, pub Option<ConnectionId>);
-impl<M> Message for Broadcast<M>
-where
-    M: Into<network_envelope::Message>,
-{
-    type Result = ();
-}
-impl<M: 'static, D: SendableDispatcher> Handler<Broadcast<M>> for Peers<D>
-where
-    M: Into<network_envelope::Message> + Send + Clone,
-{
-    type Result = ();
-    fn handle(&mut self, Broadcast(message, exclude): Broadcast<M>, _ctx: &mut Self::Context) {
-        self.connections
-            .iter()
-            .filter_map(|(id, conn)| match exclude {
-                Some(exclude) if id == &exclude => None,
-                _ => Some(conn),
-            })
-            .for_each(|conn| Arbiter::spawn(conn.send(Payload(message.clone())).then(|_| Ok(()))));
-        ()
-    }
-}
 
 impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for Peers<D> {
     type Result = ();
@@ -435,5 +412,15 @@ impl<D: SendableDispatcher> Handler<IncomingConnection> for Peers<D> {
         let dispatcher = self.get_dispatcher(ctx.address());
         let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
         self.add_connection(id, conn, None);
+    }
+}
+
+pub mod event {
+    use crate::p2p::connection::{Connection, ConnectionId};
+    use actix::{Message, WeakAddr};
+
+    pub struct ConnectionAdded(pub ConnectionId, pub WeakAddr<Connection>);
+    impl Message for ConnectionAdded {
+        type Result = ();
     }
 }

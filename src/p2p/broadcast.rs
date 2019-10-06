@@ -1,24 +1,58 @@
 use super::{
-    connection::ConnectionId,
-    dispatch::SendableDispatcher,
-    peers::{Broadcast, Peers},
+    connection::{Connection, ConnectionId, Payload},
+    peers::event::ConnectionAdded,
 };
 use crate::bisq::payload::network_envelope;
-use actix::{Addr, Arbiter};
+use actix::{Actor, Addr, Arbiter, Context, Handler, Message, WeakAddr};
+use std::collections::HashMap;
 use tokio::prelude::future::Future;
 
-pub struct Broadcaster<D: SendableDispatcher> {
-    peers: Addr<Peers<D>>,
+pub struct Broadcaster {
+    connections: HashMap<ConnectionId, WeakAddr<Connection>>,
+}
+impl Actor for Broadcaster {
+    type Context = Context<Broadcaster>;
 }
 
-impl<D: SendableDispatcher> Broadcaster<D> {
-    pub fn new(peers: Addr<Peers<D>>) -> Self {
-        Self { peers }
+impl Broadcaster {
+    pub fn start() -> Addr<Self> {
+        Self {
+            connections: HashMap::new(),
+        }
+        .start()
     }
-    pub fn broadcast<M>(&self, msg: M, exclude: Option<ConnectionId>)
-    where
-        M: Into<network_envelope::Message> + Clone + Send + 'static,
-    {
-        Arbiter::spawn(self.peers.send(Broadcast(msg, exclude)).then(|_| Ok(())));
+}
+
+pub struct Broadcast<M: Into<network_envelope::Message>>(pub M, pub Option<ConnectionId>);
+impl<M> Message for Broadcast<M>
+where
+    M: Into<network_envelope::Message>,
+{
+    type Result = ();
+}
+impl<M: 'static> Handler<Broadcast<M>> for Broadcaster
+where
+    M: Into<network_envelope::Message> + Send + Clone,
+{
+    type Result = ();
+    fn handle(&mut self, Broadcast(message, exclude): Broadcast<M>, _ctx: &mut Self::Context) {
+        self.connections.retain(|id, conn| {
+            conn.upgrade()
+                .map(|conn| match exclude {
+                    Some(exclude) if id == &exclude => (),
+                    _ => Arbiter::spawn(conn.send(Payload(message.clone())).then(|_| Ok(()))),
+                })
+                .is_some()
+        });
+    }
+}
+impl Handler<ConnectionAdded> for Broadcaster {
+    type Result = ();
+    fn handle(
+        &mut self,
+        ConnectionAdded(id, conn): ConnectionAdded,
+        _: &mut Self::Context,
+    ) -> Self::Result {
+        self.connections.insert(id, conn);
     }
 }

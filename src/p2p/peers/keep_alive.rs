@@ -1,3 +1,4 @@
+use super::event::ConnectionAdded;
 use crate::{
     bisq::payload::{gen_nonce, Ping, Pong},
     p2p::{
@@ -57,15 +58,11 @@ impl Actor for KeepAlive {
         });
     }
 }
-pub struct AddConnection(pub ConnectionId, pub WeakAddr<Connection>);
-impl Message for AddConnection {
-    type Result = ();
-}
-impl Handler<AddConnection> for KeepAlive {
+impl Handler<ConnectionAdded> for KeepAlive {
     type Result = ();
     fn handle(
         &mut self,
-        AddConnection(id, conn): AddConnection,
+        ConnectionAdded(id, conn): ConnectionAdded,
         _: &mut Self::Context,
     ) -> Self::Result {
         self.connections.insert(id, conn);
