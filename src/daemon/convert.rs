@@ -8,7 +8,7 @@ use crate::{
 use bitcoin_hashes::{sha256, Hash};
 use std::time::{Duration, SystemTime};
 
-pub fn refresh_offer(msg: RefreshOfferMessage) -> RefreshOffer {
+pub fn refresh_offer(msg: &RefreshOfferMessage) -> RefreshOffer {
     RefreshOffer {
         sequence: msg.sequence_number.into(),
         bisq_hash: BisqHash::Sha256(
