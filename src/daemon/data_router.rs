@@ -1,6 +1,7 @@
+use super::convert;
 use crate::{
     bisq::payload::{kind::*, *},
-    domain::{conversion, offer_book::*},
+    domain::offer_book::*,
     p2p::dispatch::Receive,
 };
 use actix::{Actor, Addr, Arbiter, Context, Handler};
@@ -43,7 +44,7 @@ impl DataRouter {
         match (&entry).into() {
             StoragePayloadKind::OfferPayload => Arbiter::spawn(
                 self.offer_book
-                    .send(AddOffer(conversion::open_offer(entry).unwrap()))
+                    .send(AddOffer(convert::open_offer(entry).unwrap()))
                     .then(|_| Ok(())),
             ),
             _ => (),
@@ -69,7 +70,7 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
             DataRouterDispatch::Bootstrap(data, _) => self.route_bootstrap_data(data),
             DataRouterDispatch::RefreshOffer(msg) => Arbiter::spawn(
                 self.offer_book
-                    .send(conversion::refresh_offer(msg))
+                    .send(convert::refresh_offer(msg))
                     .then(|_| Ok(())),
             ),
             DataRouterDispatch::AddData(data) => {

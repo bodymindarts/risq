@@ -1,7 +1,9 @@
-use super::{offer_book::RefreshOffer, open_offer::*};
-use crate::bisq::{
-    payload::{offer_payload, storage_payload, ProtectedStorageEntry, RefreshOfferMessage},
-    BisqHash,
+use crate::{
+    bisq::{
+        payload::{offer_payload, storage_payload, ProtectedStorageEntry, RefreshOfferMessage},
+        BisqHash,
+    },
+    domain::{offer_book::RefreshOffer, *},
 };
 use bitcoin_hashes::{sha256, Hash};
 use std::time::{Duration, SystemTime};
