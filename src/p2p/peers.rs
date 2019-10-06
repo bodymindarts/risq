@@ -18,10 +18,7 @@ use std::{
     convert::TryInto,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tokio::prelude::{
-    future::Future,
-    stream::{self, Stream},
-};
+use tokio::prelude::{future::Future, stream};
 
 const CONSOLIDATE_CONNECTIONS: Duration = Duration::from_secs(60);
 const MAX_CONNECTIONS: usize = 12;
@@ -155,7 +152,7 @@ impl<D: SendableDispatcher> Peers<D> {
             self.identified_connections.remove(&id);
         });
 
-        ctx.spawn(self.update_alive_times().then(|_, peers, ctx| {
+        ctx.spawn(self.update_alive_times().then(|_, peers, _ctx| {
             let candidates = peers.new_connection_candidates();
             if candidates.len() + peers.connections.len() < MIN_CONNECTIONS * 2 {
                 Either::A(peers.request_peers())
