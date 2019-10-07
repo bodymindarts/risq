@@ -38,10 +38,10 @@ where
     fn handle(&mut self, Broadcast(message, exclude): Broadcast<M>, _ctx: &mut Self::Context) {
         self.connections.retain(|id, conn| {
             conn.upgrade()
-                .map(|conn| match exclude {
-                    Some(exclude) if id == &exclude => (),
-                    _ => Arbiter::spawn(conn.send(Payload(message.clone())).then(|_| Ok(()))),
-                })
+                // .map(|conn| match exclude {
+                //     Some(exclude) if id == &exclude => (),
+                //     _ => Arbiter::spawn(conn.send(Payload(message.clone())).then(|_| Ok(()))),
+                // })
                 .is_some()
         });
     }

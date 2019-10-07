@@ -35,6 +35,7 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             OfferPrice::Fixed(payload.price)
         };
         Some(OpenOffer::new(
+            payload.clone(),
             hash,
             payload.id.into(),
             direction,

@@ -52,14 +52,17 @@ pub enum Extract<P> {
 }
 pub trait PayloadExtractor {
     type Extraction: Send;
-    fn extract(msg: network_envelope::Message) -> Extract<Self::Extraction>;
+    fn extract(msg: network_envelope::Message, bytes: Vec<u8>) -> Extract<Self::Extraction>;
 }
 
 macro_rules! extractor {
     ($caml:ident, $snake:ident) => {
         impl PayloadExtractor for $caml {
             type Extraction = $caml;
-            fn extract(msg: network_envelope::Message) -> Extract<Self::Extraction> {
+            fn extract(
+                msg: network_envelope::Message,
+                bytes: Vec<u8>,
+            ) -> Extract<Self::Extraction> {
                 if let network_envelope::Message::$caml(request) = msg {
                     Extract::Succeeded(request)
                 } else {

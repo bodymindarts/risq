@@ -7,6 +7,7 @@ const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(60);
 
 pub struct OfferBook {
     open_offers: HashMap<BisqHash, OpenOffer>,
+    offer_ids: HashMap<OfferId, Vec<u8>>,
 }
 impl Actor for OfferBook {
     type Context = Context<Self>;
@@ -22,6 +23,7 @@ impl OfferBook {
     pub fn start() -> Addr<OfferBook> {
         OfferBook {
             open_offers: HashMap::new(),
+            offer_ids: HashMap::new(),
         }
         .start()
     }
@@ -29,11 +31,22 @@ impl OfferBook {
 
 impl Handler<AddOffer> for OfferBook {
     type Result = MessageResult<AddOffer>;
-    fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(
+        &mut self,
+        AddOffer(offer, bytes): AddOffer,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
         if let None = self.open_offers.get(&offer.bisq_hash) {
             if !offer.is_expired() {
-                info!("Adding offer");
-                self.open_offers.insert(offer.bisq_hash, offer);
+                info!("Adding {:?}, {:?}", offer.id, offer.bisq_hash);
+                self.open_offers.insert(offer.bisq_hash, offer.clone());
+                if let Some(old_bytes) = self.offer_ids.get(&offer.id) {
+                    if &bytes != old_bytes {
+                        warn!("offer already exists: {:?}", old_bytes);
+                        warn!("Now it is: {:?}", bytes);
+                    }
+                }
+                self.offer_ids.insert(offer.id.clone(), bytes);
                 return MessageResult(CommandResult::Accepted);
             }
         }

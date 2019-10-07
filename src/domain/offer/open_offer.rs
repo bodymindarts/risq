@@ -1,9 +1,10 @@
+use crate::bisq::payload::OfferPayload;
 use crate::bisq::BisqHash;
 use std::time::{Duration, SystemTime};
 
 const OFFER_TTL: Duration = Duration::from_secs(9 * 60);
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OfferId(String);
 impl From<String> for OfferId {
     fn from(id: String) -> Self {
@@ -16,7 +17,7 @@ impl From<OfferId> for String {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, PartialOrd)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Debug)]
 pub struct OfferSequence(i32);
 impl From<i32> for OfferSequence {
     fn from(s: i32) -> Self {
@@ -30,25 +31,26 @@ pub enum OfferDirection {
     Sell,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum OfferPrice {
     Fixed(i64),
     MarketWithMargin(f64),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct OfferAmount {
     pub total: i64,
     pub min: i64,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OpenOffer {
     pub bisq_hash: BisqHash,
     pub id: OfferId,
     pub direction: OfferDirection,
     pub price: OfferPrice,
     pub amount: OfferAmount,
+    pub payload: OfferPayload,
 
     expires_at: SystemTime,
     created_at: SystemTime,
@@ -57,6 +59,7 @@ pub struct OpenOffer {
 
 impl OpenOffer {
     pub fn new(
+        payload: OfferPayload,
         bisq_hash: BisqHash,
         id: OfferId,
         direction: OfferDirection,
@@ -66,6 +69,7 @@ impl OpenOffer {
         sequence: OfferSequence,
     ) -> OpenOffer {
         Self {
+            payload,
             bisq_hash,
             id,
             direction,

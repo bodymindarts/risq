@@ -7,7 +7,7 @@ pub enum CommandResult {
     Ignored,
 }
 
-pub struct AddOffer(pub OpenOffer);
+pub struct AddOffer(pub OpenOffer, pub Vec<u8>);
 impl Message for AddOffer {
     type Result = CommandResult;
 }

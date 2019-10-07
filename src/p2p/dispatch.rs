@@ -6,11 +6,11 @@ use tokio::prelude::future::Future;
 
 pub enum Dispatch {
     Consumed,
-    Retained(network_envelope::Message),
+    Retained((network_envelope::Message, Vec<u8>)),
 }
 
 pub trait Dispatcher {
-    fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch;
+    fn dispatch(&self, conn: ConnectionId, msg: (network_envelope::Message, Vec<u8>)) -> Dispatch;
 }
 pub trait SendableDispatcher: Dispatcher + Clone + Send + 'static {}
 impl<T: Dispatcher + Clone + Send + 'static> SendableDispatcher for T {}
@@ -45,13 +45,17 @@ where
     A: Actor + Handler<Receive<<M as PayloadExtractor>::Extraction>>,
     <A as Actor>::Context: ToEnvelope<A, Receive<<M as PayloadExtractor>::Extraction>>,
 {
-    fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch {
-        match <M as PayloadExtractor>::extract(msg) {
+    fn dispatch(
+        &self,
+        conn: ConnectionId,
+        (msg, bytes): (network_envelope::Message, Vec<u8>),
+    ) -> Dispatch {
+        match <M as PayloadExtractor>::extract(msg, bytes.clone()) {
             Extract::Succeeded(extraction) => {
                 Arbiter::spawn(self.addr.send(Receive(conn, extraction)).then(|_| Ok(())));
                 Dispatch::Consumed
             }
-            Extract::Failed(msg) => Dispatch::Retained(msg),
+            Extract::Failed(msg) => Dispatch::Retained((msg, bytes)),
         }
     }
 }
@@ -96,7 +100,7 @@ impl<F: Dispatcher + Sized, N: Dispatcher + Sized> ForwardTo<F, N> {
     }
 }
 impl<F: Dispatcher + Sized, N: Dispatcher + Sized> Dispatcher for ForwardTo<F, N> {
-    fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch {
+    fn dispatch(&self, conn: ConnectionId, msg: (network_envelope::Message, Vec<u8>)) -> Dispatch {
         match self.first.dispatch(conn, msg) {
             Dispatch::Consumed => Dispatch::Consumed,
             Dispatch::Retained(msg) => self.next.dispatch(conn, msg),

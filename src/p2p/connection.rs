@@ -47,15 +47,19 @@ pub struct Connection {
 impl Actor for Connection {
     type Context = Context<Connection>;
 }
-impl StreamHandler<network_envelope::Message, error::Error> for Connection {
-    fn handle(&mut self, msg: network_envelope::Message, _ctx: &mut Self::Context) {
+impl StreamHandler<(network_envelope::Message, Vec<u8>), error::Error> for Connection {
+    fn handle(
+        &mut self,
+        (msg, bytes): (network_envelope::Message, Vec<u8>),
+        _ctx: &mut Self::Context,
+    ) {
         if let Some(id) = Option::<CorrelationId>::from(&msg) {
             if let Some(channel) = self.response_channels.remove(&id) {
                 channel.send(msg).expect("Couldn't send response");
                 return;
             }
         }
-        if let Dispatch::Retained(msg) = self.dispatcher.dispatch(self.id, msg) {
+        if let Dispatch::Retained(msg) = self.dispatcher.dispatch(self.id, (msg, bytes)) {
             warn!("{:?} retained message: {:?}", self.id, msg)
         }
     }
@@ -253,7 +257,7 @@ enum MessageStreamState {
 struct MessageStream {
     reader: ReadHalf<TcpStream>,
     state: MessageStreamState,
-    buffer: VecDeque<NetworkEnvelope>,
+    buffer: VecDeque<(NetworkEnvelope, Vec<u8>)>,
 }
 impl MessageStream {
     fn new(reader: ReadHalf<TcpStream>) -> MessageStream {
@@ -266,31 +270,32 @@ impl MessageStream {
             buffer: VecDeque::new(),
         }
     }
-    fn next_from_buffer(&mut self) -> Option<network_envelope::Message> {
-        let msg = self.buffer.pop_front()?.message;
+    fn next_from_buffer(&mut self) -> Option<(network_envelope::Message, Vec<u8>)> {
+        let (msg, bytes) = self.buffer.pop_front()?;
+        let msg = msg.message;
         match msg {
             Some(network_envelope::Message::BundleOfEnvelopes(msg)) => {
                 msg.envelopes
                     .into_iter()
                     .rev()
-                    .for_each(|envelope| self.buffer.push_front(envelope));
+                    .for_each(|envelope| self.buffer.push_front((envelope, Vec::new())));
                 self.next_from_buffer()
             }
             None => self.next_from_buffer(),
-            _ => msg,
+            Some(msg) => Some((msg, bytes)),
         }
     }
 }
 impl Stream for MessageStream {
-    type Item = network_envelope::Message;
+    type Item = (network_envelope::Message, Vec<u8>);
     type Error = error::Error;
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-        if let Some(msg) = self.next_from_buffer() {
+        if let Some((msg, bytes)) = self.next_from_buffer() {
             debug!("Receiving msg: {:?}", msg);
-            return Ok(Async::Ready(Some(msg)));
+            return Ok(Async::Ready(Some((msg, bytes))));
         }
-        let next_read = match self.state {
+        let (next_read, buf) = match self.state {
             MessageStreamState::Empty => panic!("Stream is already finished"),
             MessageStreamState::BetweenMessages {
                 ref mut buf,
@@ -309,6 +314,13 @@ impl Stream for MessageStream {
                 let size = decode_varint(&mut size_reader)? as usize;
                 let pos = size_reader.len();
                 let mut buf = vec![0; size];
+                // if size < buf.len() {
+                // whole object is in size_reader
+                // size_reader
+                //     .drain(..)
+                //     .enumerate()
+                //     .for_each(|(i, e)| buf[i] = e);
+                // }
                 size_reader
                     .drain(..)
                     .enumerate()
@@ -331,7 +343,7 @@ impl Stream for MessageStream {
                     }
                 }
                 match NetworkEnvelope::decode(&*buf) {
-                    Ok(res) => res,
+                    Ok(res) => (res, buf),
                     Err(e) => {
                         debug!("Decode error {:?}", e);
                         return Err(e.into());
@@ -339,7 +351,7 @@ impl Stream for MessageStream {
                 }
             }
         };
-        self.buffer.push_back(next_read);
+        self.buffer.push_back((next_read, buf.clone()));
         self.state = MessageStreamState::BetweenMessages {
             buf: [0; 10],
             pos: 0,

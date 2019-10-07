@@ -43,14 +43,6 @@ impl<D: SendableDispatcher> Actor for Bootstrap<D> {
             ))
             .map_err(|_, _, _| ())
             .and_then(move |seed_result, bootstrap: &mut Bootstrap<D>, _ctx| {
-                dispatcher.dispatch(
-                    seed_result.connection_id,
-                    seed_result.preliminary_data_response.into(),
-                );
-                dispatcher.dispatch(
-                    seed_result.connection_id,
-                    seed_result.get_updated_data_response.into(),
-                );
                 fut::wrap_future(
                     bootstrap
                         .peers

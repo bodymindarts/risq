@@ -47,20 +47,21 @@ impl DataRouter {
 
     fn route_bootstrap_data(&self, data: Vec<StorageEntryWrapper>) {
         data.into_iter().for_each(|w| {
-            self.route_storage_entry_wrapper(Some(w), Self::ignore_command_result());
+            self.route_storage_entry_wrapper(Some(w), Self::ignore_command_result(), Vec::new());
         })
     }
     fn route_storage_entry_wrapper(
         &self,
         entry_wrapper: Option<StorageEntryWrapper>,
         result_handler: impl ResultHandler + 'static,
+        bytes: Vec<u8>,
     ) -> Option<()> {
         match entry_wrapper?.message? {
             storage_entry_wrapper::Message::ProtectedStorageEntry(entry) => {
-                self.route_protected_storage_entry(Some(entry), result_handler);
+                self.route_protected_storage_entry(Some(entry), result_handler, bytes);
             }
             storage_entry_wrapper::Message::ProtectedMailboxStorageEntry(entry) => {
-                self.route_protected_storage_entry(entry.entry, result_handler);
+                self.route_protected_storage_entry(entry.entry, result_handler, bytes);
             }
         }
         .into()
@@ -69,12 +70,13 @@ impl DataRouter {
         &self,
         entry: Option<ProtectedStorageEntry>,
         result_handler: impl ResultHandler + 'static,
+        bytes: Vec<u8>,
     ) -> Option<()> {
         let entry = entry?;
         match (&entry).into() {
             StoragePayloadKind::OfferPayload => Arbiter::spawn(
                 self.offer_book
-                    .send(AddOffer(convert::open_offer(entry).unwrap()))
+                    .send(AddOffer(convert::open_offer(entry).unwrap(), bytes))
                     .then(result_handler),
             ),
             _ => (),
@@ -86,7 +88,7 @@ impl DataRouter {
 pub enum DataRouterDispatch {
     Bootstrap(Vec<StorageEntryWrapper>, Vec<PersistableNetworkPayload>),
     RefreshOffer(RefreshOfferMessage),
-    AddData(AddDataMessage),
+    AddData(AddDataMessage, Vec<u8>),
 }
 
 impl Handler<Receive<DataRouterDispatch>> for DataRouter {
@@ -103,10 +105,11 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
                     .send(convert::refresh_offer(&msg))
                     .then(self.handle_command_result(origin, msg)),
             ),
-            DataRouterDispatch::AddData(data) => {
+            DataRouterDispatch::AddData(data, bytes) => {
                 self.route_storage_entry_wrapper(
                     data.entry.clone(),
                     self.handle_command_result(origin, data),
+                    bytes,
                 );
             }
         }
@@ -115,7 +118,7 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
 
 impl PayloadExtractor for DataRouterDispatch {
     type Extraction = DataRouterDispatch;
-    fn extract(msg: network_envelope::Message) -> Extract<Self::Extraction> {
+    fn extract(msg: network_envelope::Message, bytes: Vec<u8>) -> Extract<Self::Extraction> {
         match msg {
             network_envelope::Message::GetDataResponse(GetDataResponse {
                 data_set,
@@ -126,7 +129,7 @@ impl PayloadExtractor for DataRouterDispatch {
                 persistable_network_payload_items,
             )),
             network_envelope::Message::AddDataMessage(msg) => {
-                Extract::Succeeded(DataRouterDispatch::AddData(msg))
+                Extract::Succeeded(DataRouterDispatch::AddData(msg, bytes))
             }
             network_envelope::Message::RefreshOfferMessage(msg) => {
                 Extract::Succeeded(DataRouterDispatch::RefreshOffer(msg))
