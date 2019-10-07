@@ -99,7 +99,8 @@ impl<D: SendableDispatcher> Peers<D> {
         addr: Option<NodeAddress>,
     ) {
         info!("Adding {:?} @ {:?}", id, addr);
-        let downgraded = conn.downgrade();
+        let for_keep_alive = conn.downgrade();
+        let for_broadcaster = conn.downgrade();
         self.connections.insert(id, conn);
         if let Some(addr) = addr {
             self.update_peer_info(&addr, SystemTime::now(), None, None);
@@ -107,7 +108,12 @@ impl<D: SendableDispatcher> Peers<D> {
         }
         Arbiter::spawn(
             self.keep_alive
-                .send(event::ConnectionAdded(id, downgraded))
+                .send(event::ConnectionAdded(id, for_keep_alive))
+                .then(|_| Ok(())),
+        );
+        Arbiter::spawn(
+            self.broadcaster
+                .send(event::ConnectionAdded(id, for_broadcaster))
                 .then(|_| Ok(())),
         );
     }
@@ -150,17 +156,25 @@ impl<D: SendableDispatcher> Peers<D> {
         let remove_ids: Vec<ConnectionId> = self
             .connections
             .iter()
-            .filter_map(|(id, conn)| if conn.connected() { None } else { Some(id) })
+            .filter_map(|(id, conn)| {
+                if self.identified_connections.get(&id).is_none() || !conn.connected() {
+                    Some(id)
+                } else {
+                    None
+                }
+            })
             .cloned()
             .collect();
         remove_ids.into_iter().for_each(|id| {
             self.connections.remove(&id);
-            self.identified_connections.remove(&id);
+            if self.identified_connections.remove(&id).is_none() {
+                self.drop_connection(&id, CloseConnectionReason::UnknownPeerAddress);
+            }
         });
 
         ctx.spawn(self.update_alive_times().then(|_, peers, _ctx| {
             let candidates = peers.new_connection_candidates();
-            if candidates.len() + peers.connections.len() < MIN_CONNECTIONS * 2 {
+            if candidates.len() + peers.identified_connections.len() < MIN_CONNECTIONS * 2 {
                 Either::A(peers.request_peers())
             } else {
                 Either::B(fut::ok(()))
@@ -168,9 +182,9 @@ impl<D: SendableDispatcher> Peers<D> {
             .then(|_, peers, ctx| fut::ok(peers.do_consolidate_connections(ctx)))
         }));
     }
-    fn drop_connection(&mut self, id: ConnectionId, reason: CloseConnectionReason) {
-        self.identified_connections.remove(&id);
-        if let Some(addr) = self.connections.remove(&id) {
+    fn drop_connection(&mut self, id: &ConnectionId, reason: CloseConnectionReason) {
+        self.identified_connections.remove(id);
+        if let Some(addr) = self.connections.remove(id) {
             if addr.connected() {
                 Arbiter::spawn(addr.send(Shutdown(reason)).then(|_| Ok(())))
             }
@@ -185,7 +199,7 @@ impl<D: SendableDispatcher> Peers<D> {
     }
 
     fn do_consolidate_connections(&mut self, ctx: &mut <Self as Actor>::Context) {
-        if self.connections.len() < MIN_CONNECTIONS {
+        if self.identified_connections.len() < MIN_CONNECTIONS {
             self.new_connection_candidates()
                 .into_iter()
                 .take(MAX_CONNECTIONS - self.connections.len())
@@ -215,7 +229,7 @@ impl<D: SendableDispatcher> Peers<D> {
                 .cloned()
                 .collect();
             to_drop.into_iter().for_each(|id| {
-                self.drop_connection(id, CloseConnectionReason::TooManyConnectionsOpen)
+                self.drop_connection(&id, CloseConnectionReason::TooManyConnectionsOpen)
             });
         }
     }
@@ -387,10 +401,10 @@ impl<D: SendableDispatcher> Handler<Receive<CloseConnectionMessage>> for Peers<D
     type Result = ();
     fn handle(
         &mut self,
-        Receive(conn_id, CloseConnectionMessage { reason }): Receive<CloseConnectionMessage>,
-        ctx: &mut Self::Context,
+        Receive(conn_id, _): Receive<CloseConnectionMessage>,
+        _ctx: &mut Self::Context,
     ) -> Self::Result {
-        self.drop_connection(conn_id, CloseConnectionReason::CloseRequestedByPeer)
+        self.drop_connection(&conn_id, CloseConnectionReason::CloseRequestedByPeer)
     }
 }
 

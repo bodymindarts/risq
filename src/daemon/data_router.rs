@@ -108,7 +108,6 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
                     data.entry.clone(),
                     self.handle_command_result(origin, data),
                 );
-                ()
             }
         }
     }

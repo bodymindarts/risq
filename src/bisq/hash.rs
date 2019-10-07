@@ -2,7 +2,7 @@ use super::payload::*;
 use bitcoin_hashes::{ripemd160, sha256, Hash};
 use prost::Message;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum BisqHash {
     Sha256(sha256::Hash),
     RIPEMD160(ripemd160::Hash),

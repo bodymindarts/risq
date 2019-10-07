@@ -223,18 +223,14 @@ impl actix::Message for Shutdown {
 impl Handler<Shutdown> for Connection {
     type Result = ();
     fn handle(&mut self, Shutdown(reason): Shutdown, ctx: &mut Self::Context) {
-        info!("Shutting down {:?}", self.id);
+        let reason: String = reason.into();
+        info!("Shutting down {:?} because {}", self.id, reason);
         ctx.spawn(
             fut::wrap_future(
                 self.writer
                     .clone()
                     .sink_from_err::<error::Error>()
-                    .send(
-                        CloseConnectionMessage {
-                            reason: reason.into(),
-                        }
-                        .into(),
-                    )
+                    .send(CloseConnectionMessage { reason: reason }.into())
                     .then(|_| Ok(())),
             )
             .then(|_: Result<(), ()>, _, ctx: &mut Self::Context| fut::ok(ctx.stop())),
