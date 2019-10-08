@@ -17,12 +17,13 @@ use std::{
     io,
     iter::FromIterator,
     net::ToSocketAddrs,
+    thread,
 };
 use tokio::{
     io::{flush, write_all, AsyncRead, ReadHalf},
     net::TcpStream,
     prelude::{
-        future::{self, Future, IntoFuture, Loop},
+        future::{self, Either, Future, IntoFuture, Loop},
         stream::Stream,
         Async, Sink,
     },
@@ -72,9 +73,9 @@ impl Connection {
         message_version: MessageVersion,
         dispatcher: D,
         proxy_port: Option<u16>,
-    ) -> Box<dyn Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error>> {
+    ) -> impl Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error> {
         match proxy_port {
-            None => Box::new(
+            None => Either::A(
                 TcpStream::connect(
                     &(addr.host_name.as_str(), addr.port as u16)
                         .to_socket_addrs()
@@ -85,16 +86,31 @@ impl Connection {
                 .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
                 .map_err(|err| err.into()),
             ),
-            Some(proxy_port) => Box::new(
-                Socks5Stream::connect(
-                    ("127.0.0.1", proxy_port),
-                    (addr.host_name.as_str(), addr.port as u16),
+            Some(proxy_port) => {
+                let (send, receive) = oneshot::channel::<Result<Socks5Stream, error::Error>>();
+                thread::spawn(move || {
+                    send.send(
+                        Socks5Stream::connect(
+                            ("127.0.0.1", proxy_port),
+                            (addr.host_name.as_str(), addr.port as u16),
+                        )
+                        .map_err(|e| e.into()),
+                    )
+                    .expect("Couldn't send Socks5Stream");
+                });
+                Either::B(
+                    receive
+                        .map_err(|e| error::Error::from(e))
+                        .flatten()
+                        .and_then(|stream| {
+                            TcpStream::from_std(stream.into_inner(), &Handle::default())
+                                .map_err(|e| e.into())
+                        })
+                        .map(move |tcp| {
+                            Connection::from_tcp_stream(tcp, message_version, dispatcher)
+                        }),
                 )
-                .and_then(|stream| TcpStream::from_std(stream.into_inner(), &Handle::default()))
-                .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
-                .map_err(|err| err.into())
-                .into_future(),
-            ),
+            }
         }
     }
     pub fn from_tcp_stream<D: SendableDispatcher>(
