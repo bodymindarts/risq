@@ -297,20 +297,24 @@ impl Stream for MessageStream {
         }
         let (next_read, buf) = match self.state {
             MessageStreamState::Empty => panic!("Stream is already finished"),
-            MessageStreamState::BetweenMessages { mut buf, mut pos } => {
-                while pos < buf.len() {
-                    let n = try_ready!(self.reader.poll_read(&mut buf[pos..(pos + 1)]));
+            MessageStreamState::BetweenMessages {
+                ref mut buf,
+                ref mut pos,
+            } => {
+                while *pos < buf.len() {
+                    let n = try_ready!(self.reader.poll_read(&mut buf[*pos..(*pos + 1)]));
                     if n == 0 {
                         return Err(
                             io::Error::new(io::ErrorKind::UnexpectedEof, "early eof").into()
                         );
                     }
-                    if buf[pos] & 0b10000000 == 0 {
+                    let old_pos = *pos;
+                    *pos += n;
+                    if buf[old_pos] & 0b10000000 == 0 {
                         break;
                     }
-                    pos += n;
                 }
-                let mut size_reader: VecDeque<u8> = buf.iter().take(pos).cloned().collect();
+                let mut size_reader: VecDeque<u8> = buf.iter().take(*pos).cloned().collect();
                 let size = decode_varint(&mut size_reader)? as usize;
                 let buf = vec![0; size];
                 self.state = MessageStreamState::MessageInProgress { size, pos: 0, buf };
