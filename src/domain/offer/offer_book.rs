@@ -1,5 +1,5 @@
 use super::{message::*, *};
-use crate::bisq::BisqHash;
+use crate::bisq::{payload::OfferPayload, BisqHash};
 use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, MessageResult};
 use std::{collections::HashMap, time::Duration};
 
@@ -7,7 +7,7 @@ const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(60);
 
 pub struct OfferBook {
     open_offers: HashMap<BisqHash, OpenOffer>,
-    offer_ids: HashMap<OfferId, Vec<u8>>,
+    offer_ids: HashMap<OfferId, (OfferPayload, Vec<u8>)>,
 }
 impl Actor for OfferBook {
     type Context = Context<Self>;
@@ -40,13 +40,14 @@ impl Handler<AddOffer> for OfferBook {
             if !offer.is_expired() {
                 info!("Adding {:?}, {:?}", offer.id, offer.bisq_hash);
                 self.open_offers.insert(offer.bisq_hash, offer.clone());
-                if let Some(old_bytes) = self.offer_ids.get(&offer.id) {
-                    if &bytes != old_bytes {
-                        warn!("offer already exists: {:?}", old_bytes);
+                if let Some((old_payload, old_bytes)) = self.offer_ids.get(&offer.id) {
+                    if &bytes != old_bytes && &offer.payload != old_payload {
+                        warn!("payload already exists: {:?}", old_bytes);
                         warn!("Now it is: {:?}", bytes);
                     }
                 }
-                self.offer_ids.insert(offer.id.clone(), bytes);
+                self.offer_ids
+                    .insert(offer.id.clone(), (offer.payload.clone(), bytes));
                 return MessageResult(CommandResult::Accepted);
             }
         }
