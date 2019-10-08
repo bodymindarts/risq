@@ -297,35 +297,23 @@ impl Stream for MessageStream {
         }
         let (next_read, buf) = match self.state {
             MessageStreamState::Empty => panic!("Stream is already finished"),
-            MessageStreamState::BetweenMessages {
-                ref mut buf,
-                ref mut pos,
-            } => {
-                while *pos < buf.len() {
-                    let n = try_ready!(self.reader.poll_read(&mut buf[*pos..]));
-                    *pos += n;
+            MessageStreamState::BetweenMessages { mut buf, mut pos } => {
+                while pos < buf.len() {
+                    let n = try_ready!(self.reader.poll_read(&mut buf[pos..(pos + 1)]));
                     if n == 0 {
                         return Err(
                             io::Error::new(io::ErrorKind::UnexpectedEof, "early eof").into()
                         );
                     }
+                    if buf[pos] & 0b10000000 == 0 {
+                        break;
+                    }
+                    pos += n;
                 }
-                let mut size_reader = VecDeque::from_iter(buf.iter().cloned());
+                let mut size_reader: VecDeque<u8> = buf.iter().take(pos).cloned().collect();
                 let size = decode_varint(&mut size_reader)? as usize;
-                let pos = size_reader.len();
-                let mut buf = vec![0; size];
-                // if size < buf.len() {
-                // whole object is in size_reader
-                // size_reader
-                //     .drain(..)
-                //     .enumerate()
-                //     .for_each(|(i, e)| buf[i] = e);
-                // }
-                size_reader
-                    .drain(..)
-                    .enumerate()
-                    .for_each(|(i, e)| buf[i] = e);
-                self.state = MessageStreamState::MessageInProgress { size, pos, buf };
+                let buf = vec![0; size];
+                self.state = MessageStreamState::MessageInProgress { size, pos: 0, buf };
                 return self.poll();
             }
             MessageStreamState::MessageInProgress {
