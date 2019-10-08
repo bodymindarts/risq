@@ -41,7 +41,7 @@ impl Handler<AddOffer> for OfferBook {
                 info!("Adding {:?}, {:?}", offer.id, offer.bisq_hash);
                 self.open_offers.insert(offer.bisq_hash, offer.clone());
                 if let Some((old_payload, old_bytes)) = self.offer_ids.get(&offer.id) {
-                    if &bytes != old_bytes && &offer.payload != old_payload {
+                    if &bytes != old_bytes && &offer.payload == old_payload {
                         warn!("payload already exists: {:?}", old_bytes);
                         warn!("Now it is: {:?}", bytes);
                     }
