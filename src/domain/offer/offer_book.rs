@@ -30,8 +30,8 @@ impl OfferBook {
 impl Handler<AddOffer> for OfferBook {
     type Result = MessageResult<AddOffer>;
     fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) -> Self::Result {
-        if let None = self.open_offers.get(&offer.bisq_hash) {
-            if !offer.is_expired() {
+        if !offer.is_expired() {
+            if let None = self.open_offers.get(&offer.bisq_hash) {
                 info!("Adding offer");
                 self.open_offers.insert(offer.bisq_hash, offer);
                 return MessageResult(CommandResult::Accepted);
