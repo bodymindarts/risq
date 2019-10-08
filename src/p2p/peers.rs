@@ -6,13 +6,14 @@ use super::{
     dispatch::{self, ActorDispatcher, Receive, SendableDispatcher},
     server::event::*,
 };
-use crate::bisq::{
-    constants::{self, BaseCurrencyNetwork, Capability, CloseConnectionReason, LOCAL_CAPABILITIES},
-    payload::*,
-};
-use actix::{
-    fut::{self, ActorFuture, ActorStream, Either},
-    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message,
+use crate::{
+    bisq::{
+        constants::{
+            self, BaseCurrencyNetwork, Capability, CloseConnectionReason, LOCAL_CAPABILITIES,
+        },
+        payload::*,
+    },
+    prelude::{fut::Either, *},
 };
 use keep_alive::*;
 use std::{
@@ -20,7 +21,6 @@ use std::{
     convert::TryInto,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tokio::prelude::{future::Future, stream};
 
 const CONSOLIDATE_CONNECTIONS: Duration = Duration::from_secs(60);
 const MAX_CONNECTIONS: usize = 12;

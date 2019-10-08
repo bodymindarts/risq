@@ -1,10 +1,12 @@
-use actix::MailboxError;
+use crate::prelude::{
+    sync::{
+        mpsc::error::{RecvError, SendError},
+        oneshot,
+    },
+    MailboxError,
+};
 use prost::{DecodeError, EncodeError};
 use std::io;
-use tokio::sync::{
-    mpsc::error::{RecvError, SendError},
-    oneshot,
-};
 
 #[derive(Debug)]
 pub enum Error {

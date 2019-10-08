@@ -3,9 +3,8 @@ use crate::{
     bisq::payload::{kind::*, *},
     domain::offer::{message::*, OfferBook},
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
+    prelude::*,
 };
-use actix::{Actor, Addr, Arbiter, Context, Handler, MailboxError};
-use tokio::prelude::future::{Either, Future};
 
 pub struct DataRouter {
     offer_book: Addr<OfferBook>,
@@ -14,8 +13,8 @@ pub struct DataRouter {
 impl Actor for DataRouter {
     type Context = Context<Self>;
 }
-trait ResultHandler: Fn(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
-impl<F> ResultHandler for F where F: Fn(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
+trait ResultHandler: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
+impl<F> ResultHandler for F where F: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
 
 impl DataRouter {
     pub fn start(offer_book: Addr<OfferBook>, broadcaster: Addr<Broadcaster>) -> Addr<DataRouter> {
@@ -37,7 +36,7 @@ impl DataRouter {
             if let Ok(CommandResult::Accepted) = result {
                 Arbiter::spawn(
                     broadcaster
-                        .send(Broadcast(original.clone(), Some(origin)))
+                        .send(Broadcast(original, Some(origin)))
                         .then(|_| Ok(())),
                 );
             }

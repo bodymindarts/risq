@@ -4,8 +4,8 @@ use crate::{
         BisqHash,
     },
     domain::offer::{message::*, *},
+    prelude::{sha256, Hash},
 };
-use bitcoin_hashes::{sha256, Hash};
 use std::time::{Duration, SystemTime};
 
 pub fn refresh_offer(msg: &RefreshOfferMessage) -> RefreshOffer {

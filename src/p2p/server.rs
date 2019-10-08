@@ -4,16 +4,17 @@ use super::{
     peers::Peers,
     tor::{AddOnionConfig, TorControl},
 };
-use crate::bisq::payload::NodeAddress;
-use actix::{Actor, Addr, Arbiter, AsyncContext, Context, StreamHandler};
-use std::io;
+use crate::{
+    bisq::payload::NodeAddress,
+    prelude::{
+        net::{TcpListener, TcpStream},
+        *,
+    },
+};
 use std::{
+    io,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     path::PathBuf,
-};
-use tokio::{
-    net::{TcpListener, TcpStream},
-    prelude::future::Future,
 };
 
 pub struct TorConfig {

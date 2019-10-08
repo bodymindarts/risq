@@ -1,8 +1,7 @@
 use super::connection::ConnectionId;
-use crate::bisq::payload::*;
-use actix::{dev::ToEnvelope, Actor, Addr, Arbiter, Handler, Message};
+use crate::{bisq::payload::*, prelude::*};
+use actix::dev::ToEnvelope;
 use std::marker::PhantomData;
-use tokio::prelude::future::Future;
 
 pub enum Dispatch {
     Consumed,

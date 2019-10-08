@@ -2,12 +2,14 @@ use super::dispatch::{Dispatch, Dispatcher, SendableDispatcher};
 use crate::{
     bisq::{constants::CloseConnectionReason, correlation::*, payload::*},
     error,
-};
-use actix::{
-    self,
-    fut::{self, ActorFuture},
-    prelude::ActorContext,
-    Actor, Addr, Arbiter, AsyncContext, Context, Handler, StreamHandler,
+    prelude::{
+        future::Either,
+        io::{flush, write_all, AsyncRead, ReadHalf},
+        net::TcpStream,
+        reactor::Handle,
+        sync::{mpsc, oneshot},
+        *,
+    },
 };
 use prost::encoding::{decode_varint, encoded_len_varint};
 use prost::Message;
@@ -15,20 +17,8 @@ use socks::Socks5Stream;
 use std::{
     collections::{HashMap, VecDeque},
     io,
-    iter::FromIterator,
     net::ToSocketAddrs,
     thread,
-};
-use tokio::{
-    io::{flush, write_all, AsyncRead, ReadHalf},
-    net::TcpStream,
-    prelude::{
-        future::{self, Either, Future, IntoFuture, Loop},
-        stream::Stream,
-        Async, Sink,
-    },
-    reactor::Handle,
-    sync::{mpsc, oneshot},
 };
 use uuid::Uuid;
 

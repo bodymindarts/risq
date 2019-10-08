@@ -1,10 +1,8 @@
-use bitcoin_hashes as hashes;
-use bufstream::BufStream;
-use hashes::{
-    hex::{FromHex, ToHex},
+use crate::prelude::{
     hmac::{Hmac, HmacEngine},
-    sha256, Hash, HashEngine,
+    sha256, FromHex, Hash, HashEngine, ToHex,
 };
+use bufstream::BufStream;
 use rand::Rng;
 use std::{
     convert::TryFrom,

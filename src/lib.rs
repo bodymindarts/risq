@@ -5,6 +5,7 @@ mod daemon;
 mod domain;
 mod error;
 mod p2p;
+mod prelude;
 
 pub mod cli;
 

@@ -1,5 +1,5 @@
 use super::payload::*;
-use bitcoin_hashes::{ripemd160, sha256, Hash};
+use crate::prelude::{ripemd160, sha256, Hash};
 use prost::Message;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

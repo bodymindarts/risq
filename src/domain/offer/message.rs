@@ -1,6 +1,5 @@
 use super::{open_offer::OfferSequence, OpenOffer};
-use crate::bisq::BisqHash;
-use actix::Message;
+use crate::{bisq::BisqHash, prelude::Message};
 
 pub enum CommandResult {
     Accepted,

@@ -1,12 +1,13 @@
 use super::responses::*;
-use crate::domain::offer::{message::GetOpenOffers, OfferBook};
-use actix::Addr;
+use crate::{
+    domain::offer::{message::GetOpenOffers, OfferBook},
+    prelude::{Addr, Future},
+};
 use actix_web::{
     web::{self, Data},
     App, Error, HttpServer, Result,
 };
 use std::io;
-use tokio::prelude::future::Future;
 
 pub fn listen(port: u16, offer_book: Addr<OfferBook>) -> Result<(), io::Error> {
     let data = web::Data::new(offer_book);

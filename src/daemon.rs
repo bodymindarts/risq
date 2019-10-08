@@ -6,8 +6,8 @@ use crate::{
     bisq::constants::BaseCurrencyNetwork,
     domain::offer::*,
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Broadcaster, Peers, TorConfig},
+    prelude::*,
 };
-use actix::{Arbiter, System};
 use data_router::*;
 use std::fs;
 

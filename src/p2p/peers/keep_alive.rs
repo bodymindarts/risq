@@ -5,10 +5,7 @@ use crate::{
         connection::{Connection, ConnectionId, Payload, Request},
         dispatch::Receive,
     },
-};
-use actix::{
-    fut::{self, ActorFuture},
-    Actor, Addr, Arbiter, AsyncContext, Context, Handler, Message, MessageResult, WeakAddr,
+    prelude::*,
 };
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
@@ -16,7 +13,6 @@ use std::{
     collections::HashMap,
     time::{Duration, SystemTime},
 };
-use tokio::prelude::future::Future;
 
 lazy_static! {
     static ref LOOP_INTERVAL_SEC: u64 = thread_rng().gen::<u64>() % 5 + 30;

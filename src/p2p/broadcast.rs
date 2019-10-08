@@ -2,10 +2,8 @@ use super::{
     connection::{Connection, ConnectionId, Payload},
     peers::event::ConnectionAdded,
 };
-use crate::bisq::payload::network_envelope;
-use actix::{Actor, Addr, Arbiter, Context, Handler, Message, WeakAddr};
+use crate::{bisq::payload::network_envelope, prelude::*};
 use std::collections::HashMap;
-use tokio::prelude::future::Future;
 
 pub struct Broadcaster {
     connections: HashMap<ConnectionId, WeakAddr<Connection>>,

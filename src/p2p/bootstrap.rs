@@ -11,13 +11,9 @@ use crate::{
         BisqHash,
     },
     error::Error,
-};
-use actix::{
-    fut::{self, ActorFuture},
-    Actor, ActorContext, Addr, AsyncContext, Context, Handler,
+    prelude::{sync::oneshot, *},
 };
 use rand::{seq::SliceRandom, thread_rng};
-use tokio::{prelude::future::Future, sync::oneshot};
 
 pub struct Bootstrap<D: SendableDispatcher> {
     network: BaseCurrencyNetwork,
