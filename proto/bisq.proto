@@ -521,7 +521,7 @@ message Alert {
     bool is_update_info = 3;
     string signature_as_base64 = 4;
     bytes owner_pub_key_bytes = 5;
-    map<string, string> extra_data = 6;
+    repeated StringMapEntry extra_data = 6;
 }
 
 message Arbitrator {
@@ -535,7 +535,7 @@ message Arbitrator {
     string btc_address = 8;
     string email_address = 9;
     string info = 10;
-    map<string, string> extra_data = 11;
+    repeated StringMapEntry extra_data = 11;
 }
 
 message Mediator {
@@ -547,7 +547,7 @@ message Mediator {
     PubKeyRing pub_key_ring = 6;
     string email_address = 7;
     string info = 8;
-    map<string, string> extra_data = 9;
+    repeated StringMapEntry extra_data = 9;
 }
 
 message Filter {
@@ -556,7 +556,7 @@ message Filter {
     repeated PaymentAccountFilter banned_payment_accounts = 3;
     string signature_as_base64 = 4;
     bytes owner_pub_key_bytes = 5;
-    map<string, string> extra_data = 6;
+    repeated StringMapEntry extra_data = 6;
     repeated string banned_currencies = 7;
     repeated string banned_payment_methods = 8;
     repeated string arbitrators = 9;
@@ -588,7 +588,7 @@ message TradeStatistics {
     string offer_id = 13;
     string deposit_tx_id = 14;
     bytes signature_pub_key_bytes = 15;
-    map<string, string> extra_data = 16;
+    repeated StringMapEntry extra_data = 16;
 }
 
 message TradeStatistics2 {
@@ -607,14 +607,14 @@ message TradeStatistics2 {
     string offer_id = 13;
     string deposit_tx_id = 14;
     bytes hash = 15;
-    map<string, string> extra_data = 16;
+    repeated StringMapEntry extra_data = 16;
 }
 
 message MailboxStoragePayload {
     PrefixedSealedAndSignedMessage prefixed_sealed_and_signed_message = 1;
     bytes sender_pub_key_for_add_operation_bytes = 2;
     bytes owner_pub_key_bytes = 3;
-    map<string, string> extra_data = 4;
+    repeated StringMapEntry extra_data = 4;
 }
 
 message OfferPayload {
@@ -660,7 +660,7 @@ message OfferPayload {
     int64 upper_close_price = 34;
     bool is_private_offer = 35;
     string hash_of_challenge = 36;
-    map<string, string> extra_data = 37;
+    repeated StringMapEntry extra_data = 37;
     int32 protocol_version = 38;
 }
 
@@ -830,7 +830,7 @@ message PaymentAccountPayload {
         InstantCryptoCurrencyAccountPayload instant_crypto_currency_account_payload = 27;
         JapanBankAccountPayload japan_bank_account_payload = 28;
     }
-    map<string, string> exclude_from_json_data = 15;
+    repeated StringMapEntry exclude_from_json_data = 15;
 }
 
 message AliPayAccountPayload {
@@ -1425,7 +1425,7 @@ message PreferencesPayload {
     bool resync_Spv_requested = 23;
     bool sort_market_currencies_numerically = 24;
     bool use_percentage_based_price = 25;
-    map<string, string> peer_tag_map = 26;
+    repeated StringMapEntry peer_tag_map = 26;
     string bitcoin_nodes = 27;
     repeated string ignore_traders_list = 28;
     string directory_chooser_path = 29;
@@ -1683,7 +1683,7 @@ message Proposal {
         RemoveAssetProposal remove_asset_proposal = 12;
     }
     // We leave some index space here in case we add more subclasses
-    map<string, string> extra_data = 20;
+    repeated StringMapEntry extra_data = 20;
 }
 
 message CompensationProposal {
@@ -1750,7 +1750,7 @@ message UnconfirmedBsqChangeOutputList {
 message TempProposalPayload {
     Proposal proposal = 1;
     bytes owner_pub_key_encoded = 2;
-    map<string, string> extra_data = 3;
+    repeated StringMapEntry extra_data = 3;
 }
 
 message ProposalPayload {
@@ -1817,7 +1817,7 @@ message BlindVote {
     int64 stake = 3;
     bytes encrypted_merit_list = 4;
     int64 date = 5;
-    map<string, string> extra_data = 6;
+    repeated StringMapEntry extra_data = 6;
 }
 
 message MyBlindVoteList {
@@ -1984,4 +1984,9 @@ message MockMailboxPayload {
 message MockPayload {
     string message_version = 1;
     string message = 2;
+}
+
+message StringMapEntry{
+  string key = 1;
+  string value = 2;
 }

@@ -789,8 +789,8 @@ pub struct Alert {
     pub signature_as_base64: std::string::String,
     #[prost(bytes, tag="5")]
     pub owner_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(map="string, string", tag="6")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="6")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Arbitrator {
@@ -814,8 +814,8 @@ pub struct Arbitrator {
     pub email_address: std::string::String,
     #[prost(string, tag="10")]
     pub info: std::string::String,
-    #[prost(map="string, string", tag="11")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="11")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Mediator {
@@ -835,8 +835,8 @@ pub struct Mediator {
     pub email_address: std::string::String,
     #[prost(string, tag="8")]
     pub info: std::string::String,
-    #[prost(map="string, string", tag="9")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="9")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Filter {
@@ -850,8 +850,8 @@ pub struct Filter {
     pub signature_as_base64: std::string::String,
     #[prost(bytes, tag="5")]
     pub owner_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(map="string, string", tag="6")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="6")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
     #[prost(string, repeated, tag="7")]
     pub banned_currencies: ::std::vec::Vec<std::string::String>,
     #[prost(string, repeated, tag="8")]
@@ -909,8 +909,8 @@ pub struct TradeStatistics {
     pub deposit_tx_id: std::string::String,
     #[prost(bytes, tag="15")]
     pub signature_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(map="string, string", tag="16")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="16")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TradeStatistics2 {
@@ -944,8 +944,8 @@ pub struct TradeStatistics2 {
     pub deposit_tx_id: std::string::String,
     #[prost(bytes, tag="15")]
     pub hash: std::vec::Vec<u8>,
-    #[prost(map="string, string", tag="16")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="16")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MailboxStoragePayload {
@@ -955,8 +955,8 @@ pub struct MailboxStoragePayload {
     pub sender_pub_key_for_add_operation_bytes: std::vec::Vec<u8>,
     #[prost(bytes, tag="3")]
     pub owner_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(map="string, string", tag="4")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="4")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OfferPayload {
@@ -1034,8 +1034,8 @@ pub struct OfferPayload {
     pub is_private_offer: bool,
     #[prost(string, tag="36")]
     pub hash_of_challenge: std::string::String,
-    #[prost(map="string, string", tag="37")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="37")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
     #[prost(int32, tag="38")]
     pub protocol_version: i32,
 }
@@ -1253,8 +1253,8 @@ pub struct PaymentAccountPayload {
     /// not used anymore but we need to keep it in PB for backward compatibility
     #[prost(int64, tag="3")]
     pub max_trade_period: i64,
-    #[prost(map="string, string", tag="15")]
-    pub exclude_from_json_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="15")]
+    pub exclude_from_json_data: ::std::vec::Vec<StringMapEntry>,
     #[prost(oneof="payment_account_payload::Message", tags="4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28")]
     pub message: ::std::option::Option<payment_account_payload::Message>,
 }
@@ -2164,8 +2164,8 @@ pub struct PreferencesPayload {
     pub sort_market_currencies_numerically: bool,
     #[prost(bool, tag="25")]
     pub use_percentage_based_price: bool,
-    #[prost(map="string, string", tag="26")]
-    pub peer_tag_map: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="26")]
+    pub peer_tag_map: ::std::vec::Vec<StringMapEntry>,
     #[prost(string, tag="27")]
     pub bitcoin_nodes: std::string::String,
     #[prost(string, repeated, tag="28")]
@@ -2486,8 +2486,8 @@ pub struct Proposal {
     #[prost(string, tag="5")]
     pub tx_id: std::string::String,
     /// We leave some index space here in case we add more subclasses
-    #[prost(map="string, string", tag="20")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="20")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
     #[prost(oneof="proposal::Message", tags="6, 7, 8, 9, 10, 11, 12")]
     pub message: ::std::option::Option<proposal::Message>,
 }
@@ -2601,8 +2601,8 @@ pub struct TempProposalPayload {
     pub proposal: ::std::option::Option<Proposal>,
     #[prost(bytes, tag="2")]
     pub owner_pub_key_encoded: std::vec::Vec<u8>,
-    #[prost(map="string, string", tag="3")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="3")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ProposalPayload {
@@ -2696,8 +2696,8 @@ pub struct BlindVote {
     pub encrypted_merit_list: std::vec::Vec<u8>,
     #[prost(int64, tag="5")]
     pub date: i64,
-    #[prost(map="string, string", tag="6")]
-    pub extra_data: ::std::collections::HashMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="6")]
+    pub extra_data: ::std::vec::Vec<StringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MyBlindVoteList {
@@ -2941,6 +2941,13 @@ pub struct MockPayload {
     pub message_version: std::string::String,
     #[prost(string, tag="2")]
     pub message: std::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StringMapEntry {
+    #[prost(string, tag="1")]
+    pub key: std::string::String,
+    #[prost(string, tag="2")]
+    pub value: std::string::String,
 }
 // dispute
 
