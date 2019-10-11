@@ -19,5 +19,8 @@ check:
 test:
 	cargo watch -x test
 
+test-checker:
+	cargo watch -s 'cargo test --features "checker"'
+
 run-tor:
 	scripts/run-tor

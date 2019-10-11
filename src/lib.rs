@@ -1,6 +1,8 @@
 mod api;
 #[macro_use]
 mod bisq;
+#[cfg(feature = "checker")]
+mod checker;
 mod daemon;
 mod domain;
 mod error;

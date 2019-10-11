@@ -6,3 +6,4 @@ pub mod payload;
 pub mod correlation;
 
 pub use hash::BisqHash;
+pub use payload::NodeAddress;

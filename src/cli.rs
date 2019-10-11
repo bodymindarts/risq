@@ -1,6 +1,8 @@
+#[cfg(feature = "checker")]
+use crate::checker;
 use crate::{
     api::{responses::*, Client},
-    bisq::constants::*,
+    bisq::{constants::*, NodeAddress},
     daemon::{self, DaemonConfig},
     p2p::TorConfig,
 };
@@ -57,7 +59,7 @@ pub fn run() -> () {
         ("daemon", Some(matches)) => daemon(matches),
         ("offers", Some(matches)) => offers(matches),
         #[cfg(feature = "checker")]
-        ("check-node", Some(matches)) => check_seed(matches),
+        ("check-node", Some(matches)) => check_node(matches),
         _ => unreachable!(),
     }
 }
@@ -147,8 +149,9 @@ fn display_offer_summary(offer: Offer) {
 }
 
 #[cfg(feature = "checker")]
-fn check_seed(matches: &ArgMatches) {
-    println!("HELLO");
-    println!("matches: {:?}", matches);
-    ()
+fn check_node(matches: &ArgMatches) {
+    let socks_port = matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap();
+    let host_name: String = matches.value_of("NODE_HOST").unwrap().into();
+    let port = matches.value_of("NODE_PORT").unwrap().parse().unwrap();
+    checker::check_node(NodeAddress { host_name, port }, socks_port);
 }

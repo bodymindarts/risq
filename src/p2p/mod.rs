@@ -9,7 +9,7 @@ pub mod server;
 
 pub use bootstrap::Bootstrap;
 pub use broadcast::Broadcaster;
-pub use connection::ConnectionId;
+pub use connection::{Connection, ConnectionId};
 pub use peers::Peers;
 pub use server::TorConfig;
 
