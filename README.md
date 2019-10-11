@@ -91,3 +91,11 @@ As this is a proof of concept there are a number of limitations.
 - Only 1 connection to a seed node is currently established. If the initial data sync fails then daemon will not bootstrap properly or be able to join the p2p network.
 - Currently only 1 read-only endpoint is provided (offers).
 - Not much effort has been made to make the output look pretty or be perticularly usefull other than seeing that things are alive.
+
+## Node Checker
+
+To build and run the node checker do the following:
+```
+make build-with-checker
+./target/debug/risq check-node 5quyxpxheyvzmb2d.onion 8000
+```
