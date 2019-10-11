@@ -105,4 +105,3 @@ it has the following exit codes:
 - 1 - Connection couldn't be established
 - 2 - Ping couldn't be sent
 - 3 - Issue while waiting for Pong
-```
