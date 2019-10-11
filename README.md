@@ -99,3 +99,10 @@ To build and run the node checker do the following:
 make build-with-checker
 ./target/debug/risq check-node 5quyxpxheyvzmb2d.onion 8000
 ```
+
+it has the following exit codes:
+- 0 - Ping - Pong succeeded
+- 1 - Connection couldn't be established
+- 2 - Ping couldn't be sent
+- 3 - Issue while waiting for Pong
+```
