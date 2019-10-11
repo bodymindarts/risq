@@ -40,6 +40,13 @@ fn app() -> App<'static, 'static> {
                         .validator(port)
                         .default_value("9050"),
                 )
+                .arg(
+                    Arg::with_name("NETWORK")
+                        .long("network")
+                        .short("n")
+                        .validator(network)
+                        .default_value("BtcMainnet"),
+                )
                 .arg(Arg::with_name("NODE_HOST").index(1).required(true))
                 .arg(
                     Arg::with_name("NODE_PORT")
@@ -153,5 +160,6 @@ fn check_node(matches: &ArgMatches) {
     let socks_port = matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap();
     let host_name: String = matches.value_of("NODE_HOST").unwrap().into();
     let port = matches.value_of("NODE_PORT").unwrap().parse().unwrap();
-    checker::check_node(NodeAddress { host_name, port }, socks_port);
+    let network: BaseCurrencyNetwork = matches.value_of("NETWORK").unwrap().parse().unwrap();
+    checker::check_node(network, NodeAddress { host_name, port }, socks_port);
 }
