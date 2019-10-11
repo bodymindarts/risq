@@ -26,4 +26,4 @@ run-tor:
 	scripts/run-tor
 
 no-of-deps:
-	cargo tree | grep -v '(*)' | wc -l
+	cargo tree | grep -v '(*)' | grep -v '\[' | wc -l
