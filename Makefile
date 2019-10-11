@@ -4,6 +4,9 @@ generate-protocols:
 build:
 	cargo build
 
+build-with-checker:
+	cargo build --features "checker"
+
 run: build
 	RUST_LOG=debug target/debug/risq daemon
 

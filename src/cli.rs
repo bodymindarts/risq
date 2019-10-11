@@ -4,11 +4,11 @@ use crate::{
     daemon::{self, DaemonConfig},
     p2p::TorConfig,
 };
-use clap::{clap_app, crate_version, App, ArgMatches};
+use clap::{clap_app, crate_version, App, Arg, ArgMatches, SubCommand};
 use std::str::FromStr;
 
 fn app() -> App<'static, 'static> {
-    clap_app!(risq =>
+    let app = clap_app!(risq =>
         (version: crate_version!())
         (@setting VersionlessSubcommands)
         (@setting SubcommandRequiredElseHelp)
@@ -27,7 +27,28 @@ fn app() -> App<'static, 'static> {
          (about: "Subcomand to interact with offers")
          (@arg API_PORT: --("api-port") default_value("7477") {port} "API port")
         )
-    )
+    );
+    if cfg!(feature = "checker") {
+        app.subcommand(
+            SubCommand::with_name("check-node")
+                .about("Send a ping to a node. Used for monitoring.")
+                .arg(
+                    Arg::with_name("TOR_SOCKS_PORT")
+                        .long("tor-socks-port")
+                        .validator(port)
+                        .default_value("9050"),
+                )
+                .arg(Arg::with_name("NODE_HOST").index(1).required(true))
+                .arg(
+                    Arg::with_name("NODE_PORT")
+                        .index(2)
+                        .required(true)
+                        .validator(port),
+                ),
+        )
+    } else {
+        app
+    }
 }
 
 pub fn run() -> () {
@@ -35,6 +56,8 @@ pub fn run() -> () {
     match matches.subcommand() {
         ("daemon", Some(matches)) => daemon(matches),
         ("offers", Some(matches)) => offers(matches),
+        #[cfg(feature = "checker")]
+        ("check-node", Some(matches)) => check_seed(matches),
         _ => unreachable!(),
     }
 }
@@ -121,4 +144,11 @@ fn display_offer_summary(offer: Offer) {
         format!("{}", offer.price.market_margin.unwrap())
     });
     println!("{} {}({})", dis, offer.amount, offer.min_amount)
+}
+
+#[cfg(feature = "checker")]
+fn check_seed(matches: &ArgMatches) {
+    println!("HELLO");
+    println!("matches: {:?}", matches);
+    ()
 }
