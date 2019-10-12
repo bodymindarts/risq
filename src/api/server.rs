@@ -15,7 +15,7 @@ pub fn listen(port: u16, offer_book: Addr<OfferBook>) -> Result<(), io::Error> {
         App::new()
             .register_data(data.clone())
             .route("/ping", web::get().to(|| "pong"))
-            .route("/offers", web::get().to(get_offers))
+            .route("/offers", web::get().to_async(get_offers))
     })
     .workers(1)
     .bind(("127.0.0.1", port))?
@@ -23,13 +23,11 @@ pub fn listen(port: u16, offer_book: Addr<OfferBook>) -> Result<(), io::Error> {
     Ok(())
 }
 
-type FutureJsonResponse<T> = Box<dyn Future<Item = web::Json<T>, Error = Error>>;
-
-fn get_offers(data: Data<Addr<OfferBook>>) -> FutureJsonResponse<GetOffers> {
-    Box::new(
-        data.get_ref()
-            .send(GetOpenOffers)
-            .map(|offers| web::Json(GetOffers::from(offers)))
-            .map_err(|e| e.into()),
-    )
+fn get_offers(
+    data: Data<Addr<OfferBook>>,
+) -> impl Future<Item = web::Json<GetOffers>, Error = Error> {
+    data.get_ref()
+        .send(GetOpenOffers)
+        .map(|offers| web::Json(GetOffers::from(offers)))
+        .map_err(|e| e.into())
 }
