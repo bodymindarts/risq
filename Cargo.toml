@@ -9,6 +9,7 @@ edition = "2018"
 [features]
 default = []
 checker = []
+stats = ["juniper"]
 
 [dependencies]
 actix = "*"
@@ -20,6 +21,7 @@ bytes = "*"
 dirs = "*"
 env_logger = "*"
 futures = "*"
+juniper = { version = "*", optional = true }
 lazy_static = "*"
 log = "*"
 prost = "*"
