@@ -4,11 +4,14 @@ use crate::{
     domain::offer::{message::*, OfferBook},
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
     prelude::*,
+    stats::StatsCache,
 };
 
 pub struct DataRouter {
     offer_book: Addr<OfferBook>,
     broadcaster: Addr<Broadcaster>,
+    #[cfg(feature = "stats")]
+    stats_cache: StatsCache,
 }
 impl Actor for DataRouter {
     type Context = Context<Self>;
@@ -17,10 +20,16 @@ trait ResultHandler: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), (
 impl<F> ResultHandler for F where F: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
 
 impl DataRouter {
-    pub fn start(offer_book: Addr<OfferBook>, broadcaster: Addr<Broadcaster>) -> Addr<DataRouter> {
+    pub fn start(
+        offer_book: Addr<OfferBook>,
+        broadcaster: Addr<Broadcaster>,
+        stats_cache: Option<StatsCache>,
+    ) -> Addr<DataRouter> {
         DataRouter {
             offer_book,
             broadcaster,
+            #[cfg(feature = "stats")]
+            stats_cache: stats_cache.expect("StatsCache missing"),
         }
         .start()
     }

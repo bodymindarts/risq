@@ -7,6 +7,7 @@ use crate::{
     domain::offer::*,
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Broadcaster, Peers, TorConfig},
     prelude::*,
+    stats::StatsCache,
 };
 use data_router::*;
 use std::{fs, sync::Arc};
@@ -35,7 +36,12 @@ pub fn run(
     let sys = System::new("risq");
     let broadcaster = Broadcaster::start();
     let offer_book = OfferBook::start();
-    let data_router = DataRouter::start(offer_book.clone(), broadcaster.clone());
+    let stats_cache = StatsCache::new();
+    let data_router = DataRouter::start(
+        offer_book.clone(),
+        broadcaster.clone(),
+        stats_cache.as_ref().map(Clone::clone),
+    );
     let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
 
     Arbiter::new().exec_fn(move || {
@@ -43,7 +49,7 @@ pub fn run(
         // let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
         // server::start(server_port, peers, bootstrap, tor_config);
     });
-    let _ = api::listen(api_port, offer_book, Some(crate::stats::StatsCache::new()));
+    let _ = api::listen(api_port, offer_book, stats_cache);
 
     let _ = sys.run();
 }

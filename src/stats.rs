@@ -1,3 +1,6 @@
+#[cfg(feature = "stats")]
+pub use inner::*;
+#[cfg(feature = "stats")]
 mod inner {
     use crate::bisq::payload::TradeStatistics2;
     use crate::prelude::*;
@@ -60,19 +63,28 @@ mod inner {
     impl juniper::Context for StatsCache {}
 
     impl StatsCache {
-        pub fn new() -> Self {
-            Self {
+        pub fn new() -> Option<Self> {
+            Some(Self {
                 statistics: Arc::new(locks::RwLock::new(Vec::new())),
-            }
+            })
         }
     }
 }
 
+#[cfg(not(feature = "stats"))]
+pub use empty::*;
+#[cfg(not(feature = "stats"))]
 mod empty {
     use crate::prelude::*;
     use actix_web::{Error, HttpResponse};
 
+    #[derive(Clone)]
     pub struct StatsCache;
+    impl StatsCache {
+        pub fn new() -> Option<Self> {
+            None
+        }
+    }
     pub struct Schema;
     pub fn create_schema() -> Schema {
         Schema
@@ -84,8 +96,3 @@ mod empty {
         HttpResponse::Ok().finish()
     }
 }
-
-#[cfg(not(feature = "stats"))]
-pub use empty::*;
-#[cfg(feature = "stats")]
-pub use inner::*;
