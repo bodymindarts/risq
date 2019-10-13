@@ -5,6 +5,8 @@ use juniper::{
     http::{graphiql::graphiql_source, GraphQLRequest},
     EmptyMutation, FieldResult, GraphQLInputObject, RootNode,
 };
+#[macro_use]
+use juniper_from_schema::graphql_schema_from_file;
 use std::sync::Arc;
 
 pub fn graphql(
@@ -12,7 +14,7 @@ pub fn graphql(
     data: web::Json<GraphQLRequest>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     web::block(move || {
-        let res = data.execute(&st, &());
+        let res = data.execute(&st, &Context);
         Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
     })
     .map_err(Error::from)
@@ -29,45 +31,24 @@ pub fn graphiql() -> HttpResponse {
         .body(html)
 }
 
-#[derive(juniper::GraphQLEnum)]
-enum Episode {
-    NewHope,
-    Empire,
-    Jedi,
-}
+graphql_schema_from_file!("src/api/stats_schema.graphql");
 
-#[derive(juniper::GraphQLObject)]
-#[graphql(description = "A humanoid creature in the Star Wars universe")]
-struct Human {
-    id: String,
-    name: String,
-    appears_in: Vec<Episode>,
-    home_planet: String,
-}
+pub struct Context;
+impl juniper::Context for Context {}
 
-#[derive(juniper::GraphQLInputObject)]
-#[graphql(description = "A humanoid creature in the Star Wars universe")]
-struct NewHuman {
-    name: String,
-    appears_in: Vec<Episode>,
-    home_planet: String,
-}
-
-pub struct QueryRoot;
-
-graphql_object!(QueryRoot: () |&self| {
-    field human(&executor, id: String) -> FieldResult<Human> {
-        Ok(Human{
-            id: "1234".to_owned(),
-            name: "Luke".to_owned(),
-            appears_in: vec![Episode::NewHope],
-            home_planet: "Mars".to_owned(),
-        })
+pub struct Query;
+impl QueryFields for Query {
+    fn field_hello_world(
+        &self,
+        executor: &juniper::Executor<'_, Context>,
+        name: String,
+    ) -> juniper::FieldResult<String> {
+        Ok(format!("Hello, {}!", name))
     }
-});
+}
 
-pub type Schema = RootNode<'static, QueryRoot, EmptyMutation<()>>;
+type Mutation = EmptyMutation<Context>;
 
 pub fn create_schema() -> Schema {
-    Schema::new(QueryRoot {}, EmptyMutation::new())
+    Schema::new(Query {}, EmptyMutation::new())
 }
