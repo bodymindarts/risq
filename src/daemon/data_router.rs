@@ -3,11 +3,11 @@ use crate::{
     bisq::payload::{kind::*, *},
     domain::{
         offer::{message::*, OfferBook},
+        stats::StatsCache,
         CommandResult,
     },
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
     prelude::*,
-    stats::StatsCache,
 };
 
 pub struct DataRouter {

@@ -8,7 +8,6 @@ mod domain;
 mod error;
 mod p2p;
 mod prelude;
-mod stats;
 
 pub mod cli;
 
