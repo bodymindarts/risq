@@ -7,6 +7,7 @@ use crate::{
         Async, Stream,
     },
 };
+use futures::try_ready;
 use prost::{encoding::decode_varint, Message};
 use std::{collections::VecDeque, io};
 
