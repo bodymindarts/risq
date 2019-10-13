@@ -10,11 +10,12 @@ use juniper_from_schema::graphql_schema_from_file;
 use std::sync::Arc;
 
 pub fn graphql(
-    data: web::Data<(Arc<Schema>, Arc<StatsLog>)>,
+    schema: web::Data<Arc<Schema>>,
+    log: web::Data<StatsLog>,
     request: web::Json<GraphQLRequest>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     web::block(move || {
-        let res = request.execute(&data.0, &data.1);
+        let res = request.execute(&schema, &log);
         Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
     })
     .map_err(Error::from)

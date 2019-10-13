@@ -28,11 +28,12 @@ pub fn listen(
             .route("/offers", web::get().to_async(get_offers));
 
         if cfg!(feature = "stats") {
-            app.data((
-                schema.clone().unwrap(),
-                stats_log.clone().expect("No stats log"),
-            ))
-            .service(web::resource("/graphql").route(web::post().to_async(graphql)))
+            app.service(
+                web::resource("/graphql")
+                    .data(schema.clone().unwrap())
+                    .data(stats_log.clone().expect("No stats log"))
+                    .route(web::post().to_async(graphql)),
+            )
             .service(web::resource("/graphiql").route(web::get().to(graphiql)))
         } else {
             app
