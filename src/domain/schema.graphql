@@ -3,12 +3,12 @@ schema {
 }
 
 type Query {
-  trades: [Trade!]! @juniper(ownership: "as_ref")
+  trades: [Trade!]! @juniper(ownership: "owned"),
 }
 
 type Trade {
-  currency: String! @juniper(ownership: "owned"),
-  # direction: Direction,
+  # currency: String! @juniper(ownership: "owned"),
+  direction: Direction! @juniper(ownership: "owned"),
   # tradePrice: Int,
   # tradeAmount: Int,
   # paymentMethod: String,

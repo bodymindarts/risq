@@ -6,6 +6,7 @@ pub mod kind;
 use super::constants::*;
 use rand::{thread_rng, Rng};
 use std::{
+    convert::TryFrom,
     io,
     net::{SocketAddr, ToSocketAddrs},
     vec,

@@ -13,7 +13,21 @@ use crate::{
     prelude::{sha256, Hash},
 };
 use iso4217::alpha3;
-use std::time::{Duration, SystemTime};
+use std::{
+    convert::TryFrom,
+    time::{Duration, SystemTime},
+};
+
+impl TryFrom<offer_payload::Direction> for OfferDirection {
+    type Error = ();
+    fn try_from(direction: offer_payload::Direction) -> Result<OfferDirection, Self::Error> {
+        match direction {
+            offer_payload::Direction::Buy => Ok(OfferDirection::Buy),
+            offer_payload::Direction::Sell => Ok(OfferDirection::Sell),
+            _ => Err(()),
+        }
+    }
+}
 
 pub fn refresh_offer(msg: &RefreshOfferMessage) -> RefreshOffer {
     RefreshOffer {
@@ -31,11 +45,10 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
     let storage_payload = entry.storage_payload?;
     let hash: BisqHash = (&storage_payload).into();
     if let storage_payload::Message::OfferPayload(payload) = storage_payload.message? {
-        let direction = match offer_payload::Direction::from_i32(payload.direction) {
-            Some(offer_payload::Direction::Buy) => Some(OfferDirection::Buy),
-            Some(offer_payload::Direction::Sell) => Some(OfferDirection::Sell),
-            _ => None,
-        }?;
+        let direction = offer_payload::Direction::from_i32(payload.direction)
+            .ok_or(())
+            .and_then(OfferDirection::try_from)
+            .ok()?;
         let price = if payload.use_market_based_price {
             OfferPrice::MarketWithMargin(payload.market_price_margin)
         } else {
@@ -62,8 +75,14 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
 pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistics::Trade> {
     let hash: BisqHash = (&payload).into();
     if let persistable_network_payload::Message::TradeStatistics2(payload) = payload.message? {
-        let currency = alpha3(&payload.base_currency)?.clone();
-        Some(statistics::Trade { hash, currency })
+        info!("direction: {:?}", payload.direction);
+        // let currency = alpha3(&payload.base_currency)?.clone();
+        let direction = offer_payload::Direction::from_i32(payload.direction)
+            .ok_or(())
+            .and_then(OfferDirection::try_from)
+            .ok()?;
+        // info!("currency is: {:?}", currency);
+        Some(statistics::Trade { hash, direction })
     } else {
         None
     }

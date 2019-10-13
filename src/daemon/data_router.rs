@@ -56,9 +56,16 @@ impl DataRouter {
         }
     }
 
-    fn route_bootstrap_data(&self, data: Vec<StorageEntryWrapper>) {
+    fn route_bootstrap_data(
+        &self,
+        data: Vec<StorageEntryWrapper>,
+        payloads: Vec<PersistableNetworkPayload>,
+    ) {
         data.into_iter().for_each(|w| {
             self.route_storage_entry_wrapper(Some(w), Self::ignore_command_result());
+        });
+        payloads.into_iter().for_each(|p| {
+            self.route_persistable_network_payload(Some(p), Self::ignore_command_result());
         })
     }
     fn route_storage_entry_wrapper(
@@ -100,11 +107,11 @@ impl DataRouter {
         let payload = payload?;
         match PersistableNetworkPayloadKind::from(&payload) {
             #[cfg(feature = "statistics")]
-            PersistableNetworkPayloadKind::TradeStatistics2 => Arbiter::spawn(
-                self.stats_cache
-                    .add(convert::trade_statistics2(payload).unwrap())
-                    .then(result_handler),
-            ),
+            PersistableNetworkPayloadKind::TradeStatistics2 => {
+                if let Some(trade) = convert::trade_statistics2(payload) {
+                    Arbiter::spawn(self.stats_cache.add(trade).then(result_handler))
+                }
+            }
             _ => (),
         }
         .into()
@@ -126,7 +133,9 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
         _ctx: &mut Self::Context,
     ) {
         match dispatch {
-            DataRouterDispatch::Bootstrap(data, _) => self.route_bootstrap_data(data),
+            DataRouterDispatch::Bootstrap(data, persistable_network_payloads) => {
+                self.route_bootstrap_data(data, persistable_network_payloads)
+            }
             DataRouterDispatch::RefreshOffer(msg) => Arbiter::spawn(
                 self.offer_book
                     .send(convert::refresh_offer(&msg))

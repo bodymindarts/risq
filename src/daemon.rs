@@ -45,8 +45,8 @@ pub fn run(
 
     Arbiter::new().exec_fn(move || {
         let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
-        // let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
-        // server::start(server_port, peers, bootstrap, tor_config);
+        let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
+        server::start(server_port, peers, bootstrap, tor_config);
     });
     let _ = api::listen(api_port, offer_book, stats_cache);
 

@@ -4,7 +4,7 @@ pub use inner::*;
 mod inner {
     use crate::{
         bisq::BisqHash,
-        domain::{CommandResult, FutureCommandResult},
+        domain::{offer::OfferDirection, CommandResult, FutureCommandResult},
         prelude::*,
     };
     use actix_web::{web, Error, HttpResponse};
@@ -15,23 +15,28 @@ mod inner {
         EmptyMutation, FieldResult, GraphQLInputObject, RootNode,
     };
     use juniper_from_schema::graphql_schema_from_file;
-    use std::sync::Arc;
+    use std::{collections::HashSet, str::FromStr, sync::Arc};
 
     pub fn graphql(
         schema: web::Data<Arc<Schema>>,
         cache: web::Data<StatsCache>,
         request: web::Json<GraphQLRequest>,
     ) -> impl Future<Item = HttpResponse, Error = Error> {
-        web::block(move || {
-            let res = request.execute(&schema, &cache);
-            Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
-        })
-        .map_err(Error::from)
-        .and_then(|user| {
-            Ok(HttpResponse::Ok()
-                .content_type("application/json")
-                .body(user))
-        })
+        cache
+            .inner()
+            .map_err(Error::from)
+            .and_then(|cache| {
+                web::block(move || {
+                    let res = request.execute(&schema, &cache);
+                    Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
+                })
+                .map_err(Error::from)
+            })
+            .and_then(|result| {
+                Ok(HttpResponse::Ok()
+                    .content_type("application/json")
+                    .body(result))
+            })
     }
     pub fn graphiql() -> HttpResponse {
         let html = graphiql_source("http://localhost:7477/graphql");
@@ -40,61 +45,88 @@ mod inner {
             .body(html)
     }
 
-    graphql_schema_from_file!("src/domain/schema.graphql", context_type: StatsCache);
+    graphql_schema_from_file!("src/domain/schema.graphql", context_type: Inner);
 
+    #[derive(Clone)]
     pub struct Trade {
-        pub currency: CurrencyCode,
+        // pub currency: CurrencyCode,
+        pub direction: OfferDirection,
         pub hash: BisqHash,
     }
 
     impl TradeFields for Trade {
-        fn field_currency(
+        // fn field_currency(&self, executor: &juniper::Executor<'_, Inner>) -> FieldResult<String> {
+        //     Ok(self.currency.alpha3.to_owned())
+        // }
+        fn field_direction(
             &self,
-            executor: &juniper::Executor<'_, StatsCache>,
-        ) -> FieldResult<String> {
-            Ok(self.currency.alpha3.to_owned())
+            executor: &juniper::Executor<'_, Inner>,
+        ) -> FieldResult<Direction> {
+            Ok(match self.direction {
+                OfferDirection::Sell => Direction::Sell,
+                OfferDirection::Buy => Direction::Buy,
+            })
         }
     }
 
     pub struct Query;
     impl QueryFields for Query {
-        fn field_trades(
+        fn field_trades<'a>(
             &self,
-            executor: &juniper::Executor<'_, StatsCache>,
+            executor: &juniper::Executor<'a, Inner>,
             trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
-        ) -> FieldResult<Vec<&Trade>> {
-            Ok(Vec::new())
+        ) -> FieldResult<Vec<Trade>> {
+            let cache = executor.context();
+            Ok(cache.trades.iter().cloned().collect())
         }
     }
 
-    type Mutation = EmptyMutation<StatsCache>;
+    type Mutation = EmptyMutation<Inner>;
 
     pub fn create_schema() -> Schema {
         Schema::new(Query {}, EmptyMutation::new())
     }
 
-    type StatsLogInner = Arc<locks::RwLock<Vec<Trade>>>;
     #[derive(Clone)]
     pub struct StatsCache {
-        statistics: StatsLogInner,
+        inner: Arc<locks::RwLock<Inner>>,
     }
-    impl juniper::Context for StatsCache {}
+    impl juniper::Context for Inner {}
+    pub struct Inner {
+        trades: Vec<Trade>,
+        hashes: HashSet<BisqHash>,
+    }
+    impl Inner {
+        fn add(&mut self, trade: Trade) -> CommandResult {
+            if self.hashes.insert(trade.hash) {
+                self.trades.push(trade);
+                CommandResult::Accepted
+            } else {
+                CommandResult::Ignored
+            }
+        }
+    }
 
     impl StatsCache {
         pub fn new() -> Option<Self> {
             Some(Self {
-                statistics: Arc::new(locks::RwLock::new(Vec::new())),
+                inner: Arc::new(locks::RwLock::new(Inner {
+                    trades: Vec::new(),
+                    hashes: HashSet::new(),
+                })),
             })
         }
 
         pub fn add(&self, trade: Trade) -> impl FutureCommandResult {
-            self.statistics
+            info!("Adding Trade");
+            self.inner
                 .write()
-                .map(move |mut guard| {
-                    guard.push(trade);
-                    CommandResult::Accepted
-                })
+                .map(move |mut inner| inner.add(trade))
                 .map_err(|_| MailboxError::Closed)
+        }
+
+        pub fn inner(&self) -> impl Future<Item = locks::RwLockReadGuard<Inner>, Error = ()> {
+            self.inner.read()
         }
     }
 }
