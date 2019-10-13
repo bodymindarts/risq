@@ -9,7 +9,7 @@ edition = "2018"
 [features]
 default = []
 checker = []
-stats = ["juniper"]
+stats = ["juniper", "juniper-from-schema"]
 
 [dependencies]
 actix = "*"
@@ -40,3 +40,4 @@ features = [ "suggestions", "color", "unstable"]
 
 [build-dependencies]
 prost-build = "*"
+juniper-from-schema = { version = "*", optional = true }
