@@ -73,7 +73,13 @@ mod inner {
         }
 
         pub fn add(&self, statistic: TradeStatistics2) -> impl FutureCommandResult {
-            future::ok(CommandResult::Accepted)
+            self.statistics
+                .write()
+                .map(move |mut guard| {
+                    guard.push(statistic);
+                    CommandResult::Accepted
+                })
+                .map_err(|_| MailboxError::Closed)
         }
     }
 }
