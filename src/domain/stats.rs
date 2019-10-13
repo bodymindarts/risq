@@ -2,8 +2,11 @@
 pub use inner::*;
 #[cfg(feature = "stats")]
 mod inner {
-    use crate::bisq::payload::TradeStatistics2;
-    use crate::prelude::*;
+    use crate::{
+        bisq::payload::TradeStatistics2,
+        domain::{CommandResult, FutureCommandResult},
+        prelude::*,
+    };
     use actix_web::{web, Error, HttpResponse};
     use juniper::{
         self, graphql_object,
@@ -67,6 +70,10 @@ mod inner {
             Some(Self {
                 statistics: Arc::new(locks::RwLock::new(Vec::new())),
             })
+        }
+
+        pub fn add(&self, statistic: TradeStatistics2) -> impl FutureCommandResult {
+            future::ok(CommandResult::Accepted)
         }
     }
 }

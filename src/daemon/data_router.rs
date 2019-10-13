@@ -99,7 +99,12 @@ impl DataRouter {
     ) -> Option<()> {
         let payload = payload?;
         match (&payload).into() {
-            PersistableNetworkPayloadKind::TradeStatistics2 => (),
+            #[cfg(feature = "stats")]
+            PersistableNetworkPayloadKind::TradeStatistics2 => Arbiter::spawn(
+                self.stats_cache
+                    .add(convert::trade_statistics2(payload).unwrap())
+                    .then(result_handler),
+            ),
             _ => (),
         }
         .into()

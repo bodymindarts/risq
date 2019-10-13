@@ -1,7 +1,10 @@
 pub mod offer;
 pub mod stats;
 
+use crate::prelude::*;
 pub enum CommandResult {
     Accepted,
     Ignored,
 }
+pub trait FutureCommandResult: Future<Item = CommandResult, Error = MailboxError> {}
+impl<F> FutureCommandResult for F where F: Future<Item = CommandResult, Error = MailboxError> {}

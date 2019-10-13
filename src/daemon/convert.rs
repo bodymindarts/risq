@@ -1,6 +1,9 @@
 use crate::{
     bisq::{
-        payload::{offer_payload, storage_payload, ProtectedStorageEntry, RefreshOfferMessage},
+        payload::{
+            offer_payload, persistable_network_payload, storage_payload, PersistableNetworkPayload,
+            ProtectedStorageEntry, RefreshOfferMessage, TradeStatistics2,
+        },
         BisqHash,
     },
     domain::offer::{message::*, *},
@@ -46,6 +49,14 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             created_at,
             entry.sequence_number.into(),
         ))
+    } else {
+        None
+    }
+}
+
+pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<TradeStatistics2> {
+    if let persistable_network_payload::Message::TradeStatistics2(payload) = payload.message? {
+        Some(payload)
     } else {
         None
     }
