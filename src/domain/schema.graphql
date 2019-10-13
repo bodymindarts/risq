@@ -1,0 +1,31 @@
+schema {
+  query: Query
+}
+
+type Query {
+  trades: [Trade!]! @juniper(ownership: "as_ref")
+}
+
+type Trade {
+  currency: String! @juniper(ownership: "owned"),
+  # direction: Direction,
+  # tradePrice: Int,
+  # tradeAmount: Int,
+  # paymentMethod: String,
+  # offerDate: Timestamp,
+  # useMarketBasedPrice: Boolean,
+  # marketPriceMargin: Float,
+  # offerAmount: Int,
+  # offerMinAmount: Int,
+  # offerId: ID,
+  # depositTxId: String,
+  # market: String,
+  # total: Int,
+}
+
+enum Direction {
+  BUY
+  SELL
+}
+
+scalar Timestamp

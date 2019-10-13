@@ -6,9 +6,13 @@ use crate::{
         },
         BisqHash,
     },
-    domain::offer::{message::*, *},
+    domain::{
+        offer::{message::*, *},
+        statistics,
+    },
     prelude::{sha256, Hash},
 };
+use iso4217::alpha3;
 use std::time::{Duration, SystemTime};
 
 pub fn refresh_offer(msg: &RefreshOfferMessage) -> RefreshOffer {
@@ -54,9 +58,12 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
     }
 }
 
-pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<TradeStatistics2> {
+#[cfg(feature = "statistics")]
+pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistics::Trade> {
+    let hash: BisqHash = (&payload).into();
     if let persistable_network_payload::Message::TradeStatistics2(payload) = payload.message? {
-        Some(payload)
+        let currency = alpha3(&payload.base_currency)?.clone();
+        Some(statistics::Trade { hash, currency })
     } else {
         None
     }

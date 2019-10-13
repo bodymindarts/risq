@@ -22,6 +22,7 @@ dirs = "*"
 env_logger = "*"
 futures = "*"
 futures-locks = "*"
+iso4217 = "*"
 juniper = { version = "*", optional = true }
 juniper-from-schema = { version = "*", optional = true }
 lazy_static = "*"

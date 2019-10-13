@@ -98,7 +98,7 @@ impl DataRouter {
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
         let payload = payload?;
-        match (&payload).into() {
+        match PersistableNetworkPayloadKind::from(&payload) {
             #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => Arbiter::spawn(
                 self.stats_cache

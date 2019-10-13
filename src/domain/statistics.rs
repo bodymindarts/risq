@@ -3,11 +3,12 @@ pub use inner::*;
 #[cfg(feature = "statistics")]
 mod inner {
     use crate::{
-        bisq::payload::TradeStatistics2,
+        bisq::BisqHash,
         domain::{CommandResult, FutureCommandResult},
         prelude::*,
     };
     use actix_web::{web, Error, HttpResponse};
+    use iso4217::CurrencyCode;
     use juniper::{
         self, graphql_object,
         http::{graphiql::graphiql_source, GraphQLRequest},
@@ -39,16 +40,30 @@ mod inner {
             .body(html)
     }
 
-    graphql_schema_from_file!("src/api/stats_schema.graphql", context_type: StatsCache);
+    graphql_schema_from_file!("src/domain/schema.graphql", context_type: StatsCache);
+
+    pub struct Trade {
+        pub currency: CurrencyCode,
+        pub hash: BisqHash,
+    }
+
+    impl TradeFields for Trade {
+        fn field_currency(
+            &self,
+            executor: &juniper::Executor<'_, StatsCache>,
+        ) -> FieldResult<String> {
+            Ok(self.currency.alpha3.to_owned())
+        }
+    }
 
     pub struct Query;
     impl QueryFields for Query {
-        fn field_hello_world(
+        fn field_trades(
             &self,
             executor: &juniper::Executor<'_, StatsCache>,
-            name: String,
-        ) -> juniper::FieldResult<String> {
-            Ok(format!("Hello, {}!", name))
+            trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
+        ) -> FieldResult<Vec<&Trade>> {
+            Ok(Vec::new())
         }
     }
 
@@ -58,7 +73,7 @@ mod inner {
         Schema::new(Query {}, EmptyMutation::new())
     }
 
-    type StatsLogInner = Arc<locks::RwLock<Vec<TradeStatistics2>>>;
+    type StatsLogInner = Arc<locks::RwLock<Vec<Trade>>>;
     #[derive(Clone)]
     pub struct StatsCache {
         statistics: StatsLogInner,
@@ -72,11 +87,11 @@ mod inner {
             })
         }
 
-        pub fn add(&self, statistic: TradeStatistics2) -> impl FutureCommandResult {
+        pub fn add(&self, trade: Trade) -> impl FutureCommandResult {
             self.statistics
                 .write()
                 .map(move |mut guard| {
-                    guard.push(statistic);
+                    guard.push(trade);
                     CommandResult::Accepted
                 })
                 .map_err(|_| MailboxError::Closed)
