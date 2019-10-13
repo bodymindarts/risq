@@ -23,6 +23,7 @@ mod stats {
     use crate::prelude::*;
     use actix_web::{Error, HttpResponse};
 
+    pub struct StatsLog;
     pub struct Schema;
     pub fn create_schema() -> Schema {
         Schema

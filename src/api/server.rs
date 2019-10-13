@@ -10,7 +10,11 @@ use actix_web::{
 };
 use std::io;
 
-pub fn listen(port: u16, offer_book: Addr<OfferBook>) -> Result<(), io::Error> {
+pub fn listen(
+    port: u16,
+    offer_book: Addr<OfferBook>,
+    stats_log: Option<StatsLog>,
+) -> Result<(), io::Error> {
     let data = web::Data::new(offer_book);
     let schema = if cfg!(feature = "stats") {
         Some(std::sync::Arc::new(create_schema()))
@@ -24,9 +28,12 @@ pub fn listen(port: u16, offer_book: Addr<OfferBook>) -> Result<(), io::Error> {
             .route("/offers", web::get().to_async(get_offers));
 
         if cfg!(feature = "stats") {
-            app.data(schema.clone().unwrap())
-                .service(web::resource("/graphql").route(web::post().to_async(graphql)))
-                .service(web::resource("/graphiql").route(web::get().to(graphiql)))
+            app.data((
+                schema.clone().unwrap(),
+                stats_log.clone().expect("No stats log"),
+            ))
+            .service(web::resource("/graphql").route(web::post().to_async(graphql)))
+            .service(web::resource("/graphiql").route(web::get().to(graphiql)))
         } else {
             app
         }

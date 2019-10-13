@@ -43,7 +43,7 @@ pub fn run(
         let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
         server::start(server_port, peers, bootstrap, tor_config);
     });
-    let _ = api::listen(api_port, offer_book);
+    let _ = api::listen(api_port, offer_book, None);
 
     let _ = sys.run();
 }
