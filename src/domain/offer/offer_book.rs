@@ -1,5 +1,5 @@
 use super::{message::*, *};
-use crate::{bisq::BisqHash, prelude::*};
+use crate::{bisq::BisqHash, domain::CommandResult, prelude::*};
 use std::{collections::HashMap, time::Duration};
 
 const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(60);

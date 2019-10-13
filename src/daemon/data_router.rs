@@ -1,7 +1,10 @@
 use super::convert;
 use crate::{
     bisq::payload::{kind::*, *},
-    domain::offer::{message::*, OfferBook},
+    domain::{
+        offer::{message::*, OfferBook},
+        CommandResult,
+    },
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
     prelude::*,
     stats::StatsCache,
@@ -89,12 +92,25 @@ impl DataRouter {
         }
         .into()
     }
+    fn route_persistable_network_payload(
+        &self,
+        payload: Option<PersistableNetworkPayload>,
+        result_handler: impl ResultHandler + 'static,
+    ) -> Option<()> {
+        let payload = payload?;
+        match (&payload).into() {
+            PersistableNetworkPayloadKind::TradeStatistics2 => (),
+            _ => (),
+        }
+        .into()
+    }
 }
 
 pub enum DataRouterDispatch {
     Bootstrap(Vec<StorageEntryWrapper>, Vec<PersistableNetworkPayload>),
     RefreshOffer(RefreshOfferMessage),
     AddData(AddDataMessage),
+    AddPersistableNetworkPayload(AddPersistableNetworkPayloadMessage),
 }
 
 impl Handler<Receive<DataRouterDispatch>> for DataRouter {
@@ -115,6 +131,12 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
                 self.route_storage_entry_wrapper(
                     data.entry.clone(),
                     self.handle_command_result(origin, data),
+                );
+            }
+            DataRouterDispatch::AddPersistableNetworkPayload(msg) => {
+                self.route_persistable_network_payload(
+                    msg.payload.as_ref().map(Clone::clone),
+                    self.handle_command_result(origin, msg),
                 );
             }
         }
@@ -138,6 +160,9 @@ impl PayloadExtractor for DataRouterDispatch {
             }
             network_envelope::Message::RefreshOfferMessage(msg) => {
                 Extract::Succeeded(DataRouterDispatch::RefreshOffer(msg))
+            }
+            network_envelope::Message::AddPersistableNetworkPayloadMessage(msg) => {
+                Extract::Succeeded(DataRouterDispatch::AddPersistableNetworkPayload(msg))
             }
             _ => Extract::Failed(msg),
         }

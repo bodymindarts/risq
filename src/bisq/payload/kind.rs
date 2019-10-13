@@ -1,4 +1,4 @@
-use crate::bisq::payload::{storage_payload, ProtectedStorageEntry};
+use crate::bisq::payload::*;
 
 pub enum StoragePayloadKind {
     Alert,
@@ -27,6 +27,34 @@ impl From<&ProtectedStorageEntry> for StoragePayloadKind {
             .map(|m| match m {
                 storage_payload::Message::OfferPayload(_) => StoragePayloadKind::OfferPayload,
                 _ => StoragePayloadKind::Unknown,
+            })
+            .unwrap_or_default()
+    }
+}
+
+pub enum PersistableNetworkPayloadKind {
+    AccountAgeWitness,
+    TradeStatistics2,
+    ProposalPayload,
+    BlindVotePayload,
+    SignedWitness,
+    Unknown,
+}
+impl Default for PersistableNetworkPayloadKind {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+impl From<&PersistableNetworkPayload> for PersistableNetworkPayloadKind {
+    fn from(payload: &PersistableNetworkPayload) -> Self {
+        payload
+            .message
+            .as_ref()
+            .map(|m| match m {
+                persistable_network_payload::Message::TradeStatistics2(_) => {
+                    PersistableNetworkPayloadKind::TradeStatistics2
+                }
+                _ => PersistableNetworkPayloadKind::Unknown,
             })
             .unwrap_or_default()
     }

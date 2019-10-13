@@ -1,10 +1,5 @@
 use super::{open_offer::OfferSequence, OpenOffer};
-use crate::{bisq::BisqHash, prelude::Message};
-
-pub enum CommandResult {
-    Accepted,
-    Ignored,
-}
+use crate::{bisq::BisqHash, domain::CommandResult, prelude::Message};
 
 pub struct AddOffer(pub OpenOffer);
 impl Message for AddOffer {
