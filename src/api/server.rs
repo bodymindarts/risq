@@ -1,8 +1,8 @@
 use super::responses::*;
-use super::stats::*;
 use crate::{
     domain::offer::{message::GetOpenOffers, OfferBook},
     prelude::*,
+    stats::*,
 };
 use actix_web::{
     web::{self, Data},

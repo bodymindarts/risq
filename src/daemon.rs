@@ -33,16 +33,16 @@ pub fn run(
     }
 
     let sys = System::new("risq");
-    // let broadcaster = Broadcaster::start();
+    let broadcaster = Broadcaster::start();
     let offer_book = OfferBook::start();
-    // let data_router = DataRouter::start(offer_book.clone(), broadcaster.clone());
-    // let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
+    let data_router = DataRouter::start(offer_book.clone(), broadcaster.clone());
+    let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
 
-    // Arbiter::new().exec_fn(move || {
-    //     let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
-    //     let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
-    //     server::start(server_port, peers, bootstrap, tor_config);
-    // });
+    Arbiter::new().exec_fn(move || {
+        let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
+        let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
+        server::start(server_port, peers, bootstrap, tor_config);
+    });
     let _ = api::listen(api_port, offer_book);
 
     let _ = sys.run();
