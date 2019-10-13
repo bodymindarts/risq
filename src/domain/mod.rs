@@ -1,5 +1,5 @@
 pub mod offer;
-pub mod stats;
+pub mod statistics;
 
 use crate::prelude::*;
 pub enum CommandResult {

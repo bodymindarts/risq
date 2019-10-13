@@ -9,7 +9,7 @@ edition = "2018"
 [features]
 default = []
 checker = []
-stats = ["juniper", "juniper-from-schema"]
+statistics = ["juniper", "juniper-from-schema"]
 
 [dependencies]
 actix = "*"

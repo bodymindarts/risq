@@ -8,7 +8,7 @@ build-with-checker:
 	cargo build --features "checker"
 
 build-with-stats:
-	cargo build --features "stats"
+	cargo build --features "statistics"
 
 run: build
 	RUST_LOG=debug target/debug/risq daemon
@@ -26,7 +26,7 @@ test-checker:
 	cargo watch -s 'cargo test --features "checker"'
 
 test-stats:
-	cargo watch -s 'cargo test --features "stats"'
+	cargo watch -s 'cargo test --features "statistics"'
 
 run-tor:
 	scripts/run-tor

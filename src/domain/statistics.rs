@@ -1,6 +1,6 @@
-#[cfg(feature = "stats")]
+#[cfg(feature = "statistics")]
 pub use inner::*;
-#[cfg(feature = "stats")]
+#[cfg(feature = "statistics")]
 mod inner {
     use crate::{
         bisq::payload::TradeStatistics2,
@@ -84,9 +84,9 @@ mod inner {
     }
 }
 
-#[cfg(not(feature = "stats"))]
+#[cfg(not(feature = "statistics"))]
 pub use empty::*;
-#[cfg(not(feature = "stats"))]
+#[cfg(not(feature = "statistics"))]
 mod empty {
     use crate::prelude::*;
     use actix_web::{Error, HttpResponse};

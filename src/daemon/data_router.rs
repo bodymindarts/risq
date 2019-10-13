@@ -3,7 +3,7 @@ use crate::{
     bisq::payload::{kind::*, *},
     domain::{
         offer::{message::*, OfferBook},
-        stats::StatsCache,
+        statistics::StatsCache,
         CommandResult,
     },
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
@@ -13,7 +13,7 @@ use crate::{
 pub struct DataRouter {
     offer_book: Addr<OfferBook>,
     broadcaster: Addr<Broadcaster>,
-    #[cfg(feature = "stats")]
+    #[cfg(feature = "statistics")]
     stats_cache: StatsCache,
 }
 impl Actor for DataRouter {
@@ -31,7 +31,7 @@ impl DataRouter {
         DataRouter {
             offer_book,
             broadcaster,
-            #[cfg(feature = "stats")]
+            #[cfg(feature = "statistics")]
             stats_cache: stats_cache.expect("StatsCache missing"),
         }
         .start()
@@ -99,7 +99,7 @@ impl DataRouter {
     ) -> Option<()> {
         let payload = payload?;
         match (&payload).into() {
-            #[cfg(feature = "stats")]
+            #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => Arbiter::spawn(
                 self.stats_cache
                     .add(convert::trade_statistics2(payload).unwrap())

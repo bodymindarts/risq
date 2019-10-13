@@ -2,7 +2,7 @@ use super::responses::*;
 use crate::{
     domain::{
         offer::{message::GetOpenOffers, OfferBook},
-        stats::*,
+        statistics::*,
     },
     prelude::*,
 };
@@ -18,7 +18,7 @@ pub fn listen(
     stats_cache: Option<StatsCache>,
 ) -> Result<(), io::Error> {
     let data = web::Data::new(offer_book);
-    let schema = if cfg!(feature = "stats") {
+    let schema = if cfg!(feature = "statistics") {
         Some(std::sync::Arc::new(create_schema()))
     } else {
         None
@@ -29,7 +29,7 @@ pub fn listen(
             .route("/ping", web::get().to(|| "pong"))
             .route("/offers", web::get().to_async(get_offers));
 
-        if cfg!(feature = "stats") {
+        if cfg!(feature = "statistics") {
             app.service(
                 web::resource("/graphql")
                     .data(schema.clone().unwrap())
