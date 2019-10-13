@@ -12,11 +12,11 @@ mod inner {
 
     pub fn graphql(
         schema: web::Data<Arc<Schema>>,
-        log: web::Data<StatsLog>,
+        cache: web::Data<StatsCache>,
         request: web::Json<GraphQLRequest>,
     ) -> impl Future<Item = HttpResponse, Error = Error> {
         web::block(move || {
-            let res = request.execute(&schema, &log);
+            let res = request.execute(&schema, &cache);
             Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
         })
         .map_err(Error::from)
@@ -33,20 +33,20 @@ mod inner {
             .body(html)
     }
 
-    graphql_schema_from_file!("src/api/stats_schema.graphql", context_type: StatsLog);
+    graphql_schema_from_file!("src/api/stats_schema.graphql", context_type: StatsCache);
 
     pub struct Query;
     impl QueryFields for Query {
         fn field_hello_world(
             &self,
-            executor: &juniper::Executor<'_, StatsLog>,
+            executor: &juniper::Executor<'_, StatsCache>,
             name: String,
         ) -> juniper::FieldResult<String> {
             Ok(format!("Hello, {}!", name))
         }
     }
 
-    type Mutation = EmptyMutation<StatsLog>;
+    type Mutation = EmptyMutation<StatsCache>;
 
     pub fn create_schema() -> Schema {
         Schema::new(Query {}, EmptyMutation::new())
@@ -54,21 +54,17 @@ mod inner {
 
     type StatsLogInner = Arc<locks::RwLock<Vec<TradeStatistics2>>>;
     #[derive(Clone)]
-    pub struct StatsLog(pub StatsLogInner);
-    impl juniper::Context for StatsLog {}
-
-    pub struct Stats {
+    pub struct StatsCache {
         statistics: StatsLogInner,
     }
-    impl Stats {
-        pub fn start() -> (StatsLog, Addr<Self>) {
-            let statistics = Arc::new(locks::RwLock::new(Vec::new()));
-            (StatsLog(statistics.clone()), Self { statistics }.start())
-        }
-    }
+    impl juniper::Context for StatsCache {}
 
-    impl Actor for Stats {
-        type Context = Context<Self>;
+    impl StatsCache {
+        pub fn new() -> Self {
+            Self {
+                statistics: Arc::new(locks::RwLock::new(Vec::new())),
+            }
+        }
     }
 }
 
@@ -76,7 +72,7 @@ mod empty {
     use crate::prelude::*;
     use actix_web::{Error, HttpResponse};
 
-    pub struct StatsLog;
+    pub struct StatsCache;
     pub struct Schema;
     pub fn create_schema() -> Schema {
         Schema

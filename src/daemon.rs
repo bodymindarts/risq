@@ -43,13 +43,7 @@ pub fn run(
         // let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
         // server::start(server_port, peers, bootstrap, tor_config);
     });
-    let _ = api::listen(
-        api_port,
-        offer_book,
-        Some(crate::stats::StatsLog(Arc::new(locks::RwLock::new(
-            Vec::new(),
-        )))),
-    );
+    let _ = api::listen(api_port, offer_book, Some(crate::stats::StatsCache::new()));
 
     let _ = sys.run();
 }

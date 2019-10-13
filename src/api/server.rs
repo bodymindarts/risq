@@ -13,7 +13,7 @@ use std::io;
 pub fn listen(
     port: u16,
     offer_book: Addr<OfferBook>,
-    stats_log: Option<StatsLog>,
+    stats_cache: Option<StatsCache>,
 ) -> Result<(), io::Error> {
     let data = web::Data::new(offer_book);
     let schema = if cfg!(feature = "stats") {
@@ -31,7 +31,7 @@ pub fn listen(
             app.service(
                 web::resource("/graphql")
                     .data(schema.clone().unwrap())
-                    .data(stats_log.clone().expect("No stats log"))
+                    .data(stats_cache.clone().expect("StatsCache empty"))
                     .route(web::post().to_async(graphql)),
             )
             .service(web::resource("/graphiql").route(web::get().to(graphiql)))
