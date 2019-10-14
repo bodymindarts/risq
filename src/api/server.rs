@@ -27,23 +27,19 @@ pub fn listen(
     } else {
         None
     };
+
     HttpServer::new(move || {
-        let app = App::new()
+        App::new()
             .register_data(data.clone())
             .route("/ping", web::get().to(|| "pong"))
-            .route("/offers", web::get().to_async(get_offers));
-
-        if cfg!(feature = "statistics") {
-            app.service(
+            .route("/offers", web::get().to_async(get_offers))
+            .service(
                 web::resource("/graphql")
                     .data(schema.clone().unwrap())
                     .data(gql_context.clone())
                     .route(web::post().to_async(graphql)),
             )
             .service(web::resource("/graphiql").route(web::get().to(graphiql)))
-        } else {
-            app
-        }
     })
     .bind(("127.0.0.1", port))?
     .start();

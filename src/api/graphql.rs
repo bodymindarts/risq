@@ -6,7 +6,7 @@ use actix_web::{web, Error, HttpResponse};
 use juniper::{
     self,
     http::{graphiql::graphiql_source, GraphQLRequest},
-    EmptyMutation, FieldResult, RootNode,
+    EmptyMutation, FieldResult,
 };
 use juniper_from_schema::graphql_schema_from_file;
 use std::sync::Arc;
