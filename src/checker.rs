@@ -27,7 +27,6 @@ pub fn check_node(network: BaseCurrencyNetwork, addr: NodeAddress, proxy_port: u
                 process::exit(2);
             })
             .and_then(move |(_id, conn)| {
-                //println!("Sending Ping to {}:{}", addr.host_name, addr.port);
                 let ping = Ping {
                     nonce: gen_nonce(),
                     last_round_trip_time: 0,
