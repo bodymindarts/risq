@@ -100,7 +100,7 @@ impl QueryFields for Query {
         _executor: &juniper::Executor<'_, GraphQLContext>,
         _trail: &QueryTrail<'_, Currency, juniper_from_schema::Walked>,
     ) -> FieldResult<&Vec<Currency>> {
-        Ok(&currency::ALL_CURRENCIES)
+        Ok(&currency::ALL)
     }
 }
 

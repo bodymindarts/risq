@@ -13,7 +13,7 @@ pub struct Currency {
 }
 
 lazy_static! {
-    pub static ref ALL_CURRENCIES: Vec<Currency> = {
+    pub static ref ALL: Vec<Currency> = {
         let mut vet = Vec::with_capacity(249);
         vet.push(Currency {
             code: "ACM".to_string(),
