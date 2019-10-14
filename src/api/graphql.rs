@@ -1,6 +1,7 @@
 use crate::{
     domain::{
         currency::{self, Currency},
+        market::{self, Market},
         offer::OfferDirection,
         statistics::*,
     },
@@ -102,11 +103,34 @@ impl QueryFields for Query {
     ) -> FieldResult<&Vec<Currency>> {
         Ok(&currency::ALL)
     }
+
+    fn field_markets(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Market, juniper_from_schema::Walked>,
+    ) -> FieldResult<&Vec<Market>> {
+        Ok(&market::ALL)
+    }
+}
+
+impl TradeFields for Trade {
+    // fn field_currency(&self, executor: &juniper::Executor<'_, Inner>) -> FieldResult<String> {
+    //     Ok(self.currency.alpha3.to_owned())
+    // }
+    fn field_direction(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Direction> {
+        Ok(match self.direction {
+            OfferDirection::Sell => Direction::Sell,
+            OfferDirection::Buy => Direction::Buy,
+        })
+    }
 }
 
 lazy_static! {
-    static ref FIAT: String = "fiat".to_string();
-    static ref CRYPTO: String = "crypto".to_string();
+    static ref FIAT_LOWER: String = "fiat".to_string();
+    static ref CRYPTO_LOWER: String = "crypto".to_string();
 }
 
 impl CurrencyFields for Currency {
@@ -131,28 +155,82 @@ impl CurrencyFields for Currency {
         Ok(self.precision as i32)
     }
 
-    fn field_currency_type(
+    fn field_currency_type_lower_case(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
-    ) -> FieldResult<CurrencyType> {
-        Ok(match self.currency_type {
-            currency::Type::Fiat => CurrencyType::Fiat,
-            currency::Type::Crypto => CurrencyType::Fiat,
-        })
+    ) -> FieldResult<&String> {
+        Ok(self.currency_type.to_lowercase())
     }
 }
 
-impl TradeFields for Trade {
-    // fn field_currency(&self, executor: &juniper::Executor<'_, Inner>) -> FieldResult<String> {
-    //     Ok(self.currency.alpha3.to_owned())
-    // }
-    fn field_direction(
+impl MarketFields for Market {
+    fn field_pair(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
-    ) -> FieldResult<Direction> {
-        Ok(match self.direction {
-            OfferDirection::Sell => Direction::Sell,
-            OfferDirection::Buy => Direction::Buy,
-        })
+    ) -> FieldResult<&String> {
+        Ok(&self.pair)
+    }
+
+    fn field_name(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.name)
+    }
+
+    fn field_lname(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.left.name)
+    }
+
+    fn field_rname(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.right.name)
+    }
+
+    fn field_lsymbol(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.left.code)
+    }
+
+    fn field_rsymbol(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.right.code)
+    }
+
+    fn field_lprecision(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<i32> {
+        Ok(self.left.precision as i32)
+    }
+
+    fn field_rprecision(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<i32> {
+        Ok(self.right.precision as i32)
+    }
+
+    fn field_ltype(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(self.left.currency_type.to_lowercase())
+    }
+
+    fn field_rtype(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(self.right.currency_type.to_lowercase())
     }
 }

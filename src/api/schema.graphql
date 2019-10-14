@@ -6,10 +6,10 @@ type Query {
   "Returns null unless --features \"statistics\" is enabled"
   trades: [Trade!] @juniper(ownership: "owned"),
   currencies: [Currency!]!
+  markets: [Market!]!
 }
 
 type Trade {
-  # currency: String! @juniper(ownership: "owned"),
   direction: Direction! @juniper(ownership: "owned"),
   # tradePrice: Int,
   # tradeAmount: Int,
@@ -34,10 +34,18 @@ type Currency {
   code: String!,
   name: String!,
   precision: Int! @juniper(ownership: "owned"),
-  currencyType: CurrencyType! @juniper(ownership: "owned")
+  currencyTypeLowerCase: String!
 }
 
-enum CurrencyType {
-  CRYPTO
-  FIAT
+type Market {
+  pair: String!,
+  name: String!,
+  lname: String!,
+  rname: String!,
+  lsymbol: String!,
+  rsymbol: String!,
+  lprecision: Int! @juniper(ownership: "owned"),
+  rprecision: Int! @juniper(ownership: "owned"),
+  ltype: String!,
+  rtype: String!,
 }
