@@ -53,7 +53,8 @@ fn app() -> App<'static, 'static> {
                         .index(2)
                         .required(true)
                         .validator(port),
-                ),
+                )
+                .after_help("Returns exit code 0 on success, 2 otherwise."),
         )
     } else {
         app

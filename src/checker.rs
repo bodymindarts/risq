@@ -23,11 +23,10 @@ pub fn check_node(network: BaseCurrencyNetwork, addr: NodeAddress, proxy_port: u
                 Some(proxy_port),
             )
             .map_err(|_| {
-                eprintln!("Could not open a connection.");
-                process::exit(1);
+                eprintln!("CRITICAL - Unable to connect to node");
+                process::exit(2);
             })
             .and_then(move |(_id, conn)| {
-                println!("Sending Ping to {}:{}", addr.host_name, addr.port);
                 let ping = Ping {
                     nonce: gen_nonce(),
                     last_round_trip_time: 0,
@@ -35,14 +34,14 @@ pub fn check_node(network: BaseCurrencyNetwork, addr: NodeAddress, proxy_port: u
                 let send_time = SystemTime::now();
                 conn.send(Request(ping))
                     .map_err(|_| {
-                        eprintln!("There was an issue sending Ping");
+                        eprintln!("CRITICAL - Unable to send ping");
                         process::exit(2)
                     })
                     .map(move |res| match res {
                         Ok(_) => {
                             let res_time = SystemTime::now();
                             println!(
-                                "Received Pong after {}ms",
+                                "OK - PONG|time={}ms",
                                 res_time
                                     .duration_since(send_time)
                                     .expect("Pong before Ping")
@@ -51,8 +50,8 @@ pub fn check_node(network: BaseCurrencyNetwork, addr: NodeAddress, proxy_port: u
                             process::exit(0)
                         }
                         Err(_) => {
-                            eprintln!("There was an issue while awaiting the Pong response");
-                            process::exit(3)
+                            eprintln!("CRITICAL - No response from host");
+                            process::exit(2)
                         }
                     })
             }),

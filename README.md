@@ -100,8 +100,4 @@ make build-with-checker
 ./target/debug/risq check-node 5quyxpxheyvzmb2d.onion 8000
 ```
 
-it has the following exit codes:
-- 0 - Ping - Pong succeeded
-- 1 - Connection couldn't be established
-- 2 - Ping couldn't be sent
-- 3 - Issue while waiting for Pong
+To be compatible with `Nagios`-like monitoring tools (`icinga`, `sensu`, etc.), it returns `0` on success (Ping - Pong succeeded), or `2` in case of any error (such as the trouble making a connection, sending `ping` or getting response from the host.)
