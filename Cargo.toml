@@ -9,7 +9,7 @@ edition = "2018"
 [features]
 default = []
 checker = []
-statistics = ["juniper", "juniper-from-schema"]
+statistics = []
 
 [dependencies]
 actix = "*"
@@ -23,8 +23,8 @@ env_logger = "*"
 futures = "*"
 futures-locks = "*"
 iso4217 = "*"
-juniper = { version = "*", optional = true }
-juniper-from-schema = { version = "*", optional = true }
+juniper = { version = "*"}
+juniper-from-schema = { version = "*"}
 lazy_static = "*"
 log = "*"
 prost = "*"

@@ -1,27 +1,30 @@
+use super::offer::OfferDirection;
+use crate::bisq::BisqHash;
+use iso4217::CurrencyCode;
+
+#[derive(Clone)]
+pub struct Trade {
+    // pub currency: CurrencyCode,
+    pub direction: OfferDirection,
+    pub hash: BisqHash,
+}
+
 #[cfg(feature = "statistics")]
 pub use inner::*;
 #[cfg(feature = "statistics")]
 mod inner {
+    use super::*;
     use crate::{
         bisq::BisqHash,
-        domain::{offer::OfferDirection, CommandResult, FutureCommandResult},
+        domain::{CommandResult, FutureCommandResult},
         prelude::*,
     };
-    use iso4217::CurrencyCode;
     use std::{collections::HashSet, str::FromStr, sync::Arc};
-
-    #[derive(Clone)]
-    pub struct Trade {
-        // pub currency: CurrencyCode,
-        pub direction: OfferDirection,
-        pub hash: BisqHash,
-    }
 
     #[derive(Clone)]
     pub struct StatsCache {
         inner: Arc<locks::RwLock<StatsCacheInner>>,
     }
-    impl juniper::Context for StatsCacheInner {}
     pub struct StatsCacheInner {
         trades: Vec<Trade>,
         hashes: HashSet<BisqHash>,
@@ -51,7 +54,6 @@ mod inner {
         }
 
         pub fn add(&self, trade: Trade) -> impl FutureCommandResult {
-            info!("Adding Trade");
             self.inner
                 .write()
                 .map(move |mut inner| inner.add(trade))
@@ -70,24 +72,11 @@ mod inner {
 pub use empty::*;
 #[cfg(not(feature = "statistics"))]
 mod empty {
-    use crate::prelude::*;
-    use actix_web::{Error, HttpResponse};
-
     #[derive(Clone)]
     pub struct StatsCache;
     impl StatsCache {
         pub fn new() -> Option<Self> {
             None
         }
-    }
-    pub struct Schema;
-    pub fn create_schema() -> Schema {
-        Schema
-    }
-    pub fn graphql() -> impl Future<Item = HttpResponse, Error = Error> {
-        future::ok(HttpResponse::Ok().finish())
-    }
-    pub fn graphiql() -> HttpResponse {
-        HttpResponse::Ok().finish()
     }
 }

@@ -18,6 +18,10 @@ pub fn listen(
     stats_cache: Option<StatsCache>,
 ) -> Result<(), io::Error> {
     let data = web::Data::new(offer_book);
+    let gql_context = GraphQLContextWrapper {
+        #[cfg(feature = "statistics")]
+        stats_cache: stats_cache.expect("StatsCache empty"),
+    };
     let schema = if cfg!(feature = "statistics") {
         Some(std::sync::Arc::new(create_schema()))
     } else {
@@ -33,7 +37,7 @@ pub fn listen(
             app.service(
                 web::resource("/graphql")
                     .data(schema.clone().unwrap())
-                    .data(stats_cache.clone().expect("StatsCache empty"))
+                    .data(gql_context.clone())
                     .route(web::post().to_async(graphql)),
             )
             .service(web::resource("/graphiql").route(web::get().to(graphiql)))
