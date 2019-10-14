@@ -7,12 +7,12 @@ use crate::{
         BisqHash,
     },
     domain::{
+        currency, market,
         offer::{message::*, *},
         statistics,
     },
     prelude::{sha256, Hash},
 };
-use iso4217::alpha3;
 use std::{
     convert::TryFrom,
     time::{Duration, SystemTime},
@@ -75,14 +75,20 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
 pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistics::Trade> {
     let hash: BisqHash = (&payload).into();
     if let persistable_network_payload::Message::TradeStatistics2(payload) = payload.message? {
-        info!("direction: {:?}", payload.direction);
-        // let currency = alpha3(&payload.base_currency)?.clone();
+        info!("converting statistics");
         let direction = offer_payload::Direction::from_i32(payload.direction)
             .ok_or(())
             .and_then(OfferDirection::try_from)
             .ok()?;
-        // info!("currency is: {:?}", currency);
-        Some(statistics::Trade { hash, direction })
+        let base = currency::from_code(&payload.base_currency)?;
+        let counter = currency::from_code(&payload.counter_currency)?;
+        let market = market::from_pair(base, counter)?;
+        info!("market is: {:?}", market);
+        Some(statistics::Trade {
+            hash,
+            direction,
+            market,
+        })
     } else {
         None
     }

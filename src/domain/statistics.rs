@@ -1,10 +1,9 @@
-use super::offer::OfferDirection;
+use super::{market::Market, offer::OfferDirection};
 use crate::bisq::BisqHash;
-use iso4217::CurrencyCode;
 
 #[derive(Clone)]
 pub struct Trade {
-    // pub currency: CurrencyCode,
+    pub market: &'static Market,
     pub direction: OfferDirection,
     pub hash: BisqHash,
 }
@@ -32,6 +31,7 @@ mod inner {
     }
     impl StatsCacheInner {
         fn add(&mut self, trade: Trade) -> CommandResult {
+            info!("ADDING TRADE TO INNER");
             if self.hashes.insert(trade.hash) {
                 self.trades.push(trade);
                 CommandResult::Accepted

@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 
+#[derive(Debug)]
 pub enum Type {
     Fiat,
     Crypto,
@@ -18,6 +19,7 @@ impl Type {
     }
 }
 
+#[derive(Debug)]
 pub struct Currency {
     pub code: String,
     pub name: String,

@@ -10,6 +10,7 @@ type Query {
 }
 
 type Trade {
+  marketPair: String!
   direction: Direction! @juniper(ownership: "owned"),
   # tradePrice: Int,
   # tradeAmount: Int,

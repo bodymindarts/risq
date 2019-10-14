@@ -114,9 +114,12 @@ impl QueryFields for Query {
 }
 
 impl TradeFields for Trade {
-    // fn field_currency(&self, executor: &juniper::Executor<'_, Inner>) -> FieldResult<String> {
-    //     Ok(self.currency.alpha3.to_owned())
-    // }
+    fn field_market_pair(
+        &self,
+        executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.market.pair)
+    }
     fn field_direction(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
