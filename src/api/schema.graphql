@@ -3,8 +3,9 @@ schema {
 }
 
 type Query {
-  "Requires --features \"statistics\" to populate"
-  trades: [Trade!]! @juniper(ownership: "owned"),
+  "Returns null unless --features \"statistics\" is enabled"
+  trades: [Trade!] @juniper(ownership: "owned"),
+  currencies: [Currency!]!
 }
 
 type Trade {
@@ -29,4 +30,14 @@ enum Direction {
   SELL
 }
 
-scalar Timestamp
+type Currency {
+  code: String!,
+  name: String!,
+  precision: Int! @juniper(ownership: "owned"),
+  currencyType: CurrencyType! @juniper(ownership: "owned")
+}
+
+enum CurrencyType {
+  CRYPTO
+  FIAT
+}

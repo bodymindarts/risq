@@ -1,1512 +1,1514 @@
+use lazy_static::lazy_static;
+
 pub enum Type {
     Fiat,
     Crypto,
 }
 
 pub struct Currency {
-    pub code: &'static str,
-    pub name: &'static str,
+    pub code: String,
+    pub name: String,
     pub precision: u16,
     pub currency_type: Type,
 }
 
-pub fn all() -> &'static [Currency] {
-    &ALL
+lazy_static! {
+    pub static ref ALL_CURRENCIES: Vec<Currency> = {
+        let mut vet = Vec::with_capacity(249);
+        vet.push(Currency {
+            code: "ACM".to_string(),
+            name: "Actinium".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ADE".to_string(),
+            name: "Adeptio".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "AED".to_string(),
+            name: "United Arab Emirates Dirham".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "AEON".to_string(),
+            name: "Aeon".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "AEUR".to_string(),
+            name: "Augmint Euro".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "AFN".to_string(),
+            name: "Afghan Afghani".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ALL".to_string(),
+            name: "Albanian Lek".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "AMD".to_string(),
+            name: "Armenian Dram".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "AMIT".to_string(),
+            name: "Amitycoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ANG".to_string(),
+            name: "Netherlands Antillean Guilder".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "AOA".to_string(),
+            name: "Angolan Kwanza".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ARQ".to_string(),
+            name: "Arqma".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ARS".to_string(),
+            name: "Argentine Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ASK".to_string(),
+            name: "Askcoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "AUD".to_string(),
+            name: "Australian Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "AUS".to_string(),
+            name: "Australiacash".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "AWG".to_string(),
+            name: "Aruban Florin".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "AZN".to_string(),
+            name: "Azerbaijani Manat".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BAM".to_string(),
+            name: "Bosnia-Herzegovina Convertible Mark".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BBD".to_string(),
+            name: "Barbadian Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BDT".to_string(),
+            name: "Bangladeshi Taka".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BEAM".to_string(),
+            name: "Beam".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "BGN".to_string(),
+            name: "Bulgarian Lev".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BHD".to_string(),
+            name: "Bahraini Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BIF".to_string(),
+            name: "Burundian Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BLUR".to_string(),
+            name: "Blur".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "BMD".to_string(),
+            name: "Bermudan Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BND".to_string(),
+            name: "Brunei Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BOB".to_string(),
+            name: "Bolivian Boliviano".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BRL".to_string(),
+            name: "Brazilian Real".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BSD".to_string(),
+            name: "Bahamian Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BSQ".to_string(),
+            name: "BSQ".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "BTC".to_string(),
+            name: "Bitcoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "BTM".to_string(),
+            name: "Bitmark".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "BTN".to_string(),
+            name: "Bhutanese Ngultrum".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BWP".to_string(),
+            name: "Botswanan Pula".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BYN".to_string(),
+            name: "Belarusian Ruble".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "BZC".to_string(),
+            name: "Bitzec".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "BZD".to_string(),
+            name: "Belize Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CAD".to_string(),
+            name: "Canadian Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CASH2".to_string(),
+            name: "Cash2".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "CDF".to_string(),
+            name: "Congolese Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CHA".to_string(),
+            name: "Chaucha".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "CHF".to_string(),
+            name: "Swiss Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CLOAK".to_string(),
+            name: "CloakCoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "CLP".to_string(),
+            name: "Chilean Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CNY".to_string(),
+            name: "Chinese Yuan".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "COP".to_string(),
+            name: "Colombian Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CRC".to_string(),
+            name: "Costa Rican Col\u{00f3}n".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CRCL".to_string(),
+            name: "CRowdCLassic".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "CRDS".to_string(),
+            name: "Credits".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "CROAT".to_string(),
+            name: "Croat".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "CUP".to_string(),
+            name: "Cuban Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CVE".to_string(),
+            name: "Cape Verdean Escudo".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "CZK".to_string(),
+            name: "Czech Republic Koruna".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "DAI".to_string(),
+            name: "Dai Stablecoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DARX".to_string(),
+            name: "BitDaric".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DASH".to_string(),
+            name: "Dash".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DCR".to_string(),
+            name: "Decred".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DJF".to_string(),
+            name: "Djiboutian Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "DKK".to_string(),
+            name: "Danish Krone".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "DOGE".to_string(),
+            name: "Dogecoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DOI".to_string(),
+            name: "Doichain".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DOP".to_string(),
+            name: "Dominican Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "DRGL".to_string(),
+            name: "Dragonglass".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DST".to_string(),
+            name: "DSTRA".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DXO".to_string(),
+            name: "Dextro".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "DZD".to_string(),
+            name: "Algerian Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "EGP".to_string(),
+            name: "Egyptian Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ERN".to_string(),
+            name: "Eritrean Nakfa".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ETB".to_string(),
+            name: "Ethiopian Birr".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ETC".to_string(),
+            name: "Ether Classic".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ETH".to_string(),
+            name: "Ether".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ETHS".to_string(),
+            name: "EtherStone".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "EUR".to_string(),
+            name: "Euro".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "FJC".to_string(),
+            name: "Fujicoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "FJD".to_string(),
+            name: "Fijian Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "FKP".to_string(),
+            name: "Falkland Islands Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "FRTY".to_string(),
+            name: "FourtyTwo".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "GALI".to_string(),
+            name: "Galilel".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "GBP".to_string(),
+            name: "British Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "GBYTE".to_string(),
+            name: "Byte".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "GEL".to_string(),
+            name: "Georgian Lari".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "GHS".to_string(),
+            name: "Ghanaian Cedi".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "GIP".to_string(),
+            name: "Gibraltar Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "GMCN".to_string(),
+            name: "GambleCoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "GMD".to_string(),
+            name: "Gambian Dalasi".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "GNF".to_string(),
+            name: "Guinean Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "GRIN".to_string(),
+            name: "Grin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "GTQ".to_string(),
+            name: "Guatemalan Quetzal".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "GYD".to_string(),
+            name: "Guyanaese Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "HATCH".to_string(),
+            name: "Hatch".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "HKD".to_string(),
+            name: "Hong Kong Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "HLM".to_string(),
+            name: "Helium".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "HNL".to_string(),
+            name: "Honduran Lempira".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "HRK".to_string(),
+            name: "Croatian Kuna".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "HTG".to_string(),
+            name: "Haitian Gourde".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "HUF".to_string(),
+            name: "Hungarian Forint".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "IDA".to_string(),
+            name: "IdaPay".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "IDR".to_string(),
+            name: "Indonesian Rupiah".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ILS".to_string(),
+            name: "Israeli New Sheqel".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "INR".to_string(),
+            name: "Indian Rupee".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "IQD".to_string(),
+            name: "Iraqi Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "IRD".to_string(),
+            name: "Iridium".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "IRR".to_string(),
+            name: "Iranian Rial".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ISK".to_string(),
+            name: "Icelandic Kr\u{00f3}na".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "JMD".to_string(),
+            name: "Jamaican Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "JOD".to_string(),
+            name: "Jordanian Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "JPY".to_string(),
+            name: "Japanese Yen".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KEK".to_string(),
+            name: "Kekcoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "KES".to_string(),
+            name: "Kenyan Shilling".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KGS".to_string(),
+            name: "Kyrgystani Som".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KHR".to_string(),
+            name: "Cambodian Riel".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KMF".to_string(),
+            name: "Comorian Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KPW".to_string(),
+            name: "North Korean Won".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KRW".to_string(),
+            name: "South Korean Won".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KWD".to_string(),
+            name: "Kuwaiti Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KYD".to_string(),
+            name: "Cayman Islands Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "KZT".to_string(),
+            name: "Kazakhstani Tenge".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "LAK".to_string(),
+            name: "Laotian Kip".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "LBP".to_string(),
+            name: "Lebanese Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "LCP".to_string(),
+            name: "LitecoinPlus".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "LKR".to_string(),
+            name: "Sri Lankan Rupee".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "LRD".to_string(),
+            name: "Liberian Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "LSL".to_string(),
+            name: "Lesotho Loti".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "LTC".to_string(),
+            name: "Litecoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "LTZ".to_string(),
+            name: "LitecoinZ".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "LYD".to_string(),
+            name: "Libyan Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "LYTX".to_string(),
+            name: "Lytix".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MAD".to_string(),
+            name: "Moroccan Dirham".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MAI".to_string(),
+            name: "Starwels".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MASK".to_string(),
+            name: "Mask".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MBGL".to_string(),
+            name: "MobitGlobal".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MDL".to_string(),
+            name: "Moldovan Leu".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MGA".to_string(),
+            name: "Malagasy Ariary".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MILE".to_string(),
+            name: "Mile".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MKD".to_string(),
+            name: "Macedonian Denar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MMK".to_string(),
+            name: "Myanmar Kyat".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MNT".to_string(),
+            name: "Mongolian Tugrik".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MOP".to_string(),
+            name: "Macanese Pataca".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MOX".to_string(),
+            name: "MoX".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MQX".to_string(),
+            name: "MirQuiX".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MRO".to_string(),
+            name: "Mauritanian Ouguiya".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MUE".to_string(),
+            name: "MonetaryUnit".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "MUR".to_string(),
+            name: "Mauritian Rupee".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MVR".to_string(),
+            name: "Maldivian Rufiyaa".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MWK".to_string(),
+            name: "Malawian Kwacha".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MXN".to_string(),
+            name: "Mexican Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MYR".to_string(),
+            name: "Malaysian Ringgit".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "MZN".to_string(),
+            name: "Mozambican Metical".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "NAD".to_string(),
+            name: "Namibian Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "NAV".to_string(),
+            name: "Navcoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "NEOS".to_string(),
+            name: "Neos".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "NGN".to_string(),
+            name: "Nigerian Naira".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "NIO".to_string(),
+            name: "Nicaraguan C\u{00f3}rdoba".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "NMC".to_string(),
+            name: "Namecoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "NOK".to_string(),
+            name: "Norwegian Krone".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "NOR".to_string(),
+            name: "Noir".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "NPR".to_string(),
+            name: "Nepalese Rupee".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "NZD".to_string(),
+            name: "New Zealand Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "OMR".to_string(),
+            name: "Omani Rial".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ONION".to_string(),
+            name: "DeepOnion".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "PAB".to_string(),
+            name: "Panamanian Balboa".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "PEN".to_string(),
+            name: "Peruvian Nuevo Sol".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "PGK".to_string(),
+            name: "Papua New Guinean Kina".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "PHP".to_string(),
+            name: "Philippine Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "PINK".to_string(),
+            name: "Pinkcoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "PIVX".to_string(),
+            name: "PIVX".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "PKR".to_string(),
+            name: "Pakistani Rupee".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "PLE".to_string(),
+            name: "Plenteum".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "PLN".to_string(),
+            name: "Polish Zloty".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "PRSN".to_string(),
+            name: "Persona".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "PYG".to_string(),
+            name: "Paraguayan Guarani".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "PZDC".to_string(),
+            name: "PZDC".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "QAR".to_string(),
+            name: "Qatari Rial".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "QBS".to_string(),
+            name: "Qbase".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "QMCoin".to_string(),
+            name: "QMCoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "QWC".to_string(),
+            name: "Qwertycoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "RADS".to_string(),
+            name: "Radium".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "RMX".to_string(),
+            name: "Remix".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "RON".to_string(),
+            name: "Romanian Leu".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "RSD".to_string(),
+            name: "Serbian Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "RUB".to_string(),
+            name: "Russian Ruble".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "RWF".to_string(),
+            name: "Rwandan Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "RYO".to_string(),
+            name: "Ryo".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "SAR".to_string(),
+            name: "Saudi Riyal".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SBD".to_string(),
+            name: "Solomon Islands Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SCP".to_string(),
+            name: "SiaPrimeCoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "SCR".to_string(),
+            name: "Seychellois Rupee".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SDG".to_string(),
+            name: "Sudanese Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SEK".to_string(),
+            name: "Swedish Krona".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SF".to_string(),
+            name: "Siafund".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "SGD".to_string(),
+            name: "Singapore Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SHP".to_string(),
+            name: "St. Helena Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SLL".to_string(),
+            name: "Sierra Leonean Leone".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SOS".to_string(),
+            name: "Somali Shilling".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SPACE".to_string(),
+            name: "SpaceCash".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "SRD".to_string(),
+            name: "Surinamese Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SSP".to_string(),
+            name: "South Sudanese Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "STN".to_string(),
+            name: "S\u{00e3}o Tom\u{00e9} and Pr\u{00ed}ncipe Dobra".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SUB1X".to_string(),
+            name: "SUB1X".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "SVC".to_string(),
+            name: "Salvadoran Col\u{00f3}n".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SYP".to_string(),
+            name: "Syrian Pound".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "SZL".to_string(),
+            name: "Swazi Lilangeni".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "THB".to_string(),
+            name: "Thai Baht".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TJS".to_string(),
+            name: "Tajikistani Somoni".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TMT".to_string(),
+            name: "Turkmenistani Manat".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TND".to_string(),
+            name: "Tunisian Dinar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TOP".to_string(),
+            name: "Tongan Pa\u{02bb}anga".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TRTL".to_string(),
+            name: "TurtleCoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "TRY".to_string(),
+            name: "Turkish Lira".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TTD".to_string(),
+            name: "Trinidad & Tobago Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TUSD".to_string(),
+            name: "TrueUSD".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "TWD".to_string(),
+            name: "New Taiwan Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "TZS".to_string(),
+            name: "Tanzanian Shilling".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "UAH".to_string(),
+            name: "Ukrainian Hryvnia".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "UCC".to_string(),
+            name: "UnitedCommunityCoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "UGX".to_string(),
+            name: "Ugandan Shilling".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "UNO".to_string(),
+            name: "Unobtanium".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "USD".to_string(),
+            name: "US Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "USDC".to_string(),
+            name: "USD Coin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "UYU".to_string(),
+            name: "Uruguayan Peso".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "UZS".to_string(),
+            name: "Uzbekistani Som".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "VEF".to_string(),
+            name: "Venezuelan Bol\u{00ed}var".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "VEIL".to_string(),
+            name: "Veil".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "VND".to_string(),
+            name: "Vietnamese Dong".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "VUV".to_string(),
+            name: "Vanuatu Vatu".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "VXV".to_string(),
+            name: "VectorspaceAI".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "WEB".to_string(),
+            name: "Webchain".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "WRKZ".to_string(),
+            name: "WrkzCoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "WST".to_string(),
+            name: "Samoan Tala".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "XAF".to_string(),
+            name: "Central African CFA Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "XCD".to_string(),
+            name: "East Caribbean Dollar".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "XCP".to_string(),
+            name: "Counterparty".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "XDR0".to_string(),
+            name: "XDR".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "XMR".to_string(),
+            name: "Monero".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "XOF".to_string(),
+            name: "West African CFA Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "XPF".to_string(),
+            name: "CFP Franc".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "XRC".to_string(),
+            name: "Bitcoin Rhodium".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "XSPEC".to_string(),
+            name: "Spectrecoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "XZC".to_string(),
+            name: "Zcoin".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "YER".to_string(),
+            name: "Yemeni Rial".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ZAR".to_string(),
+            name: "South African Rand".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ZEC".to_string(),
+            name: "Zcash".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ZEL".to_string(),
+            name: "ZelCash".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ZEN".to_string(),
+            name: "Horizen".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ZER".to_string(),
+            name: "Zero".to_string(),
+            precision: 8,
+            currency_type: Type::Crypto,
+        });
+        vet.push(Currency {
+            code: "ZMW".to_string(),
+            name: "Zambian Kwacha".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet.push(Currency {
+            code: "ZWL".to_string(),
+            name: "Zimbabwean Dollar (2009)".to_string(),
+            precision: 8,
+            currency_type: Type::Fiat,
+        });
+        vet
+    };
 }
-
-const ALL: [Currency; 249] = [
-    Currency {
-        code: "ACM",
-        name: "Actinium",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ADE",
-        name: "Adeptio",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "AED",
-        name: "United Arab Emirates Dirham",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "AEON",
-        name: "Aeon",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "AEUR",
-        name: "Augmint Euro",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "AFN",
-        name: "Afghan Afghani",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ALL",
-        name: "Albanian Lek",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "AMD",
-        name: "Armenian Dram",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "AMIT",
-        name: "Amitycoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ANG",
-        name: "Netherlands Antillean Guilder",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "AOA",
-        name: "Angolan Kwanza",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ARQ",
-        name: "Arqma",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ARS",
-        name: "Argentine Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ASK",
-        name: "Askcoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "AUD",
-        name: "Australian Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "AUS",
-        name: "Australiacash",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "AWG",
-        name: "Aruban Florin",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "AZN",
-        name: "Azerbaijani Manat",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BAM",
-        name: "Bosnia-Herzegovina Convertible Mark",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BBD",
-        name: "Barbadian Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BDT",
-        name: "Bangladeshi Taka",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BEAM",
-        name: "Beam",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "BGN",
-        name: "Bulgarian Lev",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BHD",
-        name: "Bahraini Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BIF",
-        name: "Burundian Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BLUR",
-        name: "Blur",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "BMD",
-        name: "Bermudan Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BND",
-        name: "Brunei Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BOB",
-        name: "Bolivian Boliviano",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BRL",
-        name: "Brazilian Real",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BSD",
-        name: "Bahamian Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BSQ",
-        name: "BSQ",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "BTC",
-        name: "Bitcoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "BTM",
-        name: "Bitmark",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "BTN",
-        name: "Bhutanese Ngultrum",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BWP",
-        name: "Botswanan Pula",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BYN",
-        name: "Belarusian Ruble",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "BZC",
-        name: "Bitzec",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "BZD",
-        name: "Belize Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CAD",
-        name: "Canadian Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CASH2",
-        name: "Cash2",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "CDF",
-        name: "Congolese Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CHA",
-        name: "Chaucha",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "CHF",
-        name: "Swiss Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CLOAK",
-        name: "CloakCoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "CLP",
-        name: "Chilean Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CNY",
-        name: "Chinese Yuan",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "COP",
-        name: "Colombian Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CRC",
-        name: "Costa Rican Col\u{00f3}n",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CRCL",
-        name: "CRowdCLassic",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "CRDS",
-        name: "Credits",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "CROAT",
-        name: "Croat",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "CUP",
-        name: "Cuban Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CVE",
-        name: "Cape Verdean Escudo",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "CZK",
-        name: "Czech Republic Koruna",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "DAI",
-        name: "Dai Stablecoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DARX",
-        name: "BitDaric",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DASH",
-        name: "Dash",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DCR",
-        name: "Decred",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DJF",
-        name: "Djiboutian Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "DKK",
-        name: "Danish Krone",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "DOGE",
-        name: "Dogecoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DOI",
-        name: "Doichain",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DOP",
-        name: "Dominican Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "DRGL",
-        name: "Dragonglass",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DST",
-        name: "DSTRA",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DXO",
-        name: "Dextro",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "DZD",
-        name: "Algerian Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "EGP",
-        name: "Egyptian Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ERN",
-        name: "Eritrean Nakfa",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ETB",
-        name: "Ethiopian Birr",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ETC",
-        name: "Ether Classic",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ETH",
-        name: "Ether",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ETHS",
-        name: "EtherStone",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "EUR",
-        name: "Euro",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "FJC",
-        name: "Fujicoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "FJD",
-        name: "Fijian Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "FKP",
-        name: "Falkland Islands Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "FRTY",
-        name: "FourtyTwo",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "GALI",
-        name: "Galilel",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "GBP",
-        name: "British Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "GBYTE",
-        name: "Byte",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "GEL",
-        name: "Georgian Lari",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "GHS",
-        name: "Ghanaian Cedi",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "GIP",
-        name: "Gibraltar Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "GMCN",
-        name: "GambleCoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "GMD",
-        name: "Gambian Dalasi",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "GNF",
-        name: "Guinean Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "GRIN",
-        name: "Grin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "GTQ",
-        name: "Guatemalan Quetzal",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "GYD",
-        name: "Guyanaese Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "HATCH",
-        name: "Hatch",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "HKD",
-        name: "Hong Kong Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "HLM",
-        name: "Helium",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "HNL",
-        name: "Honduran Lempira",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "HRK",
-        name: "Croatian Kuna",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "HTG",
-        name: "Haitian Gourde",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "HUF",
-        name: "Hungarian Forint",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "IDA",
-        name: "IdaPay",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "IDR",
-        name: "Indonesian Rupiah",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ILS",
-        name: "Israeli New Sheqel",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "INR",
-        name: "Indian Rupee",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "IQD",
-        name: "Iraqi Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "IRD",
-        name: "Iridium",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "IRR",
-        name: "Iranian Rial",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ISK",
-        name: "Icelandic Kr\u{00f3}na",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "JMD",
-        name: "Jamaican Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "JOD",
-        name: "Jordanian Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "JPY",
-        name: "Japanese Yen",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KEK",
-        name: "Kekcoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "KES",
-        name: "Kenyan Shilling",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KGS",
-        name: "Kyrgystani Som",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KHR",
-        name: "Cambodian Riel",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KMF",
-        name: "Comorian Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KPW",
-        name: "North Korean Won",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KRW",
-        name: "South Korean Won",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KWD",
-        name: "Kuwaiti Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KYD",
-        name: "Cayman Islands Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "KZT",
-        name: "Kazakhstani Tenge",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "LAK",
-        name: "Laotian Kip",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "LBP",
-        name: "Lebanese Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "LCP",
-        name: "LitecoinPlus",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "LKR",
-        name: "Sri Lankan Rupee",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "LRD",
-        name: "Liberian Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "LSL",
-        name: "Lesotho Loti",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "LTC",
-        name: "Litecoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "LTZ",
-        name: "LitecoinZ",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "LYD",
-        name: "Libyan Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "LYTX",
-        name: "Lytix",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MAD",
-        name: "Moroccan Dirham",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MAI",
-        name: "Starwels",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MASK",
-        name: "Mask",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MBGL",
-        name: "MobitGlobal",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MDL",
-        name: "Moldovan Leu",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MGA",
-        name: "Malagasy Ariary",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MILE",
-        name: "Mile",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MKD",
-        name: "Macedonian Denar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MMK",
-        name: "Myanmar Kyat",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MNT",
-        name: "Mongolian Tugrik",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MOP",
-        name: "Macanese Pataca",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MOX",
-        name: "MoX",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MQX",
-        name: "MirQuiX",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MRO",
-        name: "Mauritanian Ouguiya",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MUE",
-        name: "MonetaryUnit",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "MUR",
-        name: "Mauritian Rupee",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MVR",
-        name: "Maldivian Rufiyaa",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MWK",
-        name: "Malawian Kwacha",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MXN",
-        name: "Mexican Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MYR",
-        name: "Malaysian Ringgit",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "MZN",
-        name: "Mozambican Metical",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "NAD",
-        name: "Namibian Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "NAV",
-        name: "Navcoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "NEOS",
-        name: "Neos",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "NGN",
-        name: "Nigerian Naira",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "NIO",
-        name: "Nicaraguan C\u{00f3}rdoba",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "NMC",
-        name: "Namecoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "NOK",
-        name: "Norwegian Krone",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "NOR",
-        name: "Noir",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "NPR",
-        name: "Nepalese Rupee",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "NZD",
-        name: "New Zealand Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "OMR",
-        name: "Omani Rial",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ONION",
-        name: "DeepOnion",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "PAB",
-        name: "Panamanian Balboa",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "PEN",
-        name: "Peruvian Nuevo Sol",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "PGK",
-        name: "Papua New Guinean Kina",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "PHP",
-        name: "Philippine Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "PINK",
-        name: "Pinkcoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "PIVX",
-        name: "PIVX",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "PKR",
-        name: "Pakistani Rupee",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "PLE",
-        name: "Plenteum",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "PLN",
-        name: "Polish Zloty",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "PRSN",
-        name: "Persona",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "PYG",
-        name: "Paraguayan Guarani",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "PZDC",
-        name: "PZDC",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "QAR",
-        name: "Qatari Rial",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "QBS",
-        name: "Qbase",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "QMCoin",
-        name: "QMCoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "QWC",
-        name: "Qwertycoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "RADS",
-        name: "Radium",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "RMX",
-        name: "Remix",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "RON",
-        name: "Romanian Leu",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "RSD",
-        name: "Serbian Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "RUB",
-        name: "Russian Ruble",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "RWF",
-        name: "Rwandan Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "RYO",
-        name: "Ryo",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "SAR",
-        name: "Saudi Riyal",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SBD",
-        name: "Solomon Islands Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SCP",
-        name: "SiaPrimeCoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "SCR",
-        name: "Seychellois Rupee",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SDG",
-        name: "Sudanese Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SEK",
-        name: "Swedish Krona",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SF",
-        name: "Siafund",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "SGD",
-        name: "Singapore Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SHP",
-        name: "St. Helena Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SLL",
-        name: "Sierra Leonean Leone",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SOS",
-        name: "Somali Shilling",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SPACE",
-        name: "SpaceCash",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "SRD",
-        name: "Surinamese Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SSP",
-        name: "South Sudanese Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "STN",
-        name: "S\u{00e3}o Tom\u{00e9} and Pr\u{00ed}ncipe Dobra",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SUB1X",
-        name: "SUB1X",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "SVC",
-        name: "Salvadoran Col\u{00f3}n",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SYP",
-        name: "Syrian Pound",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "SZL",
-        name: "Swazi Lilangeni",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "THB",
-        name: "Thai Baht",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TJS",
-        name: "Tajikistani Somoni",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TMT",
-        name: "Turkmenistani Manat",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TND",
-        name: "Tunisian Dinar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TOP",
-        name: "Tongan Pa\u{02bb}anga",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TRTL",
-        name: "TurtleCoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "TRY",
-        name: "Turkish Lira",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TTD",
-        name: "Trinidad & Tobago Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TUSD",
-        name: "TrueUSD",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "TWD",
-        name: "New Taiwan Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "TZS",
-        name: "Tanzanian Shilling",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "UAH",
-        name: "Ukrainian Hryvnia",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "UCC",
-        name: "UnitedCommunityCoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "UGX",
-        name: "Ugandan Shilling",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "UNO",
-        name: "Unobtanium",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "USD",
-        name: "US Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "USDC",
-        name: "USD Coin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "UYU",
-        name: "Uruguayan Peso",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "UZS",
-        name: "Uzbekistani Som",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "VEF",
-        name: "Venezuelan Bol\u{00ed}var",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "VEIL",
-        name: "Veil",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "VND",
-        name: "Vietnamese Dong",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "VUV",
-        name: "Vanuatu Vatu",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "VXV",
-        name: "VectorspaceAI",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "WEB",
-        name: "Webchain",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "WRKZ",
-        name: "WrkzCoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "WST",
-        name: "Samoan Tala",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "XAF",
-        name: "Central African CFA Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "XCD",
-        name: "East Caribbean Dollar",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "XCP",
-        name: "Counterparty",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "XDR0",
-        name: "XDR",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "XMR",
-        name: "Monero",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "XOF",
-        name: "West African CFA Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "XPF",
-        name: "CFP Franc",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "XRC",
-        name: "Bitcoin Rhodium",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "XSPEC",
-        name: "Spectrecoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "XZC",
-        name: "Zcoin",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "YER",
-        name: "Yemeni Rial",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ZAR",
-        name: "South African Rand",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ZEC",
-        name: "Zcash",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ZEL",
-        name: "ZelCash",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ZEN",
-        name: "Horizen",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ZER",
-        name: "Zero",
-        precision: 8,
-        currency_type: Type::Crypto,
-    },
-    Currency {
-        code: "ZMW",
-        name: "Zambian Kwacha",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-    Currency {
-        code: "ZWL",
-        name: "Zimbabwean Dollar (2009)",
-        precision: 8,
-        currency_type: Type::Fiat,
-    },
-];

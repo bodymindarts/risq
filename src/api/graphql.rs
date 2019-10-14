@@ -1,5 +1,9 @@
 use crate::{
-    domain::{offer::OfferDirection, statistics::*},
+    domain::{
+        currency::{self, Currency},
+        offer::OfferDirection,
+        statistics::*,
+    },
     prelude::*,
 };
 use actix_web::{web, Error, HttpResponse};
@@ -9,6 +13,7 @@ use juniper::{
     EmptyMutation, FieldResult,
 };
 use juniper_from_schema::graphql_schema_from_file;
+use lazy_static::lazy_static;
 use std::sync::Arc;
 
 pub fn graphql(
@@ -77,17 +82,63 @@ impl QueryFields for Query {
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
         trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
-    ) -> FieldResult<Vec<Trade>> {
+    ) -> FieldResult<Option<Vec<Trade>>> {
         let stats = &executor.context().stats_cache;
-        Ok(stats.trades().iter().cloned().collect())
+        Ok(Some(stats.trades().iter().cloned().collect()))
     }
     #[cfg(not(feature = "statistics"))]
     fn field_trades(
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
         trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
-    ) -> FieldResult<Vec<Trade>> {
-        Ok(Vec::new())
+    ) -> FieldResult<Option<Vec<Trade>>> {
+        Ok(None)
+    }
+
+    fn field_currencies(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Currency, juniper_from_schema::Walked>,
+    ) -> FieldResult<&Vec<Currency>> {
+        Ok(&currency::ALL_CURRENCIES)
+    }
+}
+
+lazy_static! {
+    static ref FIAT: String = "fiat".to_string();
+    static ref CRYPTO: String = "crypto".to_string();
+}
+
+impl CurrencyFields for Currency {
+    fn field_code(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.code)
+    }
+
+    fn field_name(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.name)
+    }
+
+    fn field_precision(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<i32> {
+        Ok(self.precision as i32)
+    }
+
+    fn field_currency_type(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<CurrencyType> {
+        Ok(match self.currency_type {
+            currency::Type::Fiat => CurrencyType::Fiat,
+            currency::Type::Crypto => CurrencyType::Fiat,
+        })
     }
 }
 
@@ -97,7 +148,7 @@ impl TradeFields for Trade {
     // }
     fn field_direction(
         &self,
-        executor: &juniper::Executor<'_, GraphQLContext>,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Direction> {
         Ok(match self.direction {
             OfferDirection::Sell => Direction::Sell,
