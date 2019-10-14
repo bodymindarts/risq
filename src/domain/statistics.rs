@@ -7,45 +7,8 @@ mod inner {
         domain::{offer::OfferDirection, CommandResult, FutureCommandResult},
         prelude::*,
     };
-    use actix_web::{web, Error, HttpResponse};
     use iso4217::CurrencyCode;
-    use juniper::{
-        self, graphql_object,
-        http::{graphiql::graphiql_source, GraphQLRequest},
-        EmptyMutation, FieldResult, GraphQLInputObject, RootNode,
-    };
-    use juniper_from_schema::graphql_schema_from_file;
     use std::{collections::HashSet, str::FromStr, sync::Arc};
-
-    pub fn graphql(
-        schema: web::Data<Arc<Schema>>,
-        cache: web::Data<StatsCache>,
-        request: web::Json<GraphQLRequest>,
-    ) -> impl Future<Item = HttpResponse, Error = Error> {
-        cache
-            .inner()
-            .map_err(Error::from)
-            .and_then(|cache| {
-                web::block(move || {
-                    let res = request.execute(&schema, &cache);
-                    Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
-                })
-                .map_err(Error::from)
-            })
-            .and_then(|result| {
-                Ok(HttpResponse::Ok()
-                    .content_type("application/json")
-                    .body(result))
-            })
-    }
-    pub fn graphiql() -> HttpResponse {
-        let html = graphiql_source("http://localhost:7477/graphql");
-        HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(html)
-    }
-
-    graphql_schema_from_file!("src/domain/schema.graphql", context_type: Inner);
 
     #[derive(Clone)]
     pub struct Trade {
@@ -54,49 +17,16 @@ mod inner {
         pub hash: BisqHash,
     }
 
-    impl TradeFields for Trade {
-        // fn field_currency(&self, executor: &juniper::Executor<'_, Inner>) -> FieldResult<String> {
-        //     Ok(self.currency.alpha3.to_owned())
-        // }
-        fn field_direction(
-            &self,
-            executor: &juniper::Executor<'_, Inner>,
-        ) -> FieldResult<Direction> {
-            Ok(match self.direction {
-                OfferDirection::Sell => Direction::Sell,
-                OfferDirection::Buy => Direction::Buy,
-            })
-        }
-    }
-
-    pub struct Query;
-    impl QueryFields for Query {
-        fn field_trades<'a>(
-            &self,
-            executor: &juniper::Executor<'a, Inner>,
-            trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
-        ) -> FieldResult<Vec<Trade>> {
-            let cache = executor.context();
-            Ok(cache.trades.iter().cloned().collect())
-        }
-    }
-
-    type Mutation = EmptyMutation<Inner>;
-
-    pub fn create_schema() -> Schema {
-        Schema::new(Query {}, EmptyMutation::new())
-    }
-
     #[derive(Clone)]
     pub struct StatsCache {
-        inner: Arc<locks::RwLock<Inner>>,
+        inner: Arc<locks::RwLock<StatsCacheInner>>,
     }
-    impl juniper::Context for Inner {}
-    pub struct Inner {
+    impl juniper::Context for StatsCacheInner {}
+    pub struct StatsCacheInner {
         trades: Vec<Trade>,
         hashes: HashSet<BisqHash>,
     }
-    impl Inner {
+    impl StatsCacheInner {
         fn add(&mut self, trade: Trade) -> CommandResult {
             if self.hashes.insert(trade.hash) {
                 self.trades.push(trade);
@@ -105,12 +35,15 @@ mod inner {
                 CommandResult::Ignored
             }
         }
+        pub fn trades(&self) -> &Vec<Trade> {
+            &self.trades
+        }
     }
 
     impl StatsCache {
         pub fn new() -> Option<Self> {
             Some(Self {
-                inner: Arc::new(locks::RwLock::new(Inner {
+                inner: Arc::new(locks::RwLock::new(StatsCacheInner {
                     trades: Vec::new(),
                     hashes: HashSet::new(),
                 })),
@@ -125,7 +58,9 @@ mod inner {
                 .map_err(|_| MailboxError::Closed)
         }
 
-        pub fn inner(&self) -> impl Future<Item = locks::RwLockReadGuard<Inner>, Error = ()> {
+        pub fn inner(
+            &self,
+        ) -> impl Future<Item = locks::RwLockReadGuard<StatsCacheInner>, Error = ()> {
             self.inner.read()
         }
     }

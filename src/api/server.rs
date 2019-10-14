@@ -1,4 +1,4 @@
-use super::responses::*;
+use super::{graphql::*, responses::*};
 use crate::{
     domain::{
         offer::{message::GetOpenOffers, OfferBook},
