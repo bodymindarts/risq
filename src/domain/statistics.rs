@@ -25,6 +25,7 @@ mod inner {
     pub struct StatsCache {
         inner: Arc<locks::RwLock<StatsCacheInner>>,
     }
+
     pub struct StatsCacheInner {
         trades: Vec<Trade>,
         hashes: HashSet<BisqHash>,

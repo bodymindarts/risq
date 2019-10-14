@@ -3,6 +3,7 @@ schema {
 }
 
 type Query {
+  "Requires --features \"statistics\" to populate"
   trades: [Trade!]! @juniper(ownership: "owned"),
 }
 
