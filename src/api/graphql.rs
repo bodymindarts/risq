@@ -181,56 +181,56 @@ impl MarketFields for Market {
         Ok(&self.name)
     }
 
-    fn field_lname(
+    fn field_l_name(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
         Ok(&self.left.name)
     }
 
-    fn field_rname(
+    fn field_r_name(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
         Ok(&self.right.name)
     }
 
-    fn field_lsymbol(
+    fn field_l_symbol(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
         Ok(&self.left.code)
     }
 
-    fn field_rsymbol(
+    fn field_r_symbol(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
         Ok(&self.right.code)
     }
 
-    fn field_lprecision(
+    fn field_l_precision(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
         Ok(self.left.precision as i32)
     }
 
-    fn field_rprecision(
+    fn field_r_precision(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
         Ok(self.right.precision as i32)
     }
 
-    fn field_ltype(
+    fn field_l_type_lower_case(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
         Ok(self.left.currency_type.to_lowercase())
     }
 
-    fn field_rtype(
+    fn field_r_type_lower_case(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
