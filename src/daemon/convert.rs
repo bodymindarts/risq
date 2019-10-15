@@ -14,6 +14,7 @@ use crate::{
     },
     prelude::{sha256, Hash},
 };
+use chrono::{TimeZone, Utc};
 use std::{
     convert::TryFrom,
     time::{Duration, SystemTime},
@@ -84,8 +85,8 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
         let counter = currency::from_code(&payload.counter_currency)?;
         let market = market::from_pair(base, counter)?;
         info!(
-            "market: {}, price: {}, trade_amount: {}",
-            market.pair, payload.trade_price, payload.trade_amount
+            "market: {}, price: {}, trade_amount: {}, timestamp: {}",
+            market.pair, payload.trade_price, payload.trade_amount, payload.trade_date
         );
         Some(statistics::Trade::new(
             market,
@@ -94,6 +95,7 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
             payload.trade_price as u64,
             payload.trade_amount as u64,
             payload.payment_method_id,
+            Utc.timestamp_millis(payload.trade_date),
             hash,
         ))
     } else {

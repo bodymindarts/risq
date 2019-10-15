@@ -17,16 +17,10 @@ type Trade {
   formattedPrice: String! @juniper(ownership: "owned"),
   formattedAmount: String! @juniper(ownership: "owned"),
   formattedVolume: String! @juniper(ownership: "owned"),
-  # paymentMethod: String,
-  # offerDate: Timestamp,
-  # useMarketBasedPrice: Boolean,
-  # marketPriceMargin: Float,
-  # offerAmount: Int,
-  # offerMinAmount: Int,
-  # depositTxId: String,
-  # market: String,
-  # total: Int,
+  date: DateTime!
 }
+
+scalar DateTime
 
 enum Direction {
   BUY

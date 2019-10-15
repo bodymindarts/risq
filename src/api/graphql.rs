@@ -8,6 +8,7 @@ use crate::{
     prelude::*,
 };
 use actix_web::{web, Error, HttpResponse};
+use chrono::{DateTime, Utc};
 use juniper::{
     self,
     http::{graphiql::graphiql_source, GraphQLRequest},
@@ -164,6 +165,13 @@ impl TradeFields for Trade {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
         Ok(self.volume.format(TARGET_PRECISION as u32))
+    }
+
+    fn field_date(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&DateTime<Utc>> {
+        Ok(&self.date)
     }
 }
 

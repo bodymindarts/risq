@@ -4,6 +4,7 @@ use super::{
     offer::{OfferDirection, OfferId},
 };
 use crate::bisq::BisqHash;
+use chrono::{DateTime, Utc};
 
 #[derive(Clone)]
 pub struct Trade {
@@ -14,6 +15,7 @@ pub struct Trade {
     pub amount: MonetaryAmount,
     pub volume: MonetaryAmount,
     pub payment_method_id: String,
+    pub date: DateTime<Utc>,
     pub hash: BisqHash,
 }
 impl Trade {
@@ -24,6 +26,7 @@ impl Trade {
         price: u64,
         amount: u64,
         payment_method_id: String,
+        date: DateTime<Utc>,
         hash: BisqHash,
     ) -> Self {
         Self {
@@ -34,6 +37,7 @@ impl Trade {
             amount: MonetaryAmount::new(amount, market.left),
             volume: Self::determin_volume(price, amount, market),
             payment_method_id,
+            date,
             hash,
         }
     }
