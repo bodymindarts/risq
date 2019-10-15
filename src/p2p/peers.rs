@@ -39,7 +39,7 @@ impl From<(NodeAddress, &PeerInfo)> for Peer {
                 .reported_alive_at
                 .duration_since(UNIX_EPOCH)
                 .expect("Time went backwards")
-                .as_secs() as i64,
+                .as_millis() as i64,
             supported_capabilities: info
                 .reported_capabilities
                 .as_ref()
@@ -310,7 +310,7 @@ impl<D: SendableDispatcher> Peers<D> {
                 node_address.map(|addr| {
                     self.update_peer_info(
                         &addr,
-                        UNIX_EPOCH + Duration::from_secs(date as u64),
+                        UNIX_EPOCH + Duration::from_millis(date as u64),
                         Some(supported_capabilities),
                         None,
                     )
