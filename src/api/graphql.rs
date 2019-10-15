@@ -15,7 +15,10 @@ use juniper::{
 };
 use juniper_from_schema::graphql_schema_from_file;
 use lazy_static::lazy_static;
-use std::{sync::Arc, time::UNIX_EPOCH};
+use std::{
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 pub fn graphql(
     schema: web::Data<Arc<Schema>>,
@@ -170,13 +173,18 @@ impl TradeFields for Trade {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<UnixMillis> {
-        Ok(UnixMillis(
-            self.timestamp
-                .duration_since(UNIX_EPOCH)
+        Ok(self.timestamp.into())
+    }
+}
+
+impl From<SystemTime> for UnixMillis {
+    fn from(time: SystemTime) -> Self {
+        UnixMillis(
+            time.duration_since(UNIX_EPOCH)
                 .expect("Time went backwards")
                 .as_millis()
                 .to_string(),
-        ))
+        )
     }
 }
 
