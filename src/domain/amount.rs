@@ -1,6 +1,6 @@
 use super::currency::Currency;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct MonetaryAmount {
     base_amount: u64,
     currency: &'static Currency,
@@ -14,11 +14,18 @@ impl MonetaryAmount {
         }
     }
 
-    pub fn format(&self) -> String {
+    pub fn format(&self, target_precision: u32) -> String {
         let mut ret = String::new();
         let mut rest_amount = self.base_amount;
 
-        while ret.len() < self.currency.precision as usize {
+        let internal_precision = self.currency.precision();
+        if target_precision > internal_precision {
+            rest_amount = rest_amount * 10_u64.pow(target_precision - internal_precision);
+        } else if internal_precision > target_precision {
+            rest_amount = rest_amount / 10_u64.pow(internal_precision - target_precision);
+        }
+
+        while ret.len() < target_precision as usize {
             ret.push(char_of_last_digit(rest_amount));
             rest_amount = rest_amount / 10;
         }
@@ -28,7 +35,7 @@ impl MonetaryAmount {
             ret.push(char_of_last_digit(rest_amount));
             rest_amount = rest_amount / 10;
         }
-        if ret.len() == self.currency.precision as usize + 1 {
+        if ret.len() == target_precision as usize + 1 {
             ret.push('0');
         }
         ret.chars().rev().collect()

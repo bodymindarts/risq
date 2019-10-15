@@ -113,10 +113,12 @@ impl QueryFields for Query {
     }
 }
 
+const TARGET_PRECISION: i32 = 8;
+
 impl TradeFields for Trade {
     fn field_market_pair(
         &self,
-        executor: &juniper::Executor<'_, GraphQLContext>,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
         Ok(&self.market.pair)
     }
@@ -128,6 +130,40 @@ impl TradeFields for Trade {
             OfferDirection::Sell => Direction::Sell,
             OfferDirection::Buy => Direction::Buy,
         })
+    }
+    fn field_offer_id(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<juniper::ID> {
+        Ok(juniper::ID::new(self.offer_id.clone()))
+    }
+
+    fn field_payment_method_id(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.payment_method_id)
+    }
+
+    fn field_formatted_price(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.price.format(TARGET_PRECISION as u32))
+    }
+
+    fn field_formatted_amount(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.amount.format(TARGET_PRECISION as u32))
+    }
+
+    fn field_formatted_volume(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume.format(TARGET_PRECISION as u32))
     }
 }
 
@@ -155,7 +191,7 @@ impl CurrencyFields for Currency {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
-        Ok(self.precision as i32)
+        Ok(TARGET_PRECISION)
     }
 
     fn field_currency_type_lower_case(
@@ -213,14 +249,14 @@ impl MarketFields for Market {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
-        Ok(self.left.precision as i32)
+        Ok(TARGET_PRECISION)
     }
 
     fn field_r_precision(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
-        Ok(self.right.precision as i32)
+        Ok(TARGET_PRECISION)
     }
 
     fn field_l_type_lower_case(

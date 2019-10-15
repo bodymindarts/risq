@@ -22,13 +22,9 @@ macro_rules! new_market {
     }};
 }
 
-pub fn from_pair(base: &Currency, counter: &Currency) -> Option<&'static Market> {
-    let pair = format!(
-        "{}_{}",
-        base.code.to_lowercase(),
-        counter.code.to_lowercase()
-    );
-    ALL.iter().find(|m| &m.pair == &pair)
+pub fn from_pair(left: &Currency, right: &Currency) -> Option<&'static Market> {
+    ALL.iter()
+        .find(|m| m.left.code == left.code && m.right.code == right.code)
 }
 
 lazy_static! {

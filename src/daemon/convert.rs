@@ -7,6 +7,7 @@ use crate::{
         BisqHash,
     },
     domain::{
+        amount::MonetaryAmount,
         currency, market,
         offer::{message::*, *},
         statistics,
@@ -75,7 +76,6 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
 pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistics::Trade> {
     let hash: BisqHash = (&payload).into();
     if let persistable_network_payload::Message::TradeStatistics2(payload) = payload.message? {
-        info!("converting statistics");
         let direction = offer_payload::Direction::from_i32(payload.direction)
             .ok_or(())
             .and_then(OfferDirection::try_from)
@@ -83,12 +83,19 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
         let base = currency::from_code(&payload.base_currency)?;
         let counter = currency::from_code(&payload.counter_currency)?;
         let market = market::from_pair(base, counter)?;
-        info!("market is: {:?}", market);
-        Some(statistics::Trade {
-            hash,
-            direction,
+        info!(
+            "market: {}, price: {}, trade_amount: {}",
+            market.pair, payload.trade_price, payload.trade_amount
+        );
+        Some(statistics::Trade::new(
             market,
-        })
+            direction,
+            payload.offer_id.into(),
+            payload.trade_price as u64,
+            payload.trade_amount as u64,
+            payload.payment_method_id,
+            hash,
+        ))
     } else {
         None
     }
