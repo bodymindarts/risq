@@ -83,10 +83,6 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
         let base = currency::from_code(&payload.base_currency)?;
         let counter = currency::from_code(&payload.counter_currency)?;
         let market = market::from_pair(base, counter)?;
-        info!(
-            "market: {}, price: {}, trade_amount: {}, timestamp: {}",
-            market.pair, payload.trade_price, payload.trade_amount, payload.trade_date
-        );
         Some(statistics::Trade::new(
             market,
             direction,
