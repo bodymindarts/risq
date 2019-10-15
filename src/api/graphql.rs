@@ -8,7 +8,6 @@ use crate::{
     prelude::*,
 };
 use actix_web::{web, Error, HttpResponse};
-use chrono::{DateTime, Utc};
 use juniper::{
     self,
     http::{graphiql::graphiql_source, GraphQLRequest},
@@ -16,7 +15,7 @@ use juniper::{
 };
 use juniper_from_schema::graphql_schema_from_file;
 use lazy_static::lazy_static;
-use std::sync::Arc;
+use std::{sync::Arc, time::UNIX_EPOCH};
 
 pub fn graphql(
     schema: web::Data<Arc<Schema>>,
@@ -167,11 +166,17 @@ impl TradeFields for Trade {
         Ok(self.volume.format(TARGET_PRECISION as u32))
     }
 
-    fn field_date(
+    fn field_unix_millis(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
-    ) -> FieldResult<&DateTime<Utc>> {
-        Ok(&self.date)
+    ) -> FieldResult<UnixMillis> {
+        Ok(UnixMillis(
+            self.timestamp
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_millis()
+                .to_string(),
+        ))
     }
 }
 

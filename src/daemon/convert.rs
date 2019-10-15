@@ -7,17 +7,16 @@ use crate::{
         BisqHash,
     },
     domain::{
-        amount::MonetaryAmount,
+        amount::NumberWithPrecision,
         currency, market,
         offer::{message::*, *},
         statistics,
     },
     prelude::{sha256, Hash},
 };
-use chrono::{TimeZone, Utc};
 use std::{
     convert::TryFrom,
-    time::{Duration, SystemTime},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 impl TryFrom<offer_payload::Direction> for OfferDirection {
@@ -92,10 +91,10 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
             market,
             direction,
             payload.offer_id.into(),
-            payload.trade_price as u64,
-            payload.trade_amount as u64,
+            NumberWithPrecision::new(payload.trade_price as u64, counter.bisq_message_precision()),
+            NumberWithPrecision::new(payload.trade_amount as u64, base.bisq_message_precision()),
             payload.payment_method_id,
-            Utc.timestamp_millis(payload.trade_date),
+            UNIX_EPOCH + Duration::from_millis(payload.trade_date as u64),
             hash,
         ))
     } else {

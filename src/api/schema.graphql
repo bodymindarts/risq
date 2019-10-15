@@ -17,10 +17,12 @@ type Trade {
   formattedPrice: String! @juniper(ownership: "owned"),
   formattedAmount: String! @juniper(ownership: "owned"),
   formattedVolume: String! @juniper(ownership: "owned"),
-  date: DateTime!
+  "Number of milliseconds since Epoch as string"
+  unixMillis: UnixMillis! @juniper(ownership: "owned")
 }
 
-scalar DateTime
+"Number of milliseconds since Epoch as string"
+scalar UnixMillis
 
 enum Direction {
   BUY

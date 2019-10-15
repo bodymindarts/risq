@@ -18,7 +18,7 @@ impl Type {
         }
     }
 
-    fn bisq_internal_precision(&self) -> u32 {
+    fn bisq_message_precision(&self) -> u32 {
         match self {
             Type::Fiat => 4,
             Type::Crypto => 8,
@@ -34,8 +34,8 @@ pub struct Currency {
 }
 
 impl Currency {
-    pub fn precision(&self) -> u32 {
-        self.currency_type.bisq_internal_precision()
+    pub fn bisq_message_precision(&self) -> u32 {
+        self.currency_type.bisq_message_precision()
     }
 }
 
