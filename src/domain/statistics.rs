@@ -59,22 +59,37 @@ mod inner {
     pub struct StatsCache {
         inner: Arc<locks::RwLock<StatsCacheInner>>,
     }
-
+    pub struct TradeHistory {
+        inner: Vec<Trade>,
+    }
+    impl TradeHistory {
+        fn new() -> Self {
+            Self { inner: Vec::new() }
+        }
+        fn add(&mut self, trade: Trade) {
+            for n in (0..self.inner.len() + 1).rev() {
+                if n == 0 || trade.timestamp > self.inner[n - 1].timestamp {
+                    self.inner.insert(n, trade);
+                    return;
+                }
+            }
+        }
+    }
     pub struct StatsCacheInner {
-        trades: Vec<Trade>,
+        trades: TradeHistory,
         hashes: HashSet<BisqHash>,
     }
     impl StatsCacheInner {
         fn add(&mut self, trade: Trade) -> CommandResult {
             if self.hashes.insert(trade.hash) {
-                self.trades.push(trade);
+                self.trades.add(trade);
                 CommandResult::Accepted
             } else {
                 CommandResult::Ignored
             }
         }
-        pub fn trades(&self) -> &Vec<Trade> {
-            &self.trades
+        pub fn trades(&self) -> impl Iterator<Item = &Trade> {
+            self.trades.inner.iter()
         }
     }
 
@@ -82,7 +97,7 @@ mod inner {
         pub fn new() -> Option<Self> {
             Some(Self {
                 inner: Arc::new(locks::RwLock::new(StatsCacheInner {
-                    trades: Vec::new(),
+                    trades: TradeHistory::new(),
                     hashes: HashSet::new(),
                 })),
             })

@@ -4,7 +4,7 @@ schema {
 
 type Query {
   "Returns null unless --features \"statistics\" is enabled"
-  trades: [Trade!] @juniper(ownership: "owned"),
+  trades(market: String = "all", limit: Int = 100): [Trade!] @juniper(ownership: "owned"),
   currencies: [Currency!]!
   markets: [Market!]!
 }

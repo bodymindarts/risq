@@ -86,15 +86,26 @@ impl QueryFields for Query {
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
         trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
+        market: String,
+        limit: i32,
     ) -> FieldResult<Option<Vec<Trade>>> {
         let stats = &executor.context().stats_cache;
-        Ok(Some(stats.trades().iter().cloned().collect()))
+        Ok(Some(
+            stats
+                .trades()
+                .filter(|t| market == "all" || t.market.pair == market)
+                .take(usize::min(limit as usize, 2000))
+                .cloned()
+                .collect(),
+        ))
     }
     #[cfg(not(feature = "statistics"))]
     fn field_trades(
         &self,
-        executor: &juniper::Executor<'_, GraphQLContext>,
-        trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
+        _market: String,
+        _limit: i32,
     ) -> FieldResult<Option<Vec<Trade>>> {
         Ok(None)
     }
