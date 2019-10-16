@@ -6,6 +6,8 @@ use super::{
 use crate::bisq::BisqHash;
 use std::time::SystemTime;
 
+pub const DEFAULT_HISTORY_SIZE: usize = 5000;
+
 #[derive(Clone)]
 pub struct Trade {
     pub market: &'static Market,
@@ -53,25 +55,38 @@ mod inner {
         domain::{CommandResult, FutureCommandResult},
         prelude::*,
     };
-    use std::{collections::HashSet, str::FromStr, sync::Arc};
+    use std::{
+        collections::{HashSet, VecDeque},
+        str::FromStr,
+        sync::Arc,
+    };
 
     #[derive(Clone)]
     pub struct StatsCache {
         inner: Arc<locks::RwLock<StatsCacheInner>>,
     }
     pub struct TradeHistory {
-        inner: Vec<Trade>,
+        max_size: usize,
+        inner: VecDeque<Trade>,
     }
     impl TradeHistory {
-        fn new() -> Self {
-            Self { inner: Vec::new() }
+        fn new(max_size: usize) -> Self {
+            Self {
+                max_size,
+                inner: VecDeque::new(),
+            }
         }
-        fn add(&mut self, trade: Trade) {
+        fn insert(&mut self, trade: Trade) -> Option<Trade> {
             for n in (0..self.inner.len() + 1).rev() {
                 if n == 0 || trade.timestamp > self.inner[n - 1].timestamp {
                     self.inner.insert(n, trade);
-                    return;
+                    break;
                 }
+            }
+            if self.inner.len() > self.max_size {
+                self.inner.pop_front()
+            } else {
+                None
             }
         }
     }
@@ -80,9 +95,11 @@ mod inner {
         hashes: HashSet<BisqHash>,
     }
     impl StatsCacheInner {
-        fn add(&mut self, trade: Trade) -> CommandResult {
+        fn insert(&mut self, trade: Trade) -> CommandResult {
             if self.hashes.insert(trade.hash) {
-                self.trades.add(trade);
+                self.trades
+                    .insert(trade)
+                    .map(|removed| self.hashes.remove(&removed.hash));
                 CommandResult::Accepted
             } else {
                 CommandResult::Ignored
@@ -94,10 +111,10 @@ mod inner {
     }
 
     impl StatsCache {
-        pub fn new() -> Option<Self> {
+        pub fn new(trade_capacity: usize) -> Option<Self> {
             Some(Self {
                 inner: Arc::new(locks::RwLock::new(StatsCacheInner {
-                    trades: TradeHistory::new(),
+                    trades: TradeHistory::new(trade_capacity),
                     hashes: HashSet::new(),
                 })),
             })
@@ -106,7 +123,7 @@ mod inner {
         pub fn add(&self, trade: Trade) -> impl FutureCommandResult {
             self.inner
                 .write()
-                .map(move |mut inner| inner.add(trade))
+                .map(move |mut inner| inner.insert(trade))
                 .map_err(|_| MailboxError::Closed)
         }
 
@@ -125,7 +142,7 @@ mod empty {
     #[derive(Clone)]
     pub struct StatsCache;
     impl StatsCache {
-        pub fn new() -> Option<Self> {
+        pub fn new(trade_capacity: usize) -> Option<Self> {
             None
         }
     }

@@ -4,12 +4,15 @@ mod data_router;
 use crate::{
     api,
     bisq::constants::BaseCurrencyNetwork,
-    domain::{offer::*, statistics::StatsCache},
+    domain::{
+        offer::*,
+        statistics::{StatsCache, DEFAULT_HISTORY_SIZE},
+    },
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Broadcaster, Peers, TorConfig},
     prelude::*,
 };
 use data_router::*;
-use std::{fs, sync::Arc};
+use std::fs;
 
 pub struct DaemonConfig {
     pub api_port: u16,
@@ -36,7 +39,7 @@ pub fn run(
 
     // Domain Thread
     let offer_book = OfferBook::start();
-    let stats_cache = StatsCache::new();
+    let stats_cache = StatsCache::new(DEFAULT_HISTORY_SIZE);
 
     let offer_book_clone = offer_book.clone();
     let stats_cache_clone = stats_cache.as_ref().map(Clone::clone);
