@@ -24,7 +24,7 @@ impl From<i32> for OfferSequence {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OfferDirection {
     Buy,
     Sell,

@@ -7,6 +7,7 @@ use crate::{
     prelude::*,
 };
 use actix_web::{
+    middleware::Logger,
     web::{self, Data},
     App, Error, HttpServer, Result,
 };
@@ -30,6 +31,7 @@ pub fn listen(
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .register_data(data.clone())
             .route("/ping", web::get().to(|| "pong"))
             .route("/offers", web::get().to_async(get_offers))

@@ -20,6 +20,7 @@ bufstream = "*"
 bytes = "*"
 dirs = "*"
 env_logger = "*"
+either = "*"
 futures = "*"
 futures-locks = "*"
 juniper = { version = "*"}

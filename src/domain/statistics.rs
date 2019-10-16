@@ -88,7 +88,7 @@ mod inner {
                 CommandResult::Ignored
             }
         }
-        pub fn trades(&self) -> impl Iterator<Item = &Trade> {
+        pub fn trades(&self) -> impl DoubleEndedIterator<Item = &Trade> {
             self.trades.inner.iter()
         }
     }

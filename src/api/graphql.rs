@@ -8,6 +8,7 @@ use crate::{
     prelude::*,
 };
 use actix_web::{web, Error, HttpResponse};
+use either::*;
 use juniper::{
     self,
     http::{graphiql::graphiql_source, GraphQLRequest},
@@ -17,7 +18,7 @@ use juniper_from_schema::graphql_schema_from_file;
 use lazy_static::lazy_static;
 use std::{
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 pub fn graphql(
@@ -87,14 +88,34 @@ impl QueryFields for Query {
         executor: &juniper::Executor<'_, GraphQLContext>,
         trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
         market: String,
+        direction: Option<Direction>,
+        timestamp_from: Option<UnixSecs>,
+        timestamp_to: Option<UnixSecs>,
         limit: i32,
+        sort: Sort,
     ) -> FieldResult<Option<Vec<Trade>>> {
         let stats = &executor.context().stats_cache;
+        let direction = direction.map(OfferDirection::from);
+        let timestamp_from = timestamp_from
+            .and_then(|t| t.parse::<u64>().ok())
+            .map(|secs| UNIX_EPOCH + Duration::from_secs(secs))
+            .unwrap_or(UNIX_EPOCH);
+        let timestamp_to = timestamp_to
+            .and_then(|t| t.parse::<u64>().ok())
+            .map(|secs| UNIX_EPOCH + Duration::from_secs(secs))
+            .unwrap_or_else(SystemTime::now);
+        let iter = stats
+            .trades()
+            .filter(|t| t.timestamp >= timestamp_from && t.timestamp < timestamp_to)
+            .filter(|t| market == "all" || t.market.pair == market)
+            .filter(|t| direction.is_none() || t.direction == direction.unwrap());
+        let iter = if let Sort::Desc = sort {
+            Left(iter.rev())
+        } else {
+            Right(iter)
+        };
         Ok(Some(
-            stats
-                .trades()
-                .filter(|t| market == "all" || t.market.pair == market)
-                .take(usize::min(limit as usize, 2000))
+            iter.take(usize::min(limit as usize, 2000))
                 .cloned()
                 .collect(),
         ))
@@ -105,7 +126,11 @@ impl QueryFields for Query {
         _executor: &juniper::Executor<'_, GraphQLContext>,
         _trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
         _market: String,
+        _direction: Option<Direction>,
+        _timestamp_from: Option<UnixSecs>,
+        _timestamp_to: Option<UnixSecs>,
         _limit: i32,
+        _sort: Sort,
     ) -> FieldResult<Option<Vec<Trade>>> {
         Ok(None)
     }
@@ -129,6 +154,14 @@ impl QueryFields for Query {
 
 const TARGET_PRECISION: i32 = 8;
 
+impl From<Direction> for OfferDirection {
+    fn from(direction: Direction) -> OfferDirection {
+        match direction {
+            Direction::Buy => OfferDirection::Buy,
+            Direction::Sell => OfferDirection::Sell,
+        }
+    }
+}
 impl TradeFields for Trade {
     fn field_market_pair(
         &self,

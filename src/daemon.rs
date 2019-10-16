@@ -33,21 +33,30 @@ pub fn run(
     }
 
     let sys = System::new("risq");
-    let broadcaster = Broadcaster::start();
+
+    // Domain Thread
     let offer_book = OfferBook::start();
     let stats_cache = StatsCache::new();
-    let data_router = DataRouter::start(
-        offer_book.clone(),
-        broadcaster.clone(),
-        stats_cache.as_ref().map(Clone::clone),
-    );
-    let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
+
+    let offer_book_clone = offer_book.clone();
+    let stats_cache_clone = stats_cache.as_ref().map(Clone::clone);
 
     Arbiter::new().exec_fn(move || {
-        let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
-        let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
-        server::start(server_port, peers, bootstrap, tor_config);
+        // Daemon Thread
+        let broadcaster = Broadcaster::start();
+        let data_router =
+            DataRouter::start(offer_book_clone, broadcaster.clone(), stats_cache_clone);
+        let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
+
+        Arbiter::new().exec_fn(move || {
+            // P2P Thread
+            let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
+            let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
+            server::start(server_port, peers, bootstrap, tor_config);
+        });
     });
+
+    // Api Thread
     let _ = api::listen(api_port, offer_book, stats_cache);
 
     let _ = sys.run();

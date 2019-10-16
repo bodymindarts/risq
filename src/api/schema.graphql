@@ -4,9 +4,21 @@ schema {
 
 type Query {
   "Returns null unless --features \"statistics\" is enabled"
-  trades(market: String = "all", limit: Int = 100): [Trade!] @juniper(ownership: "owned"),
+  trades(
+    market: String = "all",
+    direction: Direction,
+    timestampFrom: UnixSecs,
+    timestampTo: UnixSecs,
+    limit: Int = 100,
+    sort: Sort = DESC
+  ): [Trade!] @juniper(ownership: "owned"),
   currencies: [Currency!]!
   markets: [Market!]!
+}
+
+enum Sort {
+  ASC
+  DESC
 }
 
 type Trade {
@@ -23,6 +35,8 @@ type Trade {
 
 "Number of milliseconds since Epoch as string"
 scalar UnixMillis
+"Number of secs since Epoch as string"
+scalar UnixSecs
 
 enum Direction {
   BUY
