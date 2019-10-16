@@ -28,7 +28,6 @@ impl<D: SendableDispatcher> Actor for Bootstrap<D> {
     type Context = Context<Bootstrap<D>>;
     fn started(&mut self, ctx: &mut Self::Context) {
         let addr = self.seed_nodes.pop().expect("No seed nodes defined");
-        let dispatcher = self.dispatcher.clone();
         ctx.spawn(
             fut::wrap_future(bootstrap_from_seed(
                 addr.clone(),
@@ -39,14 +38,6 @@ impl<D: SendableDispatcher> Actor for Bootstrap<D> {
             ))
             .map_err(|_, _, _| ())
             .and_then(move |seed_result, bootstrap: &mut Bootstrap<D>, _ctx| {
-                dispatcher.dispatch(
-                    seed_result.connection_id,
-                    seed_result.preliminary_data_response.into(),
-                );
-                dispatcher.dispatch(
-                    seed_result.connection_id,
-                    seed_result.get_updated_data_response.into(),
-                );
                 fut::wrap_future(
                     bootstrap
                         .peers
@@ -96,8 +87,6 @@ impl<D: SendableDispatcher> Bootstrap<D> {
     }
 }
 struct SeedResult {
-    preliminary_data_response: GetDataResponse,
-    get_updated_data_response: GetDataResponse,
     connection: Addr<Connection>,
     connection_id: ConnectionId,
 }
@@ -114,14 +103,14 @@ fn bootstrap_from_seed<D: SendableDispatcher>(
         supported_capabilities: LOCAL_CAPABILITIES.clone(),
     };
     info!("Bootstrapping from seed: {:?}", seed_addr);
-    Connection::open(seed_addr, network.into(), dispatcher, proxy_port)
+    Connection::open(seed_addr, network.into(), dispatcher.clone(), proxy_port)
         .and_then(|(id, conn)| {
             debug!("Sending PreliminaryGetDataRequest to seed.");
             conn.send(Request(preliminary_get_data_request))
                 .flatten()
                 .map(move |response| (id, conn, response))
         })
-        .and_then(|(id, conn, preliminary_data_response)| {
+        .and_then(move |(id, conn, preliminary_data_response)| {
             debug!(
                 "Preliminary data response has {} items",
                 preliminary_data_response.data_set.len()
@@ -130,6 +119,7 @@ fn bootstrap_from_seed<D: SendableDispatcher>(
                         .len()
             );
             let excluded_keys = get_excluded_keys(&preliminary_data_response);
+            dispatcher.dispatch(id, preliminary_data_response.into());
 
             local_addr
                 .map(move |addr| {
@@ -141,12 +131,12 @@ fn bootstrap_from_seed<D: SendableDispatcher>(
                         },
                         id,
                         conn,
-                        preliminary_data_response,
+                        dispatcher,
                     )
                 })
                 .map_err(|e| e.into())
         })
-        .and_then(|(request, id, conn, preliminary_data_response)| {
+        .and_then(|(request, id, conn, dispatcher)| {
             debug!("Sending GetUpdatedDataRequest to seed.");
             conn.send(Request(request))
                 .flatten()
@@ -158,10 +148,8 @@ fn bootstrap_from_seed<D: SendableDispatcher>(
                                 .persistable_network_payload_items
                                 .len()
                     );
-
+                    dispatcher.dispatch(id, get_updated_data_response.into());
                     SeedResult {
-                        preliminary_data_response,
-                        get_updated_data_response,
                         connection_id: id,
                         connection: conn,
                     }
@@ -195,6 +183,6 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
                 .iter()
                 .map(|i| i.into()),
         )
-        .map(|ref hash: BisqHash| hash.into())
+        .map(BisqHash::into)
         .collect()
 }
