@@ -87,7 +87,7 @@ impl QueryFields for Query {
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
         trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
-        market: String,
+        market: Option<MarketPair>,
         direction: Option<Direction>,
         timestamp_from: Option<UnixSecs>,
         timestamp_to: Option<UnixSecs>,
@@ -95,6 +95,9 @@ impl QueryFields for Query {
         sort: Sort,
     ) -> FieldResult<Option<Vec<Trade>>> {
         let stats = &executor.context().stats_cache;
+        let market = market
+            .map(|MarketPair(m)| m)
+            .unwrap_or_else(|| "all".to_string());
         let direction = direction.map(OfferDirection::from);
         let timestamp_from = timestamp_from
             .and_then(|t| t.parse::<u64>().ok())
@@ -125,7 +128,7 @@ impl QueryFields for Query {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
         _trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
-        _market: String,
+        _market: Option<MarketPair>,
         _direction: Option<Direction>,
         _timestamp_from: Option<UnixSecs>,
         _timestamp_to: Option<UnixSecs>,
@@ -166,8 +169,8 @@ impl TradeFields for Trade {
     fn field_market_pair(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
-    ) -> FieldResult<&String> {
-        Ok(&self.market.pair)
+    ) -> FieldResult<MarketPair> {
+        Ok(MarketPair(self.market.pair.clone()))
     }
     fn field_direction(
         &self,

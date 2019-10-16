@@ -5,7 +5,7 @@ schema {
 type Query {
   "Returns null unless --features \"statistics\" is enabled"
   trades(
-    market: String = "all",
+    market: MarketPair,
     direction: Direction,
     timestampFrom: UnixSecs,
     timestampTo: UnixSecs,
@@ -22,7 +22,7 @@ enum Sort {
 }
 
 type Trade {
-  marketPair: String!
+  marketPair: MarketPair! @juniper(ownership: "owned"),
   direction: Direction! @juniper(ownership: "owned"),
   paymentMethodId: String!,
   offerId: ID! @juniper(ownership: "owned"),
@@ -62,3 +62,6 @@ type Market {
   rPrecision: Int! @juniper(ownership: "owned"),
   rTypeLowerCase: String!,
 }
+
+"String of market pair eg. btc_eur"
+scalar MarketPair
