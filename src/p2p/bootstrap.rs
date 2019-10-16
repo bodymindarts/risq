@@ -14,6 +14,7 @@ use crate::{
     prelude::{sync::oneshot, *},
 };
 use rand::{seq::SliceRandom, thread_rng};
+use std::convert::TryFrom;
 
 pub struct Bootstrap<D: SendableDispatcher> {
     network: BaseCurrencyNetwork,
@@ -170,18 +171,12 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
                     .expect("Couldn't unwrap StorageEntry")
             }
         })
-        .map(|entry| {
-            entry
-                .storage_payload
-                .as_ref()
-                .expect("Couldn't unwrap storage_payload")
-                .into()
-        })
+        .map(|entry| BisqHash::try_from(entry).expect("Couldn't unwrap storage_payload"))
         .chain(
             preliminary_data_response
                 .persistable_network_payload_items
                 .iter()
-                .map(|i| i.into()),
+                .map(BisqHash::from),
         )
         .map(BisqHash::into)
         .collect()
