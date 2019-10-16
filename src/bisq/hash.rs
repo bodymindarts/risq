@@ -1,6 +1,7 @@
 use super::payload::*;
 use crate::prelude::{ripemd160, sha256, Hash};
 use prost::Message;
+use std::convert::TryFrom;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum BisqHash {
@@ -13,6 +14,13 @@ impl From<&BisqHash> for Vec<u8> {
             BisqHash::Sha256(hash) => hash.into_inner().to_vec(),
             BisqHash::RIPEMD160(hash) => hash.into_inner().to_vec(),
         }
+    }
+}
+
+impl TryFrom<&ProtectedStorageEntry> for BisqHash {
+    type Error = ();
+    fn try_from(entry: &ProtectedStorageEntry) -> Result<BisqHash, Self::Error> {
+        entry.storage_payload.as_ref().map(BisqHash::from).ok_or(())
     }
 }
 

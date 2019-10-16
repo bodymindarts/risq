@@ -1,6 +1,9 @@
 use super::convert;
 use crate::{
-    bisq::payload::{kind::*, *},
+    bisq::{
+        payload::{kind::*, *},
+        BisqHash,
+    },
     domain::{
         offer::{message::*, OfferBook},
         statistics::StatsCache,
@@ -9,12 +12,14 @@ use crate::{
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
     prelude::*,
 };
+use std::{collections::HashMap, convert::TryInto, time::SystemTime};
 
 pub struct DataRouter {
     offer_book: Addr<OfferBook>,
     broadcaster: Addr<Broadcaster>,
     #[cfg(feature = "statistics")]
     stats_cache: StatsCache,
+    delivered_message_hashes: HashMap<BisqHash, SystemTime>,
 }
 impl Actor for DataRouter {
     type Context = Context<Self>;
@@ -33,6 +38,7 @@ impl DataRouter {
             broadcaster,
             #[cfg(feature = "statistics")]
             stats_cache: stats_cache.expect("StatsCache missing"),
+            delivered_message_hashes: HashMap::new(),
         }
         .start()
     }
@@ -57,7 +63,7 @@ impl DataRouter {
     }
 
     fn route_bootstrap_data(
-        &self,
+        &mut self,
         data: Vec<StorageEntryWrapper>,
         payloads: Vec<PersistableNetworkPayload>,
     ) {
@@ -69,7 +75,7 @@ impl DataRouter {
         })
     }
     fn route_storage_entry_wrapper(
-        &self,
+        &mut self,
         entry_wrapper: Option<StorageEntryWrapper>,
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
@@ -84,11 +90,19 @@ impl DataRouter {
         .into()
     }
     fn route_protected_storage_entry(
-        &self,
+        &mut self,
         entry: Option<ProtectedStorageEntry>,
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
         let entry = entry?;
+        let bisq_hash: BisqHash = (&entry).try_into().ok()?;
+        if self
+            .delivered_message_hashes
+            .insert(bisq_hash, SystemTime::now())
+            .is_some()
+        {
+            return None;
+        }
         match (&entry).into() {
             StoragePayloadKind::OfferPayload => Arbiter::spawn(
                 self.offer_book
@@ -100,11 +114,19 @@ impl DataRouter {
         .into()
     }
     fn route_persistable_network_payload(
-        &self,
+        &mut self,
         payload: Option<PersistableNetworkPayload>,
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
         let payload = payload?;
+        let bisq_hash: BisqHash = (&payload).try_into().ok()?;
+        if self
+            .delivered_message_hashes
+            .insert(bisq_hash, SystemTime::now())
+            .is_some()
+        {
+            return None;
+        }
         match PersistableNetworkPayloadKind::from(&payload) {
             #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => {
