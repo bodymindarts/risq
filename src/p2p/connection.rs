@@ -108,37 +108,34 @@ impl Connection {
         let (reader, writer) = connection.split();
         let (send, rec) = mpsc::channel(10);
         let id = ConnectionId::new();
-        Arbiter::spawn(
-            future::loop_fn((rec, writer), move |(rec, writer)| {
-                rec.into_future()
-                    .map_err(|(e, _)| e.into())
-                    .and_then(|(msg, rec)| {
-                        msg.ok_or(error::Error::ReceiveMPSCError)
-                            .map(|msg| (msg, rec))
-                    })
-                    .and_then(move |(msg, rec)| {
-                        debug!("Sending message {:?}", msg);
-                        let envelope = NetworkEnvelope {
-                            message_version: message_version.into(),
-                            message: Some(msg),
-                        };
-                        let len = envelope.encoded_len();
-                        let required = len + encoded_len_varint(len as u64);
-                        let mut serialized = Vec::with_capacity(required);
-                        envelope
-                            .encode_length_delimited(&mut serialized)
-                            .expect("Could not encode message");
-                        write_all(writer, serialized)
-                            .and_then(|(writer, _)| flush(writer))
-                            .then(|writer| match writer {
-                                Ok(writer) => Ok(Loop::Continue((rec, writer))),
-                                Err(e) => Ok(Loop::Break(e)),
-                            })
-                    })
-                    .map_err(|_| ())
-            })
-            .map(|_| ()),
-        );
+        arbiter_spawn!(future::loop_fn((rec, writer), move |(rec, writer)| {
+            rec.into_future()
+                .map_err(|(e, _)| e.into())
+                .and_then(|(msg, rec)| {
+                    msg.ok_or(error::Error::ReceiveMPSCError)
+                        .map(|msg| (msg, rec))
+                })
+                .and_then(move |(msg, rec)| {
+                    debug!("Sending message {:?}", msg);
+                    let envelope = NetworkEnvelope {
+                        message_version: message_version.into(),
+                        message: Some(msg),
+                    };
+                    let len = envelope.encoded_len();
+                    let required = len + encoded_len_varint(len as u64);
+                    let mut serialized = Vec::with_capacity(required);
+                    envelope
+                        .encode_length_delimited(&mut serialized)
+                        .expect("Could not encode message");
+                    write_all(writer, serialized)
+                        .and_then(|(writer, _)| flush(writer))
+                        .then(|writer| match writer {
+                            Ok(writer) => Ok(Loop::Continue((rec, writer))),
+                            Err(e) => Ok(Loop::Break(e)),
+                        })
+                })
+                .map_err(|_| ())
+        }));
         (
             id,
             Connection::create(move |ctx| {

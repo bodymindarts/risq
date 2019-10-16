@@ -52,11 +52,7 @@ impl DataRouter {
         let broadcaster = self.broadcaster.clone();
         move |result| {
             if let Ok(CommandResult::Accepted) = result {
-                Arbiter::spawn(
-                    broadcaster
-                        .send(Broadcast(original, Some(origin)))
-                        .then(|_| Ok(())),
-                );
+                arbiter_spawn!(broadcaster.send(Broadcast(original, Some(origin))));
             }
             Ok(())
         }
@@ -104,11 +100,10 @@ impl DataRouter {
             return None;
         }
         match (&entry).into() {
-            StoragePayloadKind::OfferPayload => Arbiter::spawn(
-                self.offer_book
-                    .send(AddOffer(convert::open_offer(entry).unwrap()))
-                    .then(result_handler),
-            ),
+            StoragePayloadKind::OfferPayload => arbiter_spawn!(self
+                .offer_book
+                .send(AddOffer(convert::open_offer(entry).unwrap()))
+                .then(result_handler)),
             _ => (),
         }
         .into()

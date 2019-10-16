@@ -1,3 +1,6 @@
+#[macro_use]
+mod prelude;
+
 mod api;
 #[macro_use]
 mod bisq;
@@ -7,7 +10,6 @@ mod daemon;
 mod domain;
 mod error;
 mod p2p;
-mod prelude;
 
 pub mod cli;
 

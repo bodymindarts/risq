@@ -47,7 +47,7 @@ where
     fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch {
         match <M as PayloadExtractor>::extract(msg) {
             Extract::Succeeded(extraction) => {
-                Arbiter::spawn(self.addr.send(Receive(conn, extraction)).then(|_| Ok(())));
+                arbiter_spawn!(self.addr.send(Receive(conn, extraction)));
                 Dispatch::Consumed
             }
             Extract::Failed(msg) => Dispatch::Retained(msg),

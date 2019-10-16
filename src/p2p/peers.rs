@@ -106,16 +106,12 @@ impl<D: SendableDispatcher> Peers<D> {
             self.update_peer_info(&addr, SystemTime::now(), None, None);
             self.identified_connections.insert(id, addr);
         }
-        Arbiter::spawn(
-            self.keep_alive
-                .send(event::ConnectionAdded(id, for_keep_alive))
-                .then(|_| Ok(())),
-        );
-        Arbiter::spawn(
-            self.broadcaster
-                .send(event::ConnectionAdded(id, for_broadcaster))
-                .then(|_| Ok(())),
-        );
+        arbiter_spawn!(self
+            .keep_alive
+            .send(event::ConnectionAdded(id, for_keep_alive)));
+        arbiter_spawn!(self
+            .broadcaster
+            .send(event::ConnectionAdded(id, for_broadcaster)));
     }
 
     fn update_peer_info(
@@ -186,7 +182,7 @@ impl<D: SendableDispatcher> Peers<D> {
         self.identified_connections.remove(id);
         if let Some(addr) = self.connections.remove(id) {
             if addr.connected() {
-                Arbiter::spawn(addr.send(Shutdown(reason)).then(|_| Ok(())))
+                arbiter_spawn!(addr.send(Shutdown(reason)));
             }
         }
     }
@@ -354,12 +350,7 @@ impl<D: SendableDispatcher> Handler<SeedConnection> for super::Peers<D> {
         SeedConnection(addr, id, connection): SeedConnection,
         ctx: &mut Self::Context,
     ) -> Self::Result {
-        Arbiter::spawn(
-            connection
-                .clone()
-                .send(SetDispatcher(self.get_dispatcher(ctx.address())))
-                .then(|_| Ok(())),
-        );
+        arbiter_spawn!(connection.send(SetDispatcher(self.get_dispatcher(ctx.address()))));
         self.add_connection(id, connection, Some(addr));
         self.consolidate_connections(ctx);
     }

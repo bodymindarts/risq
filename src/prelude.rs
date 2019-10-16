@@ -16,3 +16,9 @@ pub use tokio::{
     },
     reactor, sync,
 };
+
+macro_rules! arbiter_spawn {
+    ($expr:expr) => {
+        Arbiter::spawn($expr.then(|_| Ok(())))
+    };
+}

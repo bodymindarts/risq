@@ -73,21 +73,13 @@ impl<D: SendableDispatcher> Actor for Server<D> {
         };
 
         info!("Server started @ {:?}", addr);
-        Arbiter::spawn(
-            self.bootstrap
-                .send(event::ServerStarted(addr.clone()))
-                .then(|_| Ok(())),
-        );
-        Arbiter::spawn(self.peers.send(event::ServerStarted(addr)).then(|_| Ok(())));
+        arbiter_spawn!(self.bootstrap.send(event::ServerStarted(addr.clone())));
+        arbiter_spawn!(self.peers.send(event::ServerStarted(addr)));
     }
 }
 impl<D: SendableDispatcher> StreamHandler<TcpStream, io::Error> for Server<D> {
     fn handle(&mut self, connection: TcpStream, _ctx: &mut Self::Context) {
-        Arbiter::spawn(
-            self.peers
-                .send(event::IncomingConnection(connection))
-                .then(|_| Ok(())),
-        );
+        arbiter_spawn!(self.peers.send(event::IncomingConnection(connection)));
     }
 }
 

@@ -38,7 +38,7 @@ where
             conn.upgrade()
                 .map(|conn| match exclude {
                     Some(exclude) if id == &exclude => (),
-                    _ => Arbiter::spawn(conn.send(Payload(message.clone())).then(|_| Ok(()))),
+                    _ => arbiter_spawn!(conn.send(Payload(message.clone()))),
                 })
                 .is_some()
         });

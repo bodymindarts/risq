@@ -94,12 +94,9 @@ impl Handler<Receive<Ping>> for KeepAlive {
         );
         if let Some(conn) = self.connections.get(&id) {
             if let Some(conn) = conn.upgrade() {
-                Arbiter::spawn(
-                    conn.send(Payload(Pong {
-                        request_nonce: ping.nonce,
-                    }))
-                    .then(|_| Ok(())),
-                );
+                arbiter_spawn!(conn.send(Payload(Pong {
+                    request_nonce: ping.nonce,
+                })));
             }
         }
     }
