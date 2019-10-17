@@ -1,0 +1,49 @@
+meta:
+  git_uri: (( param "Please specify the uri to the git repo" ))
+  git_branch: (( param "Please specify the branch to checkout" ))
+  pipeline-image: (( param "Please specify the name of the image for pipline tasks" ))
+
+jobs:
+- name: test
+  plan:
+  - in_parallel:
+    - { get: repo, trigger: true }
+    - { get: pipeline-tasks }
+
+- name: build-pipeline-image
+  serial: true
+  plan:
+    - {get: pipeline-image-def, trigger: true}
+    - put: pipeline-image
+      params:
+        build: pipeline-image-def/ci/ci_image
+
+resources:
+- name: repo
+  type: git
+  source:
+    ignore_paths: [infra/*, ci/*, Makefile]
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    private_key: ((github-ssh-key.private_key))
+- name: pipeline-tasks
+  type: git
+  source:
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    paths: [ci/tasks/*, Makefile]
+    private_key: ((github-ssh-key.private_key))
+- name: pipeline-image-def
+  type: git
+  source:
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    paths: [ci/ci_image/*]
+    private_key: ((github-ssh-key.private_key))
+- name: pipeline-image
+  type: docker-image
+  source:
+    email: ((docker-hub-email))
+    username: ((docker-hub-username))
+    password: ((docker-hub-password))
+    repository: (( grab meta.pipeline-image ))
