@@ -1,4 +1,4 @@
-use crate::prelude::r
+use crate::prelude::{
     hmac::{Hmac, HmacEngine},
     sha256, FromHex, Hash, HashEngine, ToHex,
 };
