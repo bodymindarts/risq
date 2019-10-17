@@ -18,6 +18,8 @@ jobs:
       inputs:
       - name: pipeline-tasks
       - name: repo
+      caches:
+        - path: cargo-home
       run:
         path: pipeline-tasks/ci/tasks/run-tests.sh
 
