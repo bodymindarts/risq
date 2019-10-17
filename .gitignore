@@ -2,3 +2,5 @@
 **/*.rs.bk
 .tor
 .risq
+/results
+/tmp

@@ -28,6 +28,9 @@ test-checker:
 test-stats:
 	cargo watch -s 'cargo test --features "statistics"'
 
+test-in-ci:
+	cargo test --features "all fail-on-warnings" --verbose
+
 run-tor:
 	scripts/run-tor
 

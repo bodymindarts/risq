@@ -1,47 +1,48 @@
 [package]
 name = "risq"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Justin Carter <justin@misthos.io>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "AGPL-3.0"
+repository = "https://github.com/bodymindarts/risq"
+description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) in rust"
 
 [features]
 default = []
-
-all = ["checker", "statistics"]
 checker = []
 statistics = []
+fail-on-warnings = []
+all = ["checker", "statistics"]
 
 [dependencies]
-actix = "*"
-actix-web = "*"
-bitcoin = "*"
-bitcoin_hashes = "*"
-bufstream = "*"
-bytes = "*"
-dirs = "*"
-env_logger = "*"
-either = "*"
-futures = "*"
-futures-locks = "*"
-juniper = { version = "*"}
-juniper-from-schema = { version = "*"}
-lazy_static = "*"
-log = "*"
-prost = "*"
-prost-types = "*"
-rand = "*"
-reqwest = "*"
-serde = { version = "*", features = ["derive"] }
-serde_json = "*"
-socks = "*"
-tokio = "*"
-uuid = { version = "*", features = ["v4"] }
+actix = "0.8.3"
+actix-web = "1.0.7"
+bitcoin = "0.18.2"
+bitcoin_hashes = "0.7.1"
+bufstream = "0.1.4"
+bytes = "0.4.12"
+dirs = "2.0.2"
+env_logger = "0.6.2"
+either = "1.5.3"
+futures = "0.1.29"
+futures-locks = "0.4.0"
+juniper = "0.14.0"
+juniper-from-schema = "0.4.0"
+lazy_static = "1.4.0"
+log = "0.4.8"
+prost = "0.5.0"
+prost-types = "0.5.0"
+rand = "0.7.2"
+reqwest = "0.9.21"
+serde = { version = "1.0.100", features = ["derive"] }
+serde_json = "1.0.40"
+socks = "0.3.2"
+tokio = "0.1.22"
+uuid = { version = "0.7.4", features = ["v4"] }
 
 [dependencies.clap]
-version = "*"
-features = [ "suggestions", "color", "unstable"] 
+version = "2.33.0"
+features = [ "suggestions", "color", "unstable"]
 
 [build-dependencies]
-prost-build = "*"
+prost-build = "0.5.0"

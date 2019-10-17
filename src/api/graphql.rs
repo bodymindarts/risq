@@ -74,8 +74,6 @@ impl juniper::Context for GraphQLContext {}
 
 graphql_schema_from_file!("src/api/schema.graphql", context_type: GraphQLContext);
 
-type Mutation = EmptyMutation<GraphQLContext>;
-
 pub fn create_schema() -> Schema {
     Schema::new(Query {}, EmptyMutation::new())
 }
@@ -86,7 +84,7 @@ impl QueryFields for Query {
     fn field_trades(
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
-        trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
+        _trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
         market: Option<MarketPair>,
         direction: Option<Direction>,
         timestamp_from: Option<UnixSecs>,

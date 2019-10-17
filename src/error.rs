@@ -10,18 +10,13 @@ use std::io;
 
 #[derive(Debug)]
 pub enum Error {
-    ToSocketError,
-    ServerShutdown,
     IoError(io::Error),
     Decode(DecodeError),
     Encode(EncodeError),
-    SendOneshotError,
     ReceiveOneshotError,
     MailboxError(MailboxError),
     SendMPSCError,
     ReceiveMPSCError,
-    ConnectionClosed,
-    DidNotReceiveExpectedResponse,
 }
 
 impl From<io::Error> for Error {
