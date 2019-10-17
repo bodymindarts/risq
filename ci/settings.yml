@@ -1,4 +1,0 @@
-meta:
-  git_uri: git@github.com:bodymindarts/risq.git
-  git_branch: ci
-  pipeline-image: bodymindarts/risq-pipeline-image
