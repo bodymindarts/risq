@@ -9,9 +9,11 @@ description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) 
 
 [features]
 default = []
+
 checker = []
 statistics = []
 fail-on-warnings = []
+
 all = ["checker", "statistics"]
 
 [dependencies]
