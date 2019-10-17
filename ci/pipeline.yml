@@ -20,6 +20,7 @@ jobs:
       - name: repo
       caches:
         - path: cargo-home
+        - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/run-tests.sh
 
