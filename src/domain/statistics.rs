@@ -57,7 +57,6 @@ mod inner {
     };
     use std::{
         collections::{HashSet, VecDeque},
-        str::FromStr,
         sync::Arc,
     };
 

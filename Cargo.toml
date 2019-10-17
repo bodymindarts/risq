@@ -13,6 +13,7 @@ default = []
 all = ["checker", "statistics"]
 checker = []
 statistics = []
+fail-on-warnings = []
 
 [dependencies]
 actix = "0.8.3"

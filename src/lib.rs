@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "fail-on-warnings", deny(warnings))]
+
 #[macro_use]
 mod prelude;
 

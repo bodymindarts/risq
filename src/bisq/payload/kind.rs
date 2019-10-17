@@ -1,5 +1,6 @@
 use crate::bisq::payload::*;
 
+#[allow(dead_code)]
 pub enum StoragePayloadKind {
     Alert,
     Arbitrator,
@@ -32,6 +33,7 @@ impl From<&ProtectedStorageEntry> for StoragePayloadKind {
     }
 }
 
+#[allow(dead_code)]
 pub enum PersistableNetworkPayloadKind {
     AccountAgeWitness,
     TradeStatistics2,
