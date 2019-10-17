@@ -3,7 +3,7 @@ name = "risq"
 version = "0.0.1"
 authors = ["Justin Carter <justin@misthos.io>"]
 edition = "2018"
-license = "APGL-v3"
+license = "AGPL-3.0"
 repository = "https://github.com/bodymindarts/risq"
 description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) in rust"
 
