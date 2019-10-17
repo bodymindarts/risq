@@ -5,8 +5,7 @@ authors = ["Justin Carter <justin@misthos.io>"]
 edition = "2018"
 license = "APGL-v3"
 repository = "https://github.com/bodymindarts/risq"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) in rust"
 
 [features]
 default = []
