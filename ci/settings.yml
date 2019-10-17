@@ -1,0 +1,9 @@
+meta:
+  github_owner: bodymindarts
+  github_repo: risq
+  github_private_key: ((github-ssh-key.private_key))
+  github_access_token: ((github-access-token))
+  git_uri: git@github.com:bodymindarts/risq.git
+  git_branch: master
+  pipeline_image: bodymindarts/risq-pipeline-image
+  crates_api_token: ((crates-api-token))

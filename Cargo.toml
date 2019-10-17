@@ -1,17 +1,18 @@
 [package]
 name = "risq"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Justin Carter <justin@misthos.io>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "AGPL-3.0"
+repository = "https://github.com/bodymindarts/risq"
+description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) in rust"
 
 [features]
 default = []
-
-all = ["checker", "statistics"]
 checker = []
 statistics = []
+fail-on-warnings = []
+all = ["checker", "statistics"]
 
 [dependencies]
 actix = "0.8.3"

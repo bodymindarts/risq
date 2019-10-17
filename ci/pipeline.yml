@@ -1,0 +1,173 @@
+meta:
+  github_owner: (( param "Please specify the org the git repo is in" ))
+  github_repo: (( param "Please specify the name of the repository" ))
+  github_private_key: (( param "Please specify the private key fot github auth" ))
+  github_access_token: (( param "Please specify access token for creating releases" ))
+  git_uri: (( param "Please specify the uri to the git repo" ))
+  git_branch: (( param "Please specify the branch to checkout" ))
+  pipeline_image: (( param "Please specify the name of the image for pipline tasks" ))
+  crates_api_token: (( param "Please specify the crates.io api token" ))
+
+jobs:
+- name: bump-patch
+  plan:
+  - { get: version, trigger: true, params: { bump: patch, pre: rc }, passed: [shipit] }
+  - { put: version,                params: { file: version/number} }
+- name: minor
+  public: true
+  plan:
+  - { get: version, trigger: false, params: { bump: minor, pre: rc } }
+  - { put: version,                 params: { file: version/number } }
+
+- name: major
+  public: true
+  plan:
+  - { get: version, trigger: false, params: { bump: major, pre: rc  } }
+  - { put: version,                 params: { file: version/number } }
+
+- name: build-pipeline-image
+  public: true
+  serial: true
+  plan:
+    - {get: pipeline-image-def, trigger: true}
+    - put: pipeline-image
+      params:
+        build: pipeline-image-def/ci/ci_image
+
+- name: test
+  public: true
+  plan:
+  - in_parallel:
+    - { get: repo, trigger: true }
+    - { get: pipeline-tasks }
+  - task: test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: (( grab meta.pipeline_image ))}
+      inputs:
+      - name: pipeline-tasks
+      - name: repo
+      caches:
+        - path: cargo-home
+        - path: cargo-target-dir
+      run:
+        path: pipeline-tasks/ci/tasks/run-tests.sh
+
+- name: rc
+  public: true
+  serial: true
+  plan:
+  - in_parallel:
+    - get: repo
+      trigger: true
+      passed: [test]
+    - { get: version, params: { pre: rc } }
+  - put: version
+    params: { file: version/number }
+
+- name: shipit
+  public: true
+  serial: true
+  plan:
+  - name: inputs
+    in_parallel:
+    - { get: version, passed: [rc], params: {bump: final} }
+    - { get: repo, passed: [rc] }
+    - { get: pipeline-tasks }
+  - task: github-release
+    config:
+      image_resource:
+        type: docker-image
+        source: {repository: (( grab meta.pipeline_image ))}
+      platform: linux
+      inputs:
+      - name: version
+      - name: repo
+      - name: pipeline-tasks
+      caches:
+        - path: cargo-home
+        - path: cargo-target-dir
+      outputs:
+      - name: gh-release
+      - name: out-repo
+      run:
+        path: pipeline-tasks/ci/tasks/github-release.sh
+      params:
+        BRANCH: (( grab meta.git_branch ))
+  - put: repo
+    params:
+      tag: version/number
+      tag_prefix: "v"
+      repository: out-repo/git
+  - put: github-release
+    params:
+      name:   gh-release/name
+      tag:    gh-release/tag
+      body:   gh-release/notes.md
+      globs: [gh-release/artifacts/*]
+  - put: version
+    params: { bump: final }
+  - task: publish-to-crates
+    config:
+      image_resource:
+        type: docker-image
+        source: {repository: (( grab meta.pipeline_image ))}
+      platform: linux
+      inputs:
+      - name: pipeline-tasks
+      - name: out-repo
+      params:
+        CRATES_API_TOKEN: (( grab meta.crates_api_token ))
+      caches:
+        - path: cargo-home
+        - path: cargo-target-dir
+      run:
+        path: pipeline-tasks/ci/tasks/publish-to-crates.sh
+
+
+resources:
+- name: repo
+  type: git
+  source:
+    ignore_paths: [infra/*, ci/*, Makefile]
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    private_key: (( grab meta.github_private_key ))
+- name: pipeline-tasks
+  type: git
+  source:
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    paths: [ci/tasks/*, Makefile]
+    private_key: (( grab meta.github_private_key ))
+- name: pipeline-image-def
+  type: git
+  source:
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    paths: [ci/ci_image/*]
+    private_key: (( grab meta.github_private_key ))
+- name: pipeline-image
+  type: docker-image
+  source:
+    email: ((docker-hub-email))
+    username: ((docker-hub-username))
+    password: ((docker-hub-password))
+    repository: (( grab meta.pipeline_image ))
+- name: version
+  type: semver
+  source:
+    driver: git
+    uri: (( grab meta.git_uri ))
+    private_key: (( grab meta.github_private_key ))
+    branch: version
+    file: version
+    initial_version: "0.0.1"
+- name: github-release
+  type: github-release
+  source:
+    user:         (( grab meta.github_owner ))
+    repository:   (( grab meta.github_repo ))
+    access_token: (( grab meta.github_access_token ))

@@ -23,11 +23,6 @@ impl FromStr for BaseCurrencyNetwork {
 
 pub(super) const P2P_NETWORK_VERSION: i32 = 1;
 
-pub const MAX_REPORTED_PEERS: usize = 1000;
-pub const MAX_CONNECTIONS_DEFAULT: u8 = 12;
-pub const NUM_SEEDS_FOR_PRELIMINARY_REQUEST: u8 = 2;
-pub const NUM_ADDITIONAL_SEEDS_FOR_UPDATE_REQUEST: u8 = 1;
-
 pub fn seed_nodes(network: &BaseCurrencyNetwork) -> Vec<NodeAddress> {
     match network {
         BaseCurrencyNetwork::BtcRegtest => vec![
@@ -35,10 +30,10 @@ pub fn seed_nodes(network: &BaseCurrencyNetwork) -> Vec<NodeAddress> {
                 host_name: "127.0.0.1".to_string(),
                 port: 2002,
             },
-            // NodeAddress {
-            //     host_name: "127.0.0.1".to_string(),
-            //     port: 3002,
-            // },
+            NodeAddress {
+                host_name: "127.0.0.1".to_string(),
+                port: 3002,
+            },
         ],
         BaseCurrencyNetwork::BtcTestnet => vec![NodeAddress {
             host_name: "m5izk3fvjsjbmkqi.onion".to_string(),

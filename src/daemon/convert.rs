@@ -2,7 +2,7 @@ use crate::{
     bisq::{
         payload::{
             offer_payload, persistable_network_payload, storage_payload, PersistableNetworkPayload,
-            ProtectedStorageEntry, RefreshOfferMessage, TradeStatistics2,
+            ProtectedStorageEntry, RefreshOfferMessage,
         },
         BisqHash,
     },

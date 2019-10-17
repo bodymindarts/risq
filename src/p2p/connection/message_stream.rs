@@ -72,6 +72,7 @@ impl Stream for MessageStream {
                 while *pos < buf.len() {
                     let n = try_ready!(self.reader.poll_read(&mut buf[*pos..(*pos + 1)]));
                     if n == 0 {
+                        self.state = MessageStreamState::Empty;
                         return Err(
                             io::Error::new(io::ErrorKind::UnexpectedEof, "early eof").into()
                         );
@@ -105,6 +106,7 @@ impl Stream for MessageStream {
                 match NetworkEnvelope::decode(&*buf) {
                     Ok(res) => res,
                     Err(e) => {
+                        self.state = MessageStreamState::Empty;
                         debug!("Decode error {:?}", e);
                         return Err(e.into());
                     }

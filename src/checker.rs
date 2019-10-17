@@ -8,7 +8,7 @@ use std::{process, time::SystemTime};
 #[derive(Debug, Clone, Copy)]
 struct DummyDispatcher;
 impl Dispatcher for DummyDispatcher {
-    fn dispatch(&self, conn: ConnectionId, msg: network_envelope::Message) -> Dispatch {
+    fn dispatch(&self, _conn: ConnectionId, _msg: network_envelope::Message) -> Dispatch {
         Dispatch::Consumed
     }
 }
