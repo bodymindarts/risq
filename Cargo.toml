@@ -32,7 +32,7 @@ lazy_static = "*"
 log = "*"
 prost = "*"
 prost-types = "*"
-rand = "0.6.5"
+rand = "0.7.2"
 reqwest = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
