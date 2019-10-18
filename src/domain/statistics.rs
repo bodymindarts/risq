@@ -76,7 +76,7 @@ mod inner {
             }
         }
         fn insert(&mut self, trade: Trade) -> Option<Trade> {
-            for n in (0..self.inner.len() + 1).rev() {
+            for n in (0..=self.inner.len()).rev() {
                 if n == 0 || trade.timestamp > self.inner[n - 1].timestamp {
                     self.inner.insert(n, trade);
                     break;
