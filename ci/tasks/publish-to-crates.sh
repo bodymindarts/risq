@@ -2,10 +2,10 @@
 
 set -e
 
-pushd out-repo
+pushd out-repo/git
 
 cat <<EOF | cargo login
 ${CRATES_API_TOKEN}
 EOF
 
-cargo publish --all-features --no-verify
+cargo publish --features "all" --no-verify --locked

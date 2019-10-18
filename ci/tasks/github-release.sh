@@ -39,7 +39,7 @@ fi
  git commit -m "Release v${VERSION}")
 
 export CARGO_TARGET_DIR="../cargo-target-dir"
-cargo build --all-features --target ${TARGET} --release
+cargo build --features "all" --target ${TARGET} --release --locked
 
 mkdir -p ${RELEASE_ROOT}/artifacts
 mv ${CARGO_TARGET_DIR}/${TARGET}/release/${BINARY} ${RELEASE_ROOT}/artifacts/${BINARY}-${TARGET}
