@@ -125,13 +125,26 @@ jobs:
         - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/publish-to-crates.sh
+  - task: verify-publish
+    config:
+      image_resource:
+        type: docker-image
+        source: {repository: (( grab meta.pipeline_image ))}
+      platform: linux
+      inputs:
+      - name: version
+      caches:
+        - path: cargo-home
+        - path: cargo-target-dir
+      run:
+        path: pipeline-tasks/ci/tasks/verify-publish.sh
 
 
 resources:
 - name: repo
   type: git
   source:
-    ignore_paths: [infra/*, ci/*, Makefile]
+    ignore_paths: ["ci/*[^md]", Makefile]
     uri: (( grab meta.git_uri ))
     branch: (( grab meta.git_branch ))
     private_key: (( grab meta.github_private_key ))
