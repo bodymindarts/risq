@@ -9,10 +9,15 @@ meta:
   crates_api_token: (( param "Please specify the crates.io api token" ))
 
 jobs:
-- name: bump-patch
+- name: auto-patch
   plan:
   - { get: version, trigger: true, params: { bump: patch, pre: rc }, passed: [shipit] }
   - { put: version,                params: { file: version/number} }
+- name: patch
+  public: true
+  plan:
+  - { get: version, trigger: false, params: { bump: patch, pre: rc } }
+  - { put: version,                 params: { file: version/number } }
 - name: minor
   public: true
   plan:
@@ -133,6 +138,7 @@ jobs:
       platform: linux
       inputs:
       - name: version
+      - name: pipeline-tasks
       caches:
         - path: cargo-home
         - path: cargo-target-dir
