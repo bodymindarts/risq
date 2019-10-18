@@ -22,6 +22,7 @@ rustup target add ${TARGET}
 pushd $REPO_ROOT
 
 sed -i'' "0,/version/{s/version.*/version = \"${VERSION}\"/}" Cargo.toml
+sed -i'' "/^name = \"risq/,/version/{s/version.*/version = \"${VERSION}\"/}" ./Cargo.lock
 mv ${REPO_ROOT}/ci/release_notes.md          ${RELEASE_ROOT}/notes.md
 
 # GIT!
