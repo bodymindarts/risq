@@ -8,7 +8,7 @@ repository = "https://github.com/bodymindarts/risq"
 description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) in rust"
 
 [features]
-default = []
+default = ["all"]
 
 checker = []
 statistics = []
