@@ -45,12 +45,3 @@ pub fn listen(
     .start();
     Ok(())
 }
-
-// fn get_offers(
-//     data: Data<Addr<OfferBook>>,
-// ) -> impl Future<Item = web::Json<GetOffers>, Error = Error> {
-//     data.get_ref()
-//         .send(GetOpenOffers)
-//         .map(|offers| web::Json(GetOffers::from(offers)))
-//         .map_err(|e| e.into())
-// }

@@ -12,7 +12,7 @@ type Query {
     limit: Int = 100,
     sort: Sort = DESC
   ): [Trade!] @juniper(ownership: "owned"),
-  offers: [OpenOffer!]! @juniper(ownership: "owned"),
+  offers(market: MarketPair): [OpenOffer!]! @juniper(ownership: "owned"),
   currencies: [Currency!]!
   markets: [Market!]!
 }
@@ -69,9 +69,9 @@ scalar MarketPair
 
 type OpenOffer {
   marketPair: MarketPair! @juniper(ownership: "owned"),
-  offerId: ID! @juniper(ownership: "owned"),
+  id: ID! @juniper(ownership: "owned"),
   # offerDate: UnixMillis,
-  # direction: Direction! @juniper(ownership: "owned"),
+  direction: Direction! @juniper(ownership: "owned"),
   # formattedMinAmount: String! @juniper(ownership: "owned"),
   # formattedPrice: String! @juniper(ownership: "owned"),
   # formattedVolume: String! @juniper(ownership: "owned"),

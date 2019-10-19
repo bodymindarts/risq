@@ -86,6 +86,8 @@ pub fn create_schema() -> Schema {
     Schema::new(Query {}, EmptyMutation::new())
 }
 
+const ALL_MARKETS: &'static str = "all";
+
 pub struct Query;
 impl QueryFields for Query {
     #[cfg(feature = "statistics")]
@@ -102,8 +104,9 @@ impl QueryFields for Query {
     ) -> FieldResult<Option<Vec<Trade>>> {
         let stats = &executor.context().stats_cache;
         let market = market
-            .map(|MarketPair(m)| m)
-            .unwrap_or_else(|| "all".to_string());
+            .as_ref()
+            .map(|MarketPair(m)| m.as_ref())
+            .unwrap_or_else(|| ALL_MARKETS);
         let direction = direction.map(OfferDirection::from);
         let timestamp_from = timestamp_from
             .and_then(|t| t.parse::<u64>().ok())
@@ -116,7 +119,7 @@ impl QueryFields for Query {
         let iter = stats
             .trades()
             .filter(|t| t.timestamp >= timestamp_from && t.timestamp < timestamp_to)
-            .filter(|t| market == "all" || t.market.pair == market)
+            .filter(|t| market == ALL_MARKETS || t.market.pair == market)
             .filter(|t| direction.is_none() || t.direction == direction.unwrap());
         let iter = if let Sort::Desc = sort {
             Left(iter.rev())
@@ -164,13 +167,33 @@ impl QueryFields for Query {
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
         _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+        market: Option<MarketPair>,
     ) -> FieldResult<Vec<OpenOffer>> {
-        Ok(executor.context().open_offers.values().cloned().collect())
+        let market = market
+            .as_ref()
+            .map(|MarketPair(m)| m.as_ref())
+            .unwrap_or_else(|| ALL_MARKETS);
+        Ok(executor
+            .context()
+            .open_offers
+            .values()
+            .filter(|o| &o.market.pair == market || market == ALL_MARKETS)
+            .filter(|o| !o.is_expired())
+            .cloned()
+            .collect())
     }
 }
 
 const TARGET_PRECISION: i32 = 8;
 
+impl From<OfferDirection> for Direction {
+    fn from(direction: OfferDirection) -> Direction {
+        match direction {
+            OfferDirection::Buy => Direction::Buy,
+            OfferDirection::Sell => Direction::Sell,
+        }
+    }
+}
 impl From<Direction> for OfferDirection {
     fn from(direction: Direction) -> OfferDirection {
         match direction {
@@ -190,10 +213,7 @@ impl TradeFields for Trade {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Direction> {
-        Ok(match self.direction {
-            OfferDirection::Sell => Direction::Sell,
-            OfferDirection::Buy => Direction::Buy,
-        })
+        Ok(self.direction.into())
     }
     fn field_offer_id(
         &self,
@@ -363,10 +383,16 @@ impl OpenOfferFields for OpenOffer {
     ) -> FieldResult<MarketPair> {
         Ok(MarketPair::new(self.market.pair.clone()))
     }
-    fn field_offer_id(
+    fn field_id(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<juniper::ID> {
         Ok(juniper::ID::new(self.id.clone()))
+    }
+    fn field_direction(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Direction> {
+        Ok(self.direction.into())
     }
 }
