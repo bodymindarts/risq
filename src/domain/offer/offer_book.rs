@@ -11,7 +11,13 @@ impl Actor for OfferBook {
     type Context = Context<Self>;
     fn started(&mut self, ctx: &mut Self::Context) {
         ctx.run_interval(CHECK_TTL_INTERVAL, |offer_book, _ctx| {
-            Arc::make_mut(&mut offer_book.open_offers).retain(|_, offer| !offer.is_expired());
+            if offer_book
+                .open_offers
+                .values()
+                .any(|offer| offer.is_expired())
+            {
+                Arc::make_mut(&mut offer_book.open_offers).retain(|_, offer| !offer.is_expired());
+            }
         });
     }
 }
@@ -48,10 +54,13 @@ impl Handler<RefreshOffer> for OfferBook {
         }: RefreshOffer,
         _ctx: &mut Self::Context,
     ) -> Self::Result {
-        let offers = Arc::make_mut(&mut self.open_offers);
-        if let Some(offer) = offers.get_mut(&bisq_hash) {
-            if offer.refresh(sequence) {
-                return MessageResult(CommandResult::Accepted);
+        if let Some(offer) = self.open_offers.get(&bisq_hash) {
+            if offer.would_refresh(sequence) {
+                let offers = Arc::make_mut(&mut self.open_offers);
+                let offer = offers.get_mut(&bisq_hash).unwrap();
+                if offer.refresh(sequence) {
+                    return MessageResult(CommandResult::Accepted);
+                }
             }
         }
         MessageResult(CommandResult::Ignored)
@@ -61,6 +70,6 @@ impl Handler<RefreshOffer> for OfferBook {
 impl Handler<GetOpenOffers> for OfferBook {
     type Result = MessageResult<GetOpenOffers>;
     fn handle(&mut self, _: GetOpenOffers, _ctx: &mut Self::Context) -> Self::Result {
-        MessageResult(self.open_offers.clone())
+        MessageResult(Arc::clone(&self.open_offers))
     }
 }

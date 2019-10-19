@@ -43,8 +43,8 @@ pub fn graphql(
                 .body(result)
         })
 }
-pub fn graphiql() -> HttpResponse {
-    let html = graphiql_source("http://localhost:7477/graphql");
+pub fn graphiql(port: web::Data<u16>) -> HttpResponse {
+    let html = graphiql_source(&format!("http://localhost:{}/graphql", port.to_string()));
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(html)
@@ -250,7 +250,7 @@ impl TradeFields for Trade {
         Ok(self.volume.format(TARGET_PRECISION as u32))
     }
 
-    fn field_unix_millis(
+    fn field_trade_date(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<UnixMillis> {
@@ -394,5 +394,23 @@ impl OpenOfferFields for OpenOffer {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Direction> {
         Ok(self.direction.into())
+    }
+    fn field_payment_method_id(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.payment_method_id)
+    }
+    fn field_offer_fee_tx_id(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<&String> {
+        Ok(&self.offer_fee_tx_id)
+    }
+    fn field_offer_date(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<UnixMillis> {
+        Ok(self.created_at.into())
     }
 }

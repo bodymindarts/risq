@@ -31,7 +31,7 @@ type Trade {
   formattedAmount: String! @juniper(ownership: "owned"),
   formattedVolume: String! @juniper(ownership: "owned"),
   "Number of milliseconds since Epoch as string"
-  unixMillis: UnixMillis! @juniper(ownership: "owned")
+  tradeDate: UnixMillis! @juniper(ownership: "owned")
 }
 
 "Number of milliseconds since Epoch as string"
@@ -70,11 +70,11 @@ scalar MarketPair
 type OpenOffer {
   marketPair: MarketPair! @juniper(ownership: "owned"),
   id: ID! @juniper(ownership: "owned"),
-  # offerDate: UnixMillis,
+  offerDate: UnixMillis! @juniper(ownership: "owned"),,
   direction: Direction! @juniper(ownership: "owned"),
   # formattedMinAmount: String! @juniper(ownership: "owned"),
   # formattedPrice: String! @juniper(ownership: "owned"),
   # formattedVolume: String! @juniper(ownership: "owned"),
-  # paymentMethodId: String!,
-  # offerFeeTxId: String!,
+  paymentMethodId: String!,
+  offerFeeTxId: String!,
 }

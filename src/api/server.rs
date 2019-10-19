@@ -23,11 +23,7 @@ pub fn listen(
         stats_cache: stats_cache.expect("StatsCache empty"),
         offer_book,
     };
-    let schema = if cfg!(feature = "statistics") {
-        Some(std::sync::Arc::new(create_schema()))
-    } else {
-        None
-    };
+    let schema = std::sync::Arc::new(create_schema());
 
     HttpServer::new(move || {
         App::new()
@@ -35,11 +31,15 @@ pub fn listen(
             .route("/ping", web::get().to(|| "pong"))
             .service(
                 web::resource("/graphql")
-                    .data(schema.clone().unwrap())
+                    .data(schema.clone())
                     .data(gql_context.clone())
                     .route(web::post().to_async(graphql)),
             )
-            .service(web::resource("/graphiql").route(web::get().to(graphiql)))
+            .service(
+                web::resource("/graphiql")
+                    .data(port)
+                    .route(web::get().to(graphiql)),
+            )
     })
     .bind(("127.0.0.1", port))?
     .start();

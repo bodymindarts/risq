@@ -84,6 +84,8 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
                 total: payload.amount,
                 min: payload.min_amount,
             },
+            payload.payment_method_id,
+            payload.offer_fee_payment_tx_id,
             created_at,
             entry.sequence_number.into(),
         ))

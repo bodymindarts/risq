@@ -16,7 +16,7 @@ impl From<OfferId> for String {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, PartialOrd)]
 pub struct OfferSequence(i32);
 impl From<i32> for OfferSequence {
     fn from(s: i32) -> Self {
@@ -50,9 +50,11 @@ pub struct OpenOffer {
     pub direction: OfferDirection,
     pub price: OfferPrice,
     pub amount: OfferAmount,
+    pub payment_method_id: String,
+    pub offer_fee_tx_id: String,
+    pub created_at: SystemTime,
 
     expires_at: SystemTime,
-    created_at: SystemTime,
     latest_sequence: OfferSequence,
 }
 
@@ -64,6 +66,8 @@ impl OpenOffer {
         direction: OfferDirection,
         price: OfferPrice,
         amount: OfferAmount,
+        payment_method_id: String,
+        offer_fee_tx_id: String,
         created_at: SystemTime,
         sequence: OfferSequence,
     ) -> OpenOffer {
@@ -74,9 +78,11 @@ impl OpenOffer {
             direction,
             price,
             amount,
+            payment_method_id,
             created_at,
             expires_at: created_at + OFFER_TTL,
             latest_sequence: sequence,
+            offer_fee_tx_id,
         }
     }
 
@@ -84,6 +90,9 @@ impl OpenOffer {
         self.expires_at.elapsed().is_ok()
     }
 
+    pub fn would_refresh(&self, sequence: OfferSequence) -> bool {
+        sequence > self.latest_sequence
+    }
     pub fn refresh(&mut self, sequence: OfferSequence) -> bool {
         if sequence > self.latest_sequence {
             self.expires_at = SystemTime::now() + OFFER_TTL;
