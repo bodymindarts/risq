@@ -1,4 +1,4 @@
-use crate::bisq::BisqHash;
+use crate::{bisq::BisqHash, domain::market::Market};
 use std::time::{Duration, SystemTime};
 
 const OFFER_TTL: Duration = Duration::from_secs(9 * 60);
@@ -45,6 +45,7 @@ pub struct OfferAmount {
 #[derive(Clone)]
 pub struct OpenOffer {
     pub bisq_hash: BisqHash,
+    pub market: &'static Market,
     pub id: OfferId,
     pub direction: OfferDirection,
     pub price: OfferPrice,
@@ -58,6 +59,7 @@ pub struct OpenOffer {
 impl OpenOffer {
     pub fn new(
         bisq_hash: BisqHash,
+        market: &'static Market,
         id: OfferId,
         direction: OfferDirection,
         price: OfferPrice,
@@ -67,6 +69,7 @@ impl OpenOffer {
     ) -> OpenOffer {
         Self {
             bisq_hash,
+            market,
             id,
             direction,
             price,

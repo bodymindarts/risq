@@ -18,10 +18,10 @@ pub fn listen(
     offer_book: Addr<OfferBook>,
     stats_cache: Option<StatsCache>,
 ) -> Result<(), io::Error> {
-    let data = web::Data::new(offer_book);
     let gql_context = GraphQLContextWrapper {
         #[cfg(feature = "statistics")]
         stats_cache: stats_cache.expect("StatsCache empty"),
+        offer_book,
     };
     let schema = if cfg!(feature = "statistics") {
         Some(std::sync::Arc::new(create_schema()))
@@ -32,9 +32,7 @@ pub fn listen(
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .register_data(data.clone())
             .route("/ping", web::get().to(|| "pong"))
-            .route("/offers", web::get().to_async(get_offers))
             .service(
                 web::resource("/graphql")
                     .data(schema.clone().unwrap())
@@ -48,11 +46,11 @@ pub fn listen(
     Ok(())
 }
 
-fn get_offers(
-    data: Data<Addr<OfferBook>>,
-) -> impl Future<Item = web::Json<GetOffers>, Error = Error> {
-    data.get_ref()
-        .send(GetOpenOffers)
-        .map(|offers| web::Json(GetOffers::from(offers)))
-        .map_err(|e| e.into())
-}
+// fn get_offers(
+//     data: Data<Addr<OfferBook>>,
+// ) -> impl Future<Item = web::Json<GetOffers>, Error = Error> {
+//     data.get_ref()
+//         .send(GetOpenOffers)
+//         .map(|offers| web::Json(GetOffers::from(offers)))
+//         .map_err(|e| e.into())
+// }

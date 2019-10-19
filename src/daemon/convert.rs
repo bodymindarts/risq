@@ -55,8 +55,28 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
         } else {
             OfferPrice::Fixed(payload.price)
         };
+        let base = if let Some(currency) = currency::from_code(&payload.base_currency_code) {
+            currency
+        } else {
+            warn!(
+                "Unsupported base currency in offer '{}'",
+                payload.base_currency_code
+            );
+            return None;
+        };
+        let counter = if let Some(currency) = currency::from_code(&payload.counter_currency_code) {
+            currency
+        } else {
+            warn!(
+                "Unsupported currency in offer '{}'",
+                payload.counter_currency_code
+            );
+            return None;
+        };
+        let market = market::from_pair(base, counter)?;
         Some(OpenOffer::new(
             hash,
+            market,
             payload.id.into(),
             direction,
             price,

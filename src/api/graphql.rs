@@ -1,8 +1,9 @@
 use crate::{
+    bisq::BisqHash,
     domain::{
         currency::{self, Currency},
         market::{self, Market},
-        offer::OfferDirection,
+        offer::{message::GetOpenOffers, OfferBook, OfferDirection, OpenOffer},
         statistics::*,
     },
     prelude::*,
@@ -17,6 +18,7 @@ use juniper::{
 use juniper_from_schema::graphql_schema_from_file;
 use lazy_static::lazy_static;
 use std::{
+    collections::HashMap,
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -52,14 +54,19 @@ pub fn graphiql() -> HttpResponse {
 pub struct GraphQLContextWrapper {
     #[cfg(feature = "statistics")]
     pub stats_cache: StatsCache,
+    pub offer_book: Addr<OfferBook>,
 }
 impl GraphQLContextWrapper {
     #[cfg(feature = "statistics")]
     pub fn get(&self) -> impl Future<Item = GraphQLContext, Error = Error> {
-        self.stats_cache
-            .inner()
-            .map_err(Error::from)
-            .map(|stats_cache| GraphQLContext { stats_cache })
+        Future::join(
+            self.stats_cache.inner().map_err(Error::from),
+            self.offer_book.send(GetOpenOffers).map_err(Error::from),
+        )
+        .map(|(stats_cache, open_offers)| GraphQLContext {
+            stats_cache,
+            open_offers,
+        })
     }
     #[cfg(not(feature = "statistics"))]
     pub fn get(&self) -> impl Future<Item = GraphQLContext, Error = Error> {
@@ -69,6 +76,7 @@ impl GraphQLContextWrapper {
 pub struct GraphQLContext {
     #[cfg(feature = "statistics")]
     stats_cache: locks::RwLockReadGuard<StatsCacheInner>,
+    open_offers: Arc<HashMap<BisqHash, OpenOffer>>,
 }
 impl juniper::Context for GraphQLContext {}
 
@@ -150,6 +158,14 @@ impl QueryFields for Query {
         _trail: &QueryTrail<'_, Market, juniper_from_schema::Walked>,
     ) -> FieldResult<&Vec<Market>> {
         Ok(&market::ALL)
+    }
+
+    fn field_offers(
+        &self,
+        executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+    ) -> FieldResult<Vec<OpenOffer>> {
+        Ok(executor.context().open_offers.values().cloned().collect())
     }
 }
 
@@ -337,5 +353,20 @@ impl MarketFields for Market {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<&String> {
         Ok(self.right.currency_type.to_lowercase())
+    }
+}
+
+impl OpenOfferFields for OpenOffer {
+    fn field_market_pair(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<MarketPair> {
+        Ok(MarketPair::new(self.market.pair.clone()))
+    }
+    fn field_offer_id(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<juniper::ID> {
+        Ok(juniper::ID::new(self.id.clone()))
     }
 }

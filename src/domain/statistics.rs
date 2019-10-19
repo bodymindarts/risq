@@ -60,10 +60,6 @@ mod inner {
         sync::Arc,
     };
 
-    #[derive(Clone)]
-    pub struct StatsCache {
-        inner: Arc<locks::RwLock<StatsCacheInner>>,
-    }
     pub struct TradeHistory {
         max_size: usize,
         inner: VecDeque<Trade>,
@@ -109,6 +105,10 @@ mod inner {
         }
     }
 
+    #[derive(Clone)]
+    pub struct StatsCache {
+        inner: Arc<locks::RwLock<StatsCacheInner>>,
+    }
     impl StatsCache {
         pub fn new(trade_capacity: usize) -> Option<Self> {
             Some(Self {

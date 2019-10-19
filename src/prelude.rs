@@ -14,7 +14,7 @@ pub use tokio::{
         stream::Stream,
         *,
     },
-    reactor, sync,
+    reactor, runtime, sync,
 };
 
 macro_rules! arbiter_spawn {

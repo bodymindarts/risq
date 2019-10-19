@@ -100,10 +100,12 @@ impl DataRouter {
             return None;
         }
         match (&entry).into() {
-            StoragePayloadKind::OfferPayload => arbiter_spawn!(self
-                .offer_book
-                .send(AddOffer(convert::open_offer(entry).unwrap()))
-                .then(result_handler)),
+            StoragePayloadKind::OfferPayload => {
+                convert::open_offer(entry).map(|offer| {
+                    arbiter_spawn!(self.offer_book.send(AddOffer(offer)).then(result_handler))
+                });
+                ()
+            }
             _ => (),
         }
         .into()
