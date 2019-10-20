@@ -60,6 +60,7 @@ pub struct OpenOffer {
     pub offer_fee_tx_id: String,
     pub created_at: SystemTime,
     pub display_price: NumberWithPrecision,
+    pub display_volume: NumberWithPrecision,
 
     price: OfferPrice,
     expires_at: SystemTime,
@@ -88,6 +89,7 @@ impl OpenOffer {
             amount,
             payment_method_id,
             display_price: NumberWithPrecision::new(0, 0),
+            display_volume: NumberWithPrecision::new(0, 0),
             created_at,
             expires_at: created_at + OFFER_TTL,
             latest_sequence: sequence,
@@ -124,6 +126,7 @@ impl OpenOffer {
             }
             OfferPrice::Fixed(price) => self.display_price = price,
         }
+        self.display_volume = self.display_price * self.amount.total;
     }
 
     pub(super) fn would_refresh(&self, sequence: OfferSequence) -> bool {

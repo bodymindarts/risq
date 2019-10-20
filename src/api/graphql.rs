@@ -431,4 +431,10 @@ impl OpenOfferFields for OpenOffer {
     ) -> FieldResult<String> {
         Ok(self.display_price.format(TARGET_PRECISION))
     }
+    fn field_formatted_volume(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.display_volume.format(TARGET_PRECISION))
+    }
 }

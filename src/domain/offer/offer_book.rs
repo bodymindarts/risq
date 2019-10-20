@@ -6,7 +6,7 @@ use crate::{
 };
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
-const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(30);
+const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(40);
 
 pub struct OfferBook {
     open_offers: Arc<HashMap<BisqHash, OpenOffer>>,
