@@ -50,11 +50,6 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             .ok_or(())
             .and_then(OfferDirection::try_from)
             .ok()?;
-        let price = if payload.use_market_based_price {
-            OfferPrice::MarketWithMargin(payload.market_price_margin)
-        } else {
-            OfferPrice::Fixed(payload.price)
-        };
         let base = if let Some(currency) = currency::from_code(&payload.base_currency_code) {
             currency
         } else {
@@ -73,6 +68,14 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             );
             return None;
         };
+        let price = if payload.use_market_based_price {
+            OfferPrice::MarketWithMargin(payload.market_price_margin)
+        } else {
+            OfferPrice::Fixed(NumberWithPrecision::new(
+                payload.price as u64,
+                counter.bisq_message_precision(),
+            ))
+        };
         let market = market::from_pair(base, counter)?;
         Some(OpenOffer::new(
             hash,
@@ -81,8 +84,14 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             direction,
             price,
             OfferAmount {
-                total: payload.amount,
-                min: payload.min_amount,
+                total: NumberWithPrecision::new(
+                    payload.amount as u64,
+                    base.bisq_message_precision(),
+                ),
+                min: NumberWithPrecision::new(
+                    payload.min_amount as u64,
+                    base.bisq_message_precision(),
+                ),
             },
             payload.payment_method_id,
             payload.offer_fee_payment_tx_id,

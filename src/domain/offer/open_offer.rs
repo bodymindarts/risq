@@ -1,4 +1,7 @@
-use crate::{bisq::BisqHash, domain::market::Market};
+use crate::{
+    bisq::BisqHash,
+    domain::{amount::NumberWithPrecision, market::Market},
+};
 use std::time::{Duration, SystemTime};
 
 const OFFER_TTL: Duration = Duration::from_secs(9 * 60);
@@ -32,14 +35,14 @@ pub enum OfferDirection {
 
 #[derive(Clone, Copy)]
 pub enum OfferPrice {
-    Fixed(i64),
+    Fixed(NumberWithPrecision),
     MarketWithMargin(f64),
 }
 
 #[derive(Clone, Copy)]
 pub struct OfferAmount {
-    pub total: i64,
-    pub min: i64,
+    pub total: NumberWithPrecision,
+    pub min: NumberWithPrecision,
 }
 
 #[derive(Clone)]

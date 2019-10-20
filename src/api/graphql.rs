@@ -184,7 +184,7 @@ impl QueryFields for Query {
     }
 }
 
-const TARGET_PRECISION: i32 = 8;
+const TARGET_PRECISION: u32 = 8;
 
 impl From<OfferDirection> for Direction {
     fn from(direction: OfferDirection) -> Direction {
@@ -233,21 +233,21 @@ impl TradeFields for Trade {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
-        Ok(self.price.format(TARGET_PRECISION as u32))
+        Ok(self.price.format(TARGET_PRECISION))
     }
 
     fn field_formatted_amount(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
-        Ok(self.amount.format(TARGET_PRECISION as u32))
+        Ok(self.amount.format(TARGET_PRECISION))
     }
 
     fn field_formatted_volume(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
-        Ok(self.volume.format(TARGET_PRECISION as u32))
+        Ok(self.volume.format(TARGET_PRECISION))
     }
 
     fn field_trade_date(
@@ -293,7 +293,7 @@ impl CurrencyFields for Currency {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
-        Ok(TARGET_PRECISION)
+        Ok(TARGET_PRECISION as i32)
     }
 
     fn field_currency_type_lower_case(
@@ -351,14 +351,14 @@ impl MarketFields for Market {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
-        Ok(TARGET_PRECISION)
+        Ok(TARGET_PRECISION as i32)
     }
 
     fn field_r_precision(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<i32> {
-        Ok(TARGET_PRECISION)
+        Ok(TARGET_PRECISION as i32)
     }
 
     fn field_l_type_lower_case(
@@ -412,5 +412,17 @@ impl OpenOfferFields for OpenOffer {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<UnixMillis> {
         Ok(self.created_at.into())
+    }
+    fn field_formatted_amount(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.amount.total.format(TARGET_PRECISION))
+    }
+    fn field_formatted_min_amount(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.amount.min.format(TARGET_PRECISION))
     }
 }
