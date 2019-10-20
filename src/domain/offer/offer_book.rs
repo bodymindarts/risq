@@ -1,30 +1,53 @@
 use super::{message::*, *};
-use crate::{bisq::BisqHash, domain::CommandResult, prelude::*};
+use crate::{
+    bisq::BisqHash,
+    domain::{price_feed::*, CommandResult},
+    prelude::*,
+};
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(60);
 
 pub struct OfferBook {
     open_offers: Arc<HashMap<BisqHash, OpenOffer>>,
+    price_feed: Addr<PriceFeed>,
+    price_data: Arc<HashMap<&'static str, PriceData>>,
 }
 impl Actor for OfferBook {
     type Context = Context<Self>;
     fn started(&mut self, ctx: &mut Self::Context) {
-        ctx.run_interval(CHECK_TTL_INTERVAL, |offer_book, _ctx| {
-            if offer_book
-                .open_offers
-                .values()
-                .any(|offer| offer.is_expired())
-            {
-                Arc::make_mut(&mut offer_book.open_offers).retain(|_, offer| !offer.is_expired());
-            }
+        ctx.run_interval(CHECK_TTL_INTERVAL, |offer_book, ctx| {
+            ctx.spawn(
+                fut::wrap_future(offer_book.price_feed.send(GetCurrentPrices)).then(
+                    |maybe_data, offer_book: &mut OfferBook, _| {
+                        if let Ok(price_data) = maybe_data {
+                            offer_book.price_data = price_data;
+                        }
+                        let open_offers = offer_book
+                            .open_offers
+                            .iter()
+                            .filter_map(|(hash, offer)| {
+                                if offer.is_expired() {
+                                    None
+                                } else {
+                                    Some((hash.clone(), offer.clone()))
+                                }
+                            })
+                            .collect();
+                        offer_book.open_offers = Arc::new(open_offers);
+                        fut::ok(())
+                    },
+                ),
+            );
         });
     }
 }
 impl OfferBook {
-    pub fn start() -> Addr<OfferBook> {
+    pub fn start(price_feed: Addr<PriceFeed>) -> Addr<OfferBook> {
         OfferBook {
             open_offers: Arc::new(HashMap::new()),
+            price_feed,
+            price_data: Arc::new(HashMap::new()),
         }
         .start()
     }

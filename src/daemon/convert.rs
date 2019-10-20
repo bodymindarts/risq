@@ -8,7 +8,8 @@ use crate::{
     },
     domain::{
         amount::NumberWithPrecision,
-        currency, market,
+        currency::Currency,
+        market,
         offer::{message::*, *},
         statistics,
     },
@@ -50,7 +51,7 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             .ok_or(())
             .and_then(OfferDirection::try_from)
             .ok()?;
-        let base = if let Some(currency) = currency::from_code(&payload.base_currency_code) {
+        let base = if let Some(currency) = Currency::from_code(&payload.base_currency_code) {
             currency
         } else {
             warn!(
@@ -59,7 +60,7 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             );
             return None;
         };
-        let counter = if let Some(currency) = currency::from_code(&payload.counter_currency_code) {
+        let counter = if let Some(currency) = Currency::from_code(&payload.counter_currency_code) {
             currency
         } else {
             warn!(
@@ -111,8 +112,8 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
             .ok_or(())
             .and_then(OfferDirection::try_from)
             .ok()?;
-        let base = currency::from_code(&payload.base_currency)?;
-        let counter = currency::from_code(&payload.counter_currency)?;
+        let base = Currency::from_code(&payload.base_currency)?;
+        let counter = Currency::from_code(&payload.counter_currency)?;
         let market = market::from_pair(base, counter)?;
         Some(statistics::Trade::new(
             market,

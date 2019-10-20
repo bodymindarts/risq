@@ -6,6 +6,7 @@ use crate::{
     bisq::constants::BaseCurrencyNetwork,
     domain::{
         offer::*,
+        price_feed::PriceFeed,
         statistics::{StatsCache, DEFAULT_HISTORY_SIZE},
     },
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Broadcaster, Peers, TorConfig},
@@ -38,7 +39,8 @@ pub fn run(
     let sys = System::new("risq");
 
     // Domain Thread
-    let offer_book = OfferBook::start();
+    let price_feed = PriceFeed::start();
+    let offer_book = OfferBook::start(price_feed);
     let stats_cache = StatsCache::new(DEFAULT_HISTORY_SIZE);
 
     let offer_book_clone = offer_book.clone();

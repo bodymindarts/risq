@@ -2,6 +2,7 @@ pub mod amount;
 pub mod currency;
 pub mod market;
 pub mod offer;
+pub mod price_feed;
 pub mod statistics;
 
 use crate::prelude::*;

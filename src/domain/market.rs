@@ -1,4 +1,4 @@
-use super::currency::{from_code, Currency};
+use super::currency::Currency;
 use lazy_static::lazy_static;
 
 #[derive(Clone, Debug)]
@@ -11,8 +11,8 @@ pub struct Market {
 
 macro_rules! new_market {
     ($left:literal, $right:literal) => {{
-        let left = from_code($left).unwrap();
-        let right = from_code($right).unwrap();
+        let left = Currency::from_code($left).unwrap();
+        let right = Currency::from_code($right).unwrap();
         Market {
             pair: format!("{}_{}", left.code.to_lowercase(), right.code.to_lowercase()),
             name: format!("{}/{}", left.name, right.name),

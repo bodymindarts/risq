@@ -37,10 +37,10 @@ impl Currency {
     pub fn bisq_message_precision(&self) -> u32 {
         self.currency_type.bisq_message_precision()
     }
-}
 
-pub fn from_code(code: &str) -> Option<&'static Currency> {
-    ALL.iter().find(|c| &c.code == code)
+    pub fn from_code(code: &str) -> Option<&'static Currency> {
+        ALL.iter().find(|c| &c.code == code)
+    }
 }
 
 lazy_static! {
