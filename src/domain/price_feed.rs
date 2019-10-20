@@ -81,8 +81,8 @@ impl Handler<GetCurrentPrices> for PriceFeed {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(from = "PriceDataRaw")]
 pub struct PriceData {
-    currency: &'static Currency,
-    price: NumberWithPrecision,
+    pub currency: &'static Currency,
+    pub price: f64,
     timestamp: SystemTime,
     provider: String,
 }
@@ -108,18 +108,12 @@ impl From<PriceDataRaw> for PriceData {
             _ => {
                 return Self {
                     currency: Currency::from_code("EUR").unwrap(),
-                    price: NumberWithPrecision::new(0, 0),
+                    price: 0.0,
                     timestamp: UNIX_EPOCH,
                     provider: INVALID.to_string(),
                 }
             }
         };
-        let precision = match currency.currency_type {
-            Type::Fiat => PRICE_NODE_FIAT_DECIMALS,
-            Type::Crypto => PRICE_NODE_CRYPTO_DECIMALS,
-        };
-        let price =
-            NumberWithPrecision::new((price * 10_f64.powf(precision as f64)) as u64, precision);
         Self {
             currency,
             price,

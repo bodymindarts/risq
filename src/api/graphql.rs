@@ -425,4 +425,10 @@ impl OpenOfferFields for OpenOffer {
     ) -> FieldResult<String> {
         Ok(self.amount.min.format(TARGET_PRECISION))
     }
+    fn field_formatted_price(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.display_price.format(TARGET_PRECISION))
+    }
 }

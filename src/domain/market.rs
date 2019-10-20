@@ -9,6 +9,16 @@ pub struct Market {
     pub right: &'static Currency,
 }
 
+impl Market {
+    pub fn non_btc_side(&self) -> &Currency {
+        if &self.left.code == &"BTC" {
+            self.right
+        } else {
+            self.left
+        }
+    }
+}
+
 macro_rules! new_market {
     ($left:literal, $right:literal) => {{
         let left = Currency::from_code($left).unwrap();

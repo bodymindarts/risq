@@ -74,7 +74,7 @@ type OpenOffer {
   direction: Direction! @juniper(ownership: "owned"),
   formattedAmount: String! @juniper(ownership: "owned"),
   formattedMinAmount: String! @juniper(ownership: "owned"),
-  # formattedPrice: String! @juniper(ownership: "owned"),
+  formattedPrice: String! @juniper(ownership: "owned"),
   # formattedVolume: String! @juniper(ownership: "owned"),
   paymentMethodId: String!,
   offerFeeTxId: String!,

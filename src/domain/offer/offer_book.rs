@@ -6,7 +6,7 @@ use crate::{
 };
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
-const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(60);
+const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(30);
 
 pub struct OfferBook {
     open_offers: Arc<HashMap<BisqHash, OpenOffer>>,
@@ -30,7 +30,9 @@ impl Actor for OfferBook {
                                 if offer.is_expired() {
                                     None
                                 } else {
-                                    Some((hash.clone(), offer.clone()))
+                                    let mut offer = offer.clone();
+                                    offer.update_display_price(&offer_book.price_data);
+                                    Some((hash.clone(), offer))
                                 }
                             })
                             .collect();
@@ -55,10 +57,11 @@ impl OfferBook {
 
 impl Handler<AddOffer> for OfferBook {
     type Result = MessageResult<AddOffer>;
-    fn handle(&mut self, AddOffer(offer): AddOffer, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, AddOffer(mut offer): AddOffer, _ctx: &mut Self::Context) -> Self::Result {
         if !offer.is_expired() {
             if let None = self.open_offers.get(&offer.bisq_hash) {
                 info!("Adding offer");
+                offer.update_display_price(&self.price_data);
                 let offers = Arc::make_mut(&mut self.open_offers);
                 offers.insert(offer.bisq_hash, offer);
                 return MessageResult(CommandResult::Accepted);

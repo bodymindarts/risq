@@ -74,7 +74,7 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
         } else {
             OfferPrice::Fixed(NumberWithPrecision::new(
                 payload.price as u64,
-                counter.bisq_message_precision(),
+                counter.bisq_internal_precision(),
             ))
         };
         let market = market::from_pair(base, counter)?;
@@ -87,11 +87,11 @@ pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
             OfferAmount {
                 total: NumberWithPrecision::new(
                     payload.amount as u64,
-                    base.bisq_message_precision(),
+                    base.bisq_internal_precision(),
                 ),
                 min: NumberWithPrecision::new(
                     payload.min_amount as u64,
-                    base.bisq_message_precision(),
+                    base.bisq_internal_precision(),
                 ),
             },
             payload.payment_method_id,
@@ -119,8 +119,11 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
             market,
             direction,
             payload.offer_id.into(),
-            NumberWithPrecision::new(payload.trade_price as u64, counter.bisq_message_precision()),
-            NumberWithPrecision::new(payload.trade_amount as u64, base.bisq_message_precision()),
+            NumberWithPrecision::new(
+                payload.trade_price as u64,
+                counter.bisq_internal_precision(),
+            ),
+            NumberWithPrecision::new(payload.trade_amount as u64, base.bisq_internal_precision()),
             payload.payment_method_id,
             UNIX_EPOCH + Duration::from_millis(payload.trade_date as u64),
             hash,
