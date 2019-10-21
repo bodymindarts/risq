@@ -1,12 +1,16 @@
-#[cfg(feature = "checker")]
+mod query;
+
 use crate::checker;
 use crate::{
-    api::{responses::*, Client},
+    api::Client,
     bisq::{constants::*, NodeAddress},
     daemon::{self, DaemonConfig},
     p2p::TorConfig,
 };
 use clap::{clap_app, crate_version, App, Arg, ArgMatches, SubCommand};
+use query::*;
+#[cfg(feature = "checker")]
+use reqwest;
 use std::str::FromStr;
 
 fn app() -> App<'static, 'static> {
@@ -130,7 +134,8 @@ fn daemon(matches: &ArgMatches) {
 
 fn offers(matches: &ArgMatches) {
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
-    match Client::new(api_port).get_offers() {
+    let response: reqwest::Result<Offers> = Client::new(api_port).query();
+    match response {
         Ok(get_offers) => {
             println!("OPEN OFFERS");
             if get_offers.offers.len() == 0 {
