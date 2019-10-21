@@ -5,13 +5,14 @@ use crate::{
     api::Client,
     bisq::{constants::*, NodeAddress},
     daemon::{self, DaemonConfig},
+    domain::{currency::Currency, market::Market},
     p2p::TorConfig,
 };
 use clap::{clap_app, crate_version, App, Arg, ArgMatches, SubCommand};
 use query::*;
 #[cfg(feature = "checker")]
 use reqwest;
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 fn app() -> App<'static, 'static> {
     let app = clap_app!(risq =>
@@ -32,6 +33,7 @@ fn app() -> App<'static, 'static> {
         (@subcommand offers =>
          (about: "Subcomand to interact with offers")
          (@arg API_PORT: --("api-port") default_value("7477") {port} "API port")
+         (@arg MARKET: --("market") default_value("all") {market} "Filter by market pair")
         )
     );
     if cfg!(feature = "checker") {
@@ -88,6 +90,15 @@ fn port(port: String) -> Result<(), String> {
         Ok(_) => Ok(()),
     }
 }
+fn market(market: String) -> Result<(), String> {
+    if &market == "all" {
+        return Ok(());
+    }
+    if let None = Currency::from_code(&market) {
+        return Err(format!("'{}' is not a valid currency code", market));
+    }
+    Ok(())
+}
 fn boolean(b: String) -> Result<(), String> {
     match bool::from_str(&b) {
         Err(_) => Err(format!("'{}' is not a valid boolean", b).into()),
@@ -134,7 +145,13 @@ fn daemon(matches: &ArgMatches) {
 
 fn offers(matches: &ArgMatches) {
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
-    let response: reqwest::Result<Offers> = Client::new(api_port).query();
+    let mut args = HashMap::new();
+    let currency: Result<&Currency, ()> = matches.value_of("MARKET").unwrap().parse();
+    if let Ok(currency) = currency {
+        let market: &Market = currency.into();
+        Offers::add_variables(&market, &mut args);
+    }
+    let response: reqwest::Result<Offers> = Client::new(api_port).query(args);
     match response {
         Ok(get_offers) => {
             println!("OPEN OFFERS");
@@ -142,17 +159,12 @@ fn offers(matches: &ArgMatches) {
                 println!("<currently no offers available>");
                 return;
             }
-            get_offers
-                .offers
-                .into_iter()
-                .for_each(display_offer_summary)
+            for offer in get_offers.offers.into_iter() {
+                println!("{}", offer)
+            }
         }
         Err(_) => println!("Error trying to reach api"),
     }
-}
-
-fn display_offer_summary(offer: Offer) {
-    println!("{} - {}", offer.id, offer.direction);
 }
 
 #[cfg(feature = "checker")]

@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 pub enum CurrencyType {
@@ -40,6 +41,12 @@ impl Currency {
 
     pub fn from_code(code: &str) -> Option<&'static Currency> {
         ALL.iter().find(|c| &c.code == code)
+    }
+}
+impl FromStr for &Currency {
+    type Err = ();
+    fn from_str(code: &str) -> Result<Self, Self::Err> {
+        Currency::from_code(code).ok_or(())
     }
 }
 

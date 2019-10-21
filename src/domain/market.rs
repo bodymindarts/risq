@@ -37,6 +37,14 @@ pub fn from_pair(left: &Currency, right: &Currency) -> Option<&'static Market> {
         .find(|m| m.left.code == left.code && m.right.code == right.code)
 }
 
+impl From<&Currency> for &Market {
+    fn from(other: &Currency) -> Self {
+        ALL.iter()
+            .find(|m| m.left.code == other.code || m.right.code == other.code)
+            .expect("Currency defined without market")
+    }
+}
+
 lazy_static! {
     pub static ref ALL: Vec<Market> = {
         let mut vec = Vec::with_capacity(248);

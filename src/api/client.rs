@@ -1,5 +1,6 @@
 use reqwest::{self, *};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::collections::HashMap;
 
 pub struct GrqphQLClient {
     url: Url,
@@ -19,11 +20,13 @@ struct GraphQLResponse<T: DeserializeOwned> {
 #[derive(Serialize)]
 struct GraphQLQuery {
     query: String,
+    variables: HashMap<String, String>,
 }
 impl GraphQLQuery {
-    fn new<T: WithQueryFields>() -> Self {
+    fn new<T: WithQueryFields>(variables: HashMap<String, String>) -> Self {
         Self {
             query: <T as WithQueryFields>::get_fields(),
+            variables,
         }
     }
 }
@@ -37,11 +40,11 @@ impl GrqphQLClient {
             client: Client::new(),
         }
     }
-    pub fn query<T: WithQueryFields>(&self) -> Result<T> {
+    pub fn query<T: WithQueryFields>(&self, variables: HashMap<String, String>) -> Result<T> {
         let response: GraphQLResponse<T> = self
             .client
             .post(self.url.clone())
-            .json(&GraphQLQuery::new::<T>())
+            .json(&GraphQLQuery::new::<T>(variables))
             .send()?
             .json()?;
         Ok(response.data)
