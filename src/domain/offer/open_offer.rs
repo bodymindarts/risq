@@ -10,7 +10,7 @@ use std::{
 
 const OFFER_TTL: Duration = Duration::from_secs(9 * 60);
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OfferId(String);
 impl From<String> for OfferId {
     fn from(id: String) -> Self {

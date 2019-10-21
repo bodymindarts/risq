@@ -60,7 +60,7 @@ impl Handler<AddOffer> for OfferBook {
     fn handle(&mut self, AddOffer(mut offer): AddOffer, _ctx: &mut Self::Context) -> Self::Result {
         if !offer.is_expired() {
             if let None = self.open_offers.get(&offer.bisq_hash) {
-                info!("Adding offer");
+                info!("Adding {:?}", offer.id);
                 offer.update_display_price(&self.price_data);
                 let offers = Arc::make_mut(&mut self.open_offers);
                 offers.insert(offer.bisq_hash, offer);

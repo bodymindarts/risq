@@ -3,11 +3,7 @@ use crate::{
     domain::{offer::OfferBook, statistics::*},
     prelude::*,
 };
-use actix_web::{
-    middleware::Logger,
-    web::,
-    App, HttpServer, Result,
-};
+use actix_web::{middleware::Logger, web, App, HttpServer, Result};
 use std::io;
 
 pub fn listen(
