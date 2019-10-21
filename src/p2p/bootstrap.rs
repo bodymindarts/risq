@@ -171,12 +171,18 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
                     .expect("Couldn't unwrap StorageEntry")
             }
         })
-        .map(|entry| BisqHash::try_from(entry).expect("Couldn't unwrap storage_payload"))
+        .map(|entry| {
+            entry
+                .storage_payload
+                .as_ref()
+                .expect("Couldn't unwrap storage_payload")
+                .bisq_hash()
+        })
         .chain(
             preliminary_data_response
                 .persistable_network_payload_items
                 .iter()
-                .map(BisqHash::from),
+                .map(PersistableNetworkPayload::bisq_hash),
         )
         .map(BisqHash::into)
         .collect()

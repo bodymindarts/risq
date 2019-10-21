@@ -117,7 +117,7 @@ impl DataRouter {
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
         let entry = entry?;
-        let bisq_hash: BisqHash = (&entry).try_into().ok()?;
+        let bisq_hash = entry.verify()?;
         if !self.should_deliver(bisq_hash, Some(entry.sequence_number)) {
             return None;
         }
@@ -138,7 +138,7 @@ impl DataRouter {
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
         let payload = payload?;
-        let bisq_hash: BisqHash = (&payload).try_into().ok()?;
+        let bisq_hash = payload.bisq_hash();
         if !self.should_deliver(bisq_hash, None) {
             return None;
         }
