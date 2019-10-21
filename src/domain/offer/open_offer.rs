@@ -62,9 +62,10 @@ pub struct OpenOffer {
     pub display_price: NumberWithPrecision,
     pub display_volume: NumberWithPrecision,
 
+    pub(super) latest_sequence: OfferSequence,
+
     price: OfferPrice,
     expires_at: SystemTime,
-    latest_sequence: OfferSequence,
 }
 
 impl OpenOffer {
