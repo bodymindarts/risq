@@ -19,10 +19,14 @@ pub struct DataRouter {
     broadcaster: Addr<Broadcaster>,
     #[cfg(feature = "statistics")]
     stats_cache: StatsCache,
-    delivered_message_hashes: HashMap<BisqHash, SystemTime>,
+    delivered_info: HashMap<BisqHash, DeliveredInfo>,
 }
 impl Actor for DataRouter {
     type Context = Context<Self>;
+}
+struct DeliveredInfo {
+    delivered_at: SystemTime,
+    sequence: i32,
 }
 trait ResultHandler: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
 impl<F> ResultHandler for F where F: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
@@ -38,7 +42,7 @@ impl DataRouter {
             broadcaster,
             #[cfg(feature = "statistics")]
             stats_cache: stats_cache.expect("StatsCache missing"),
-            delivered_message_hashes: HashMap::new(),
+            delivered_info: HashMap::new(),
         }
         .start()
     }
@@ -70,6 +74,28 @@ impl DataRouter {
             self.route_persistable_network_payload(Some(p), Self::ignore_command_result());
         })
     }
+    fn should_deliver(&mut self, hash: BisqHash, sequence: Option<i32>) -> bool {
+        let ignore = -1;
+        let sequence = sequence.unwrap_or(ignore);
+        match self.delivered_info.get_mut(&hash) {
+            Some(ref mut info) if sequence == ignore || sequence > info.sequence => {
+                info.sequence = sequence;
+                info.delivered_at = SystemTime::now();
+                true
+            }
+            None => {
+                self.delivered_info.insert(
+                    hash,
+                    DeliveredInfo {
+                        sequence,
+                        delivered_at: SystemTime::now(),
+                    },
+                );
+                true
+            }
+            _ => false,
+        }
+    }
     fn route_storage_entry_wrapper(
         &mut self,
         entry_wrapper: Option<StorageEntryWrapper>,
@@ -92,11 +118,7 @@ impl DataRouter {
     ) -> Option<()> {
         let entry = entry?;
         let bisq_hash: BisqHash = (&entry).try_into().ok()?;
-        if self
-            .delivered_message_hashes
-            .insert(bisq_hash, SystemTime::now())
-            .is_some()
-        {
+        if !self.should_deliver(bisq_hash, Some(entry.sequence_number)) {
             return None;
         }
         match (&entry).into() {
@@ -117,11 +139,7 @@ impl DataRouter {
     ) -> Option<()> {
         let payload = payload?;
         let bisq_hash: BisqHash = (&payload).try_into().ok()?;
-        if self
-            .delivered_message_hashes
-            .insert(bisq_hash, SystemTime::now())
-            .is_some()
-        {
+        if !self.should_deliver(bisq_hash, None) {
             return None;
         }
         match PersistableNetworkPayloadKind::from(&payload) {
