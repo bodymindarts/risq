@@ -1,6 +1,5 @@
 use reqwest::{self, *};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::marker::PhantomData;
 
 pub struct GrqphQLClient {
     url: Url,
@@ -18,15 +17,13 @@ struct GraphQLResponse<T: DeserializeOwned> {
 }
 
 #[derive(Serialize)]
-struct GraphQLQuery<T: WithQueryFields> {
+struct GraphQLQuery {
     query: String,
-    phantom: PhantomData<T>,
 }
-impl<T: WithQueryFields> GraphQLQuery<T> {
-    fn new() -> Self {
+impl GraphQLQuery {
+    fn new<T: WithQueryFields>() -> Self {
         Self {
             query: <T as WithQueryFields>::get_fields(),
-            phantom: PhantomData,
         }
     }
 }
@@ -41,11 +38,10 @@ impl GrqphQLClient {
         }
     }
     pub fn query<T: WithQueryFields>(&self) -> Result<T> {
-        let query: GraphQLQuery<T> = GraphQLQuery::new();
         let response: GraphQLResponse<T> = self
             .client
             .post(self.url.clone())
-            .json(&query)
+            .json(&GraphQLQuery::new::<T>())
             .send()?
             .json()?;
         Ok(response.data)
