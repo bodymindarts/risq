@@ -133,21 +133,21 @@ fn offers(matches: &ArgMatches) {
     match Client::new(api_port).get_offers() {
         Ok(get_offers) => {
             println!("OPEN OFFERS");
-            if get_offers.any() {
-                get_offers
-                    .offers
-                    .into_iter()
-                    .for_each(display_offer_summary)
-            } else {
-                println!("<currently no offers available>")
+            if get_offers.offers.len() == 0 {
+                println!("<currently no offers available>");
+                return;
             }
+            get_offers
+                .offers
+                .into_iter()
+                .for_each(display_offer_summary)
         }
         Err(_) => println!("Error trying to reach api"),
     }
 }
 
 fn display_offer_summary(offer: Offer) {
-    let mut dis = format!("{}", offer.direction);
+    println!("{} - {}", offer.id, offer.direction);
 }
 
 #[cfg(feature = "checker")]

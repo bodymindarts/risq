@@ -118,8 +118,6 @@ pub struct PriceData {
 struct GetAllMarketPricesResponse {
     data: Vec<PriceData>,
 }
-const PRICE_NODE_FIAT_DECIMALS: u32 = 2;
-const PRICE_NODE_CRYPTO_DECIMALS: u32 = 8;
 
 impl From<PriceDataRaw> for PriceData {
     fn from(

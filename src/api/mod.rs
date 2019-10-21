@@ -4,5 +4,5 @@ mod server;
 
 pub mod responses;
 
-pub use client::Client;
+pub use client::GrqphQLClient as Client;
 pub use server::listen;
