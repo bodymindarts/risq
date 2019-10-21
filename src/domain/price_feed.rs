@@ -54,7 +54,7 @@ impl PriceFeed {
     fn update_prices(&mut self, ctx: &mut Context<Self>) {
         let node_index: usize = thread_rng().gen::<usize>() % self.nodes.len();
         info!(
-            "Calling price node: {}",
+            "Updating price feed via {}",
             format!("{}/getAllMarketPrices", self.nodes[node_index])
         );
         ctx.spawn(
