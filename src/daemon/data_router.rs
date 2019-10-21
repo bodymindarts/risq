@@ -12,7 +12,7 @@ use crate::{
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
     prelude::*,
 };
-use std::{collections::HashMap, convert::TryInto, time::SystemTime};
+use std::{collections::HashMap, time::SystemTime};
 
 pub struct DataRouter {
     offer_book: Addr<OfferBook>,

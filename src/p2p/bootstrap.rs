@@ -14,7 +14,6 @@ use crate::{
     prelude::{sync::oneshot, *},
 };
 use rand::{seq::SliceRandom, thread_rng};
-use std::convert::TryFrom;
 
 pub struct Bootstrap<D: SendableDispatcher> {
     network: BaseCurrencyNetwork,
