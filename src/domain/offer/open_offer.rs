@@ -8,7 +8,8 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-const OFFER_TTL: Duration = Duration::from_secs(9 * 60);
+const INITIAL_TTL: Duration = Duration::from_secs(12 * 60);
+const REFRESH_TTL: Duration = Duration::from_secs(9 * 60);
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OfferId(String);
@@ -92,7 +93,7 @@ impl OpenOffer {
             display_price: NumberWithPrecision::new(0, 0),
             display_volume: NumberWithPrecision::new(0, 0),
             created_at,
-            expires_at: created_at + OFFER_TTL,
+            expires_at: created_at + INITIAL_TTL,
             latest_sequence: sequence,
             offer_fee_tx_id,
         }
@@ -135,7 +136,7 @@ impl OpenOffer {
     }
     pub(super) fn refresh(&mut self, sequence: OfferSequence) -> bool {
         if sequence > self.latest_sequence {
-            self.expires_at = SystemTime::now() + OFFER_TTL;
+            self.expires_at = SystemTime::now() + REFRESH_TTL;
             self.latest_sequence = sequence;
             return true;
         }

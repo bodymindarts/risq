@@ -1,4 +1,5 @@
 use crate::prelude::{ripemd160, sha256, Hash};
+use prost::Message;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum BisqHash {
@@ -13,3 +14,14 @@ impl From<BisqHash> for Vec<u8> {
         }
     }
 }
+
+pub trait Sha256: Message + Sized {
+    fn sha256(&self) -> sha256::Hash {
+        let mut serialized = Vec::with_capacity(self.encoded_len());
+        self.encode(&mut serialized)
+            .expect("Could not encode message");
+        sha256::Hash::hash(&serialized)
+    }
+}
+
+impl<T> Sha256 for T where T: Message + Sized {}

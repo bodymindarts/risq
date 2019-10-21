@@ -68,6 +68,7 @@ impl Handler<AddOffer> for OfferBook {
                     return MessageResult(CommandResult::Accepted);
                 }
                 Some(existing) if existing.would_refresh(offer.latest_sequence) => {
+                    info!("Refreshing via add {:?}", offer.id);
                     let offers = Arc::make_mut(&mut self.open_offers);
                     offers.insert(offer.bisq_hash, offer);
                     return MessageResult(CommandResult::Accepted);
@@ -92,10 +93,13 @@ impl Handler<RefreshOffer> for OfferBook {
             if offer.would_refresh(sequence) {
                 let offers = Arc::make_mut(&mut self.open_offers);
                 let offer = offers.get_mut(&bisq_hash).unwrap();
+                info!("Offer REFRESHED");
                 if offer.refresh(sequence) {
                     return MessageResult(CommandResult::Accepted);
                 }
             }
+        } else {
+            warn!("UNKNOWN HASH {:?}", bisq_hash);
         }
         MessageResult(CommandResult::Ignored)
     }

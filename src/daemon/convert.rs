@@ -41,11 +41,10 @@ pub fn refresh_offer(msg: &RefreshOfferMessage) -> RefreshOffer {
     }
 }
 
-pub fn open_offer(entry: ProtectedStorageEntry) -> Option<OpenOffer> {
+pub fn open_offer(entry: ProtectedStorageEntry, hash: BisqHash) -> Option<OpenOffer> {
     let created_at =
         SystemTime::UNIX_EPOCH + Duration::from_millis(entry.creation_time_stamp as u64);
     let storage_payload = entry.storage_payload?;
-    let hash = storage_payload.bisq_hash();
     if let storage_payload::Message::OfferPayload(payload) = storage_payload.message? {
         let direction = offer_payload::Direction::from_i32(payload.direction)
             .ok_or(())

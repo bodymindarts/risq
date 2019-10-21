@@ -5,6 +5,7 @@ pub mod kind;
 
 use super::{constants::*, hash::*};
 use crate::prelude::{ripemd160, sha256, Hash};
+use openssl::{dsa::Dsa, hash::MessageDigest, pkey::*, sign::Verifier};
 use prost::Message;
 use rand::{thread_rng, Rng};
 use std::{
@@ -39,18 +40,103 @@ impl From<BaseCurrencyNetwork> for MessageVersion {
 
 impl StoragePayload {
     pub fn bisq_hash(&self) -> BisqHash {
-        let mut serialized = Vec::with_capacity(self.encoded_len());
-        self.encode(&mut serialized)
-            .expect("Could not encode message");
-        BisqHash::Sha256(sha256::Hash::hash(&serialized))
+        BisqHash::Sha256(self.sha256())
+    }
+
+    fn signing_pub_key_bytes(&self) -> Option<&Vec<u8>> {
+        match self.message.as_ref()? {
+            storage_payload::Message::Alert(alert) => &alert.owner_pub_key_bytes,
+            storage_payload::Message::Arbitrator(arb) => {
+                &arb.pub_key_ring.as_ref()?.signature_pub_key_bytes
+            }
+
+            storage_payload::Message::Mediator(med) => {
+                &med.pub_key_ring.as_ref()?.signature_pub_key_bytes
+            }
+            storage_payload::Message::Filter(filter) => &filter.owner_pub_key_bytes,
+            storage_payload::Message::TradeStatistics(trade) => &trade.signature_pub_key_bytes,
+            storage_payload::Message::MailboxStoragePayload(payload) => {
+                &payload.sender_pub_key_for_add_operation_bytes
+            }
+            storage_payload::Message::OfferPayload(offer) => {
+                &offer.pub_key_ring.as_ref()?.signature_pub_key_bytes
+            }
+            storage_payload::Message::TempProposalPayload(payload) => {
+                &payload.owner_pub_key_encoded
+            }
+        }
+        .into()
     }
 }
 impl ProtectedStorageEntry {
+    fn owner_pub_key(&self) -> Option<PKey<Public>> {
+        PKey::from_dsa(Dsa::public_key_from_der(&self.owner_pub_key_bytes).ok()?).ok()
+    }
     pub fn verify(&self) -> Option<BisqHash> {
         let payload = self.storage_payload.as_ref()?;
-        Some(payload.bisq_hash())
+        if payload.signing_pub_key_bytes()? != &self.owner_pub_key_bytes {
+            warn!("Invalid public key in ProtectedStorageEntry");
+            return None;
+        }
+        let pub_key = self.owner_pub_key()?;
+        let verifier = Verifier::new_without_digest(&pub_key).ok()?;
+        let hash = DataAndSeqNrPair {
+            payload: Some(payload.clone()),
+            sequence_number: self.sequence_number,
+        }
+        .sha256();
+        verifier
+            .verify_oneshot(&self.signature, &hash.into_inner())
+            .ok()
+            .and_then(|verified| {
+                if verified {
+                    Some(payload.bisq_hash())
+                } else {
+                    warn!(
+                        "Detected invalid signature in ProtectedStorageEntry {:?}",
+                        payload.bisq_hash()
+                    );
+                    None
+                }
+            })
     }
 }
+impl RefreshOfferMessage {
+    pub fn payload_hash(&self) -> BisqHash {
+        BisqHash::Sha256(
+            sha256::Hash::from_slice(&self.hash_of_payload)
+                .expect("Couldn't unwrap RefreshOfferMessage.hash_of_data"),
+        )
+    }
+    pub fn verify(&self, owner_pub_key: &[u8], original_payload: &StoragePayload) -> Option<()> {
+        let hash = DataAndSeqNrPair {
+            payload: Some(original_payload.clone()),
+            sequence_number: self.sequence_number,
+        }
+        .sha256();
+        if hash.into_inner() != &*self.hash_of_data_and_seq_nr {
+            warn!("Error with RefreshOfferMessage.hash_of_data_and_seq_nr");
+            return None;
+        }
+        let pub_key = PKey::from_dsa(Dsa::public_key_from_der(owner_pub_key).ok()?).ok()?;
+        let verifier = Verifier::new_without_digest(&pub_key).ok()?;
+        verifier
+            .verify_oneshot(&self.signature, &hash.into_inner())
+            .ok()
+            .and_then(|verified| {
+                if verified {
+                    Some(())
+                } else {
+                    warn!(
+                        "Detected invalid signature in RefreshOfferMessage {:?}",
+                        self.payload_hash()
+                    );
+                    None
+                }
+            })
+    }
+}
+
 impl PersistableNetworkPayload {
     pub fn bisq_hash(&self) -> BisqHash {
         let inner = match self
