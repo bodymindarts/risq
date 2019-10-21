@@ -23,16 +23,13 @@ impl GrqphQLClient {
     }
     pub fn get_offers(&self) -> Result<Offers> {
         let response: GraphQLResponse<Offers> = self
-            // let text = self
             .client
             .post(self.url.clone())
             .json(&GraphQLQuery {
                 query: "{offers { id direction } }",
             })
             .send()?
-            // .text()?;
             .json()?;
-        // println!("{}", text);
         Ok(response.data)
     }
 }
