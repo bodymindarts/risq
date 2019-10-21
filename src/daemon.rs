@@ -39,7 +39,7 @@ pub fn run(
     let sys = System::new("risq");
 
     // Domain Thread
-    let price_feed = PriceFeed::start();
+    let price_feed = PriceFeed::start(tor_proxy_port);
     let offer_book = OfferBook::start(price_feed);
     let stats_cache = StatsCache::new(DEFAULT_HISTORY_SIZE);
 

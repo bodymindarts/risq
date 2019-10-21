@@ -1,15 +1,12 @@
-use super::{graphql::*, responses::*};
+use super::graphql::*;
 use crate::{
-    domain::{
-        offer::{message::GetOpenOffers, OfferBook},
-        statistics::*,
-    },
+    domain::{offer::OfferBook, statistics::*},
     prelude::*,
 };
 use actix_web::{
     middleware::Logger,
-    web::{self, Data},
-    App, Error, HttpServer, Result,
+    web::,
+    App, HttpServer, Result,
 };
 use std::io;
 

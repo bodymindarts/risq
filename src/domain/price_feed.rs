@@ -1,7 +1,8 @@
-use super::{amount::NumberWithPrecision, currency::*};
-use crate::prelude::*;
+use super::currency::*;
+use crate::{bisq::constants, prelude::*};
 use lazy_static::lazy_static;
-use reqwest::r#async::Client;
+use rand::{thread_rng, Rng};
+use reqwest::{r#async::Client, Proxy};
 use serde::{self, Deserialize};
 use std::{
     collections::HashMap,
@@ -10,13 +11,14 @@ use std::{
 };
 
 lazy_static! {
-    static ref LOOP_INTERVAL: Duration = Duration::from_secs(60);
+    static ref LOOP_INTERVAL: Duration = Duration::from_secs(30);
 }
 const INVALID: &str = "INVALID";
 
 pub struct PriceFeed {
     client: Client,
     price_data: Arc<HashMap<&'static str, PriceData>>,
+    nodes: Vec<&'static str>,
 }
 impl Actor for PriceFeed {
     type Context = Context<Self>;
@@ -27,18 +29,38 @@ impl Actor for PriceFeed {
     }
 }
 impl PriceFeed {
-    pub fn start() -> Addr<PriceFeed> {
+    pub fn start(proxy_port: Option<u16>) -> Addr<PriceFeed> {
+        let client = if proxy_port.is_some() {
+            Client::builder()
+                .proxy(
+                    Proxy::http(&format!(
+                        "socks5h://127.0.0.1:{}",
+                        proxy_port.unwrap().to_string()
+                    ))
+                    .expect("Couldn't set proxy"),
+                )
+                .build()
+                .expect("Couldn't create client")
+        } else {
+            Client::new()
+        };
         PriceFeed {
-            client: Client::new(),
+            client,
             price_data: Arc::new(HashMap::new()),
+            nodes: constants::price_nodes(proxy_port.is_some()),
         }
         .start()
     }
-    fn update_prices(&self, ctx: &mut Context<Self>) {
+    fn update_prices(&mut self, ctx: &mut Context<Self>) {
+        let node_index: usize = thread_rng().gen::<usize>() % (self.nodes.len() - 1);
+        info!(
+            "Calling price node: {}",
+            format!("{}/getAllMarketPrices", self.nodes[node_index])
+        );
         ctx.spawn(
             fut::wrap_future(
                 self.client
-                    .get("http://174.138.104.137:8080/getAllMarketPrices")
+                    .get(&format!("{}/getAllMarketPrices", self.nodes[node_index]))
                     .send()
                     .map_err(|e| {
                         error!("error getting price {:?}", e);
@@ -55,7 +77,12 @@ impl PriceFeed {
                             if d.provider == INVALID {
                                 None
                             } else {
-                                Some((d.currency.code.as_ref(), d))
+                                let code: &'static str = d.currency.code.as_ref();
+                                let d = match feed.price_data.get(code) {
+                                    Some(data) if data.timestamp > d.timestamp => data.clone(),
+                                    _ => d,
+                                };
+                                Some((code, d))
                             }
                         })
                         .collect();

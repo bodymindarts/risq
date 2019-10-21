@@ -76,13 +76,19 @@ pub fn seed_nodes(network: &BaseCurrencyNetwork) -> Vec<NodeAddress> {
     }
 }
 
-// pub fn price_nodes() -> Vec<NodeAddress>{
-//                     "http://xc3nh4juf2hshy7e.onion/",   // @emzy
-//                                 "http://ceaanhbvluug4we6.onion/",   // @mrosseel
-//                                             "http://44mgyoe2b6oqiytt.onion/",   // @devinbileck
-//                                                         "http://62nvujg5iou3vu3i.onion/",   // @alexej996
-//                                                                     "http://gztmprecgqjq64zh.onion/"    // @wiz
-// }
+pub fn price_nodes(use_tor_proxy: bool) -> Vec<&'static str> {
+    if use_tor_proxy {
+        vec![
+            "http://xc3nh4juf2hshy7e.onion", // @emzy
+            "http://ceaanhbvluug4we6.onion", // @mrosseel
+            "http://44mgyoe2b6oqiytt.onion", // @devinbileck
+            "http://62nvujg5iou3vu3i.onion", // @alexej996
+            "http://gztmprecgqjq64zh.onion", // @wiz
+        ]
+    } else {
+        vec!["http://174.138.104.137:8080"]
+    }
+}
 
 lazy_static! {
     pub static ref LOCAL_CAPABILITIES: Vec<i32> = {
