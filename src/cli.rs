@@ -1,5 +1,6 @@
 mod query;
 
+#[cfg(feature = "checker")]
 use crate::checker;
 use crate::{
     api::Client,
@@ -10,7 +11,6 @@ use crate::{
 };
 use clap::{clap_app, crate_version, App, Arg, ArgMatches, SubCommand};
 use query::*;
-#[cfg(feature = "checker")]
 use reqwest;
 use std::{collections::HashMap, str::FromStr};
 

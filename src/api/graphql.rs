@@ -70,7 +70,10 @@ impl GraphQLContextWrapper {
     }
     #[cfg(not(feature = "statistics"))]
     pub fn get(&self) -> impl Future<Item = GraphQLContext, Error = Error> {
-        future::ok(GraphQLContext {})
+        self.offer_book
+            .send(GetOpenOffers)
+            .map_err(Error::from)
+            .map(|open_offers| GraphQLContext { open_offers })
     }
 }
 pub struct GraphQLContext {
