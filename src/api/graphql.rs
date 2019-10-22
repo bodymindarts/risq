@@ -168,7 +168,9 @@ impl QueryFields for Query {
         executor: &juniper::Executor<'_, GraphQLContext>,
         _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
         market: Option<MarketPair>,
+        direction: Option<Direction>,
     ) -> FieldResult<Vec<OpenOffer>> {
+        let direction = direction.map(OfferDirection::from);
         let market = market
             .as_ref()
             .map(|MarketPair(m)| m.as_ref())
@@ -179,6 +181,7 @@ impl QueryFields for Query {
             .values()
             .filter(|o| &o.market.pair == market || market == ALL_MARKETS)
             .filter(|o| !o.is_expired())
+            .filter(|t| direction.is_none() || t.direction == direction.unwrap())
             .cloned()
             .collect())
     }

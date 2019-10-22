@@ -12,7 +12,10 @@ type Query {
     limit: Int = 100,
     sort: Sort = DESC
   ): [Trade!] @juniper(ownership: "owned"),
-  offers(market: MarketPair): [OpenOffer!]! @juniper(ownership: "owned"),
+  offers(
+    market: MarketPair,
+    direction: Direction
+  ): [OpenOffer!]! @juniper(ownership: "owned"),
   currencies: [Currency!]!
   markets: [Market!]!
 }
