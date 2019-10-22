@@ -53,14 +53,12 @@ impl PriceFeed {
     }
     fn update_prices(&mut self, ctx: &mut Context<Self>) {
         let node_index: usize = thread_rng().gen::<usize>() % self.nodes.len();
-        info!(
-            "Updating price feed via {}",
-            format!("{}/getAllMarketPrices", self.nodes[node_index])
-        );
+        let url = format!("{}/getAllMarketPrices", self.nodes[node_index]);
+        info!("Updating price feed via {}", url);
         ctx.spawn(
             fut::wrap_future(
                 self.client
-                    .get(&format!("{}/getAllMarketPrices", self.nodes[node_index]))
+                    .get(&url)
                     .send()
                     .map_err(|e| {
                         error!("error getting price {:?}", e);
