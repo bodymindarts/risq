@@ -4,11 +4,7 @@ mod data_router;
 use crate::{
     api,
     bisq::constants::BaseCurrencyNetwork,
-    domain::{
-        offer::*,
-        price_feed::PriceFeed,
-        statistics::{StatsCache, DEFAULT_HISTORY_SIZE},
-    },
+    domain::{offer::*, price_feed::PriceFeed, statistics::StatsCache},
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Broadcaster, Peers, TorConfig},
     prelude::*,
 };
@@ -41,7 +37,7 @@ pub fn run(
     // Domain Thread
     let price_feed = PriceFeed::start(tor_proxy_port);
     let offer_book = OfferBook::start(price_feed);
-    let stats_cache = StatsCache::new(DEFAULT_HISTORY_SIZE);
+    let stats_cache = StatsCache::new();
 
     let offer_book_clone = offer_book.clone();
     let stats_cache_clone = stats_cache.as_ref().map(Clone::clone);

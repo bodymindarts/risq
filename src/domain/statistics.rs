@@ -6,8 +6,6 @@ use super::{
 use crate::bisq::PersistentMessageHash;
 use std::time::SystemTime;
 
-pub const DEFAULT_HISTORY_SIZE: usize = 5000;
-
 #[derive(Clone)]
 pub struct Trade {
     pub market: &'static Market,
@@ -55,33 +53,21 @@ mod inner {
         domain::{CommandResult, FutureCommandResult},
         prelude::*,
     };
-    use std::{
-        collections::{HashSet, VecDeque},
-        sync::Arc,
-    };
+    use std::{collections::HashSet, sync::Arc};
 
     pub struct TradeHistory {
-        max_size: usize,
-        inner: VecDeque<Trade>,
+        inner: Vec<Trade>,
     }
     impl TradeHistory {
-        fn new(max_size: usize) -> Self {
-            Self {
-                max_size,
-                inner: VecDeque::new(),
-            }
+        fn new() -> Self {
+            Self { inner: Vec::new() }
         }
-        fn insert(&mut self, trade: Trade) -> Option<Trade> {
+        fn insert(&mut self, trade: Trade) {
             for n in (0..=self.inner.len()).rev() {
                 if n == 0 || trade.timestamp > self.inner[n - 1].timestamp {
                     self.inner.insert(n, trade);
                     break;
                 }
-            }
-            if self.inner.len() > self.max_size {
-                self.inner.pop_front()
-            } else {
-                None
             }
         }
     }
@@ -92,9 +78,7 @@ mod inner {
     impl StatsCacheInner {
         fn insert(&mut self, trade: Trade) -> CommandResult {
             if self.hashes.insert(trade.hash) {
-                self.trades
-                    .insert(trade)
-                    .map(|removed| self.hashes.remove(&removed.hash));
+                self.trades.insert(trade);
                 CommandResult::Accepted
             } else {
                 CommandResult::Ignored
@@ -110,10 +94,10 @@ mod inner {
         inner: Arc<locks::RwLock<StatsCacheInner>>,
     }
     impl StatsCache {
-        pub fn new(trade_capacity: usize) -> Option<Self> {
+        pub fn new() -> Option<Self> {
             Some(Self {
                 inner: Arc::new(locks::RwLock::new(StatsCacheInner {
-                    trades: TradeHistory::new(trade_capacity),
+                    trades: TradeHistory::new(),
                     hashes: HashSet::new(),
                 })),
             })
@@ -141,7 +125,7 @@ mod empty {
     #[derive(Clone)]
     pub struct StatsCache;
     impl StatsCache {
-        pub fn new(trade_capacity: usize) -> Option<Self> {
+        pub fn new() -> Option<Self> {
             None
         }
     }
