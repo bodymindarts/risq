@@ -2,7 +2,7 @@ use super::convert;
 use crate::{
     bisq::{
         payload::{kind::*, *},
-        BisqHash,
+        PersistentMessageHash, SequencedMessageHash,
     },
     domain::{
         offer::{message::*, OfferBook},
@@ -12,21 +12,28 @@ use crate::{
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
     prelude::*,
 };
-use std::{collections::HashMap, time::SystemTime};
+use std::{
+    collections::{HashMap, HashSet},
+    mem,
+    time::SystemTime,
+};
 
 pub struct DataRouter {
     offer_book: Addr<OfferBook>,
     broadcaster: Addr<Broadcaster>,
     #[cfg(feature = "statistics")]
     stats_cache: StatsCache,
-    delivered_info: HashMap<BisqHash, DeliveredInfo>,
+    sequenced_message_info: HashMap<SequencedMessageHash, SequencedMessageInfo>,
+    persistent_message_info: HashSet<PersistentMessageHash>,
 }
 impl Actor for DataRouter {
     type Context = Context<Self>;
 }
-struct DeliveredInfo {
-    delivered_at: SystemTime,
+struct SequencedMessageInfo {
+    last_delivery: SystemTime,
     sequence: i32,
+    owner_pub_key: Vec<u8>,
+    original_payload: StoragePayload,
 }
 trait ResultHandler: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
 impl<F> ResultHandler for F where F: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
@@ -42,7 +49,8 @@ impl DataRouter {
             broadcaster,
             #[cfg(feature = "statistics")]
             stats_cache: stats_cache.expect("StatsCache missing"),
-            delivered_info: HashMap::new(),
+            sequenced_message_info: HashMap::new(),
+            persistent_message_info: HashSet::new(),
         }
         .start()
     }
@@ -74,21 +82,27 @@ impl DataRouter {
             self.route_persistable_network_payload(Some(p), Self::ignore_command_result());
         })
     }
-    fn should_deliver(&mut self, hash: BisqHash, sequence: Option<i32>) -> bool {
-        let ignore = -1;
-        let sequence = sequence.unwrap_or(ignore);
-        match self.delivered_info.get_mut(&hash) {
-            Some(ref mut info) if sequence == ignore || sequence > info.sequence => {
+    fn should_deliver_sequenced(
+        &mut self,
+        hash: SequencedMessageHash,
+        sequence: i32,
+        owner_pub_key: Vec<u8>,
+        original_payload: &StoragePayload,
+    ) -> bool {
+        match self.sequenced_message_info.get_mut(&hash) {
+            Some(ref mut info) if sequence > info.sequence => {
                 info.sequence = sequence;
-                info.delivered_at = SystemTime::now();
+                info.last_delivery = SystemTime::now();
                 true
             }
             None => {
-                self.delivered_info.insert(
+                self.sequenced_message_info.insert(
                     hash,
-                    DeliveredInfo {
+                    SequencedMessageInfo {
                         sequence,
-                        delivered_at: SystemTime::now(),
+                        last_delivery: SystemTime::now(),
+                        owner_pub_key,
+                        original_payload: original_payload.clone(),
                     },
                 );
                 true
@@ -116,16 +130,26 @@ impl DataRouter {
         entry: Option<ProtectedStorageEntry>,
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
-        let entry = entry?;
+        let mut entry = entry?;
         let bisq_hash = entry.verify()?;
-        if !self.should_deliver(bisq_hash, Some(entry.sequence_number)) {
+        if !self.should_deliver_sequenced(
+            bisq_hash,
+            entry.sequence_number,
+            mem::replace(&mut entry.owner_pub_key_bytes, Vec::new()),
+            entry.storage_payload.as_ref()?,
+        ) {
             return None;
         }
         match (&entry).into() {
             StoragePayloadKind::OfferPayload => {
-                convert::open_offer(entry).map(|offer| {
-                    arbiter_spawn!(self.offer_book.send(AddOffer(offer)).then(result_handler))
-                });
+                convert::open_offer(entry, bisq_hash)
+                    .map(|offer| {
+                        arbiter_spawn!(self.offer_book.send(AddOffer(offer)).then(result_handler))
+                    })
+                    .or_else(|| {
+                        warn!("Offer didn't convert {:?}", bisq_hash);
+                        None
+                    });
                 ()
             }
             _ => (),
@@ -139,14 +163,14 @@ impl DataRouter {
     ) -> Option<()> {
         let payload = payload?;
         let bisq_hash = payload.bisq_hash();
-        if !self.should_deliver(bisq_hash, None) {
+        if !self.persistent_message_info.insert(bisq_hash) {
             return None;
         }
         match PersistableNetworkPayloadKind::from(&payload) {
             #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => {
                 if let Some(trade) = convert::trade_statistics2(payload) {
-                    Arbiter::spawn(self.stats_cache.add(trade).then(result_handler))
+                    arbiter_spawn!(self.stats_cache.add(trade).then(result_handler))
                 }
             }
             _ => (),
@@ -173,11 +197,24 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
             DataRouterDispatch::Bootstrap(data, persistable_network_payloads) => {
                 self.route_bootstrap_data(data, persistable_network_payloads)
             }
-            DataRouterDispatch::RefreshOffer(msg) => Arbiter::spawn(
-                self.offer_book
-                    .send(convert::refresh_offer(&msg))
-                    .then(self.handle_command_result(origin, msg)),
-            ),
+            DataRouterDispatch::RefreshOffer(msg) => {
+                let hash = msg.payload_hash();
+                if let Some(ref mut info) = self.sequenced_message_info.get_mut(&hash) {
+                    if info.sequence < msg.sequence_number
+                        && msg
+                            .verify(&*info.owner_pub_key, &info.original_payload)
+                            .is_some()
+                    {
+                        info.sequence = msg.sequence_number;
+                        info.last_delivery = SystemTime::now();
+                        Arbiter::spawn(
+                            self.offer_book
+                                .send(convert::refresh_offer(&msg))
+                                .then(self.handle_command_result(origin, msg)),
+                        );
+                    }
+                }
+            }
             DataRouterDispatch::AddData(data) => {
                 self.route_storage_entry_wrapper(
                     data.entry.clone(),

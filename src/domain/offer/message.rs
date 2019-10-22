@@ -1,5 +1,5 @@
 use super::{open_offer::OfferSequence, OpenOffer};
-use crate::{bisq::BisqHash, domain::CommandResult, prelude::Message};
+use crate::{bisq::SequencedMessageHash, domain::CommandResult, prelude::Message};
 use std::{collections::HashMap, sync::Arc};
 
 pub struct AddOffer(pub OpenOffer);
@@ -8,7 +8,7 @@ impl Message for AddOffer {
 }
 
 pub struct RefreshOffer {
-    pub bisq_hash: BisqHash,
+    pub bisq_hash: SequencedMessageHash,
     pub sequence: OfferSequence,
 }
 impl Message for RefreshOffer {
@@ -17,5 +17,5 @@ impl Message for RefreshOffer {
 
 pub struct GetOpenOffers;
 impl Message for GetOpenOffers {
-    type Result = Arc<HashMap<BisqHash, OpenOffer>>;
+    type Result = Arc<HashMap<SequencedMessageHash, OpenOffer>>;
 }

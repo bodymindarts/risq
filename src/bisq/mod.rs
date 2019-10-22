@@ -5,5 +5,5 @@ pub mod constants;
 pub mod payload;
 pub mod correlation;
 
-pub use hash::BisqHash;
+pub use hash::*;
 pub use payload::NodeAddress;

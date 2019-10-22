@@ -1,5 +1,5 @@
 use crate::{
-    bisq::BisqHash,
+    bisq::SequencedMessageHash,
     domain::{
         currency::{self, Currency},
         market::{self, Market},
@@ -76,7 +76,7 @@ impl GraphQLContextWrapper {
 pub struct GraphQLContext {
     #[cfg(feature = "statistics")]
     stats_cache: locks::RwLockReadGuard<StatsCacheInner>,
-    open_offers: Arc<HashMap<BisqHash, OpenOffer>>,
+    open_offers: Arc<HashMap<SequencedMessageHash, OpenOffer>>,
 }
 impl juniper::Context for GraphQLContext {}
 
