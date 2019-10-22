@@ -6,3 +6,6 @@
 ## Improvements
 - incoming messages that Add / Refresh offers are now cryptographically verified
 - some scenarious where threads would crash have been fixed
+
+## Bug fixe
+- fix issue with the ci pipeline release process

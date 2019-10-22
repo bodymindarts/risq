@@ -103,8 +103,6 @@ jobs:
         BRANCH: (( grab meta.git_branch ))
   - put: repo
     params:
-      tag: version/number
-      tag_prefix: "v"
       repository: out-repo/git
   - put: github-release
     params:
