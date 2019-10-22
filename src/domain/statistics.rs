@@ -3,7 +3,7 @@ use super::{
     market::Market,
     offer::{OfferDirection, OfferId},
 };
-use crate::bisq::BisqHash;
+use crate::bisq::PersistentMessageHash;
 use std::time::SystemTime;
 
 pub const DEFAULT_HISTORY_SIZE: usize = 5000;
@@ -18,7 +18,7 @@ pub struct Trade {
     pub volume: NumberWithPrecision,
     pub payment_method_id: String,
     pub timestamp: SystemTime,
-    pub hash: BisqHash,
+    pub hash: PersistentMessageHash,
 }
 impl Trade {
     pub fn new(
@@ -29,7 +29,7 @@ impl Trade {
         amount: NumberWithPrecision,
         payment_method_id: String,
         timestamp: SystemTime,
-        hash: BisqHash,
+        hash: PersistentMessageHash,
     ) -> Self {
         Self {
             market,
@@ -51,7 +51,7 @@ pub use inner::*;
 mod inner {
     use super::*;
     use crate::{
-        bisq::BisqHash,
+        bisq::PersistentMessageHash,
         domain::{CommandResult, FutureCommandResult},
         prelude::*,
     };
@@ -87,7 +87,7 @@ mod inner {
     }
     pub struct StatsCacheInner {
         trades: TradeHistory,
-        hashes: HashSet<BisqHash>,
+        hashes: HashSet<PersistentMessageHash>,
     }
     impl StatsCacheInner {
         fn insert(&mut self, trade: Trade) -> CommandResult {

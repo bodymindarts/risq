@@ -2,7 +2,7 @@ use super::convert;
 use crate::{
     bisq::{
         payload::{kind::*, *},
-        BisqHash,
+        PersistentMessageHash, SequencedMessageHash,
     },
     domain::{
         offer::{message::*, OfferBook},
@@ -23,8 +23,8 @@ pub struct DataRouter {
     broadcaster: Addr<Broadcaster>,
     #[cfg(feature = "statistics")]
     stats_cache: StatsCache,
-    sequenced_message_info: HashMap<BisqHash, SequencedMessageInfo>,
-    persistent_message_info: HashSet<BisqHash>,
+    sequenced_message_info: HashMap<SequencedMessageHash, SequencedMessageInfo>,
+    persistent_message_info: HashSet<PersistentMessageHash>,
 }
 impl Actor for DataRouter {
     type Context = Context<Self>;
@@ -84,7 +84,7 @@ impl DataRouter {
     }
     fn should_deliver_sequenced(
         &mut self,
-        hash: BisqHash,
+        hash: SequencedMessageHash,
         sequence: i32,
         owner_pub_key: Vec<u8>,
         original_payload: &StoragePayload,
@@ -163,16 +163,14 @@ impl DataRouter {
     ) -> Option<()> {
         let payload = payload?;
         let bisq_hash = payload.bisq_hash();
-        if let None = self.persistent_message_info.get(&bisq_hash) {
-            self.persistent_message_info.insert(bisq_hash);
-        } else {
+        if !self.persistent_message_info.insert(bisq_hash) {
             return None;
         }
         match PersistableNetworkPayloadKind::from(&payload) {
             #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => {
                 if let Some(trade) = convert::trade_statistics2(payload) {
-                    Arbiter::spawn(self.stats_cache.add(trade).then(result_handler))
+                    arbiter_spawn!(self.stats_cache.add(trade).then(result_handler))
                 }
             }
             _ => (),

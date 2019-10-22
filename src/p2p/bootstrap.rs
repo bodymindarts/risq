@@ -8,7 +8,6 @@ use crate::{
     bisq::{
         constants::{seed_nodes, BaseCurrencyNetwork, LOCAL_CAPABILITIES},
         payload::*,
-        BisqHash,
     },
     error::Error,
     prelude::{sync::oneshot, *},
@@ -176,13 +175,14 @@ fn get_excluded_keys(preliminary_data_response: &GetDataResponse) -> Vec<Vec<u8>
                 .as_ref()
                 .expect("Couldn't unwrap storage_payload")
                 .bisq_hash()
+                .into()
         })
         .chain(
             preliminary_data_response
                 .persistable_network_payload_items
                 .iter()
-                .map(PersistableNetworkPayload::bisq_hash),
+                .map(PersistableNetworkPayload::bisq_hash)
+                .map(Vec::<u8>::from),
         )
-        .map(BisqHash::into)
         .collect()
 }

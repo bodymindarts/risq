@@ -1,6 +1,6 @@
 use super::{message::*, *};
 use crate::{
-    bisq::BisqHash,
+    bisq::SequencedMessageHash,
     domain::{price_feed::*, CommandResult},
     prelude::*,
 };
@@ -9,7 +9,7 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 const CHECK_TTL_INTERVAL: Duration = Duration::from_secs(40);
 
 pub struct OfferBook {
-    open_offers: Arc<HashMap<BisqHash, OpenOffer>>,
+    open_offers: Arc<HashMap<SequencedMessageHash, OpenOffer>>,
     price_feed: Addr<PriceFeed>,
     price_data: Arc<HashMap<&'static str, PriceData>>,
 }

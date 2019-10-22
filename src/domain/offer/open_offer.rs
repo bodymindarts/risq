@@ -1,5 +1,5 @@
 use crate::{
-    bisq::BisqHash,
+    bisq::SequencedMessageHash,
     domain::{amount::NumberWithPrecision, currency::*, market::Market, price_feed::PriceData},
 };
 use std::{
@@ -52,7 +52,7 @@ pub struct OfferAmount {
 
 #[derive(Clone)]
 pub struct OpenOffer {
-    pub bisq_hash: BisqHash,
+    pub bisq_hash: SequencedMessageHash,
     pub market: &'static Market,
     pub id: OfferId,
     pub direction: OfferDirection,
@@ -71,7 +71,7 @@ pub struct OpenOffer {
 
 impl OpenOffer {
     pub fn new(
-        bisq_hash: BisqHash,
+        bisq_hash: SequencedMessageHash,
         market: &'static Market,
         id: OfferId,
         direction: OfferDirection,

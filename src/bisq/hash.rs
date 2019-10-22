@@ -2,16 +2,28 @@ use crate::prelude::{ripemd160, sha256, Hash};
 use prost::Message;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum BisqHash {
-    Sha256(sha256::Hash),
-    RIPEMD160(ripemd160::Hash),
+pub struct PersistentMessageHash(ripemd160::Hash);
+impl PersistentMessageHash {
+    pub fn new(inner: ripemd160::Hash) -> Self {
+        PersistentMessageHash(inner)
+    }
 }
-impl From<BisqHash> for Vec<u8> {
-    fn from(hash: BisqHash) -> Vec<u8> {
-        match hash {
-            BisqHash::Sha256(hash) => hash.into_inner().to_vec(),
-            BisqHash::RIPEMD160(hash) => hash.into_inner().to_vec(),
-        }
+impl From<PersistentMessageHash> for Vec<u8> {
+    fn from(hash: PersistentMessageHash) -> Vec<u8> {
+        hash.0.into_inner().to_vec()
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct SequencedMessageHash(sha256::Hash);
+impl SequencedMessageHash {
+    pub fn new(inner: sha256::Hash) -> Self {
+        SequencedMessageHash(inner)
+    }
+}
+impl From<SequencedMessageHash> for Vec<u8> {
+    fn from(hash: SequencedMessageHash) -> Vec<u8> {
+        hash.0.into_inner().to_vec()
     }
 }
 

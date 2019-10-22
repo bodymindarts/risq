@@ -4,7 +4,7 @@ use crate::{
             offer_payload, persistable_network_payload, storage_payload, PersistableNetworkPayload,
             ProtectedStorageEntry, RefreshOfferMessage,
         },
-        BisqHash,
+        SequencedMessageHash,
     },
     domain::{
         amount::NumberWithPrecision,
@@ -34,14 +34,14 @@ impl TryFrom<offer_payload::Direction> for OfferDirection {
 pub fn refresh_offer(msg: &RefreshOfferMessage) -> RefreshOffer {
     RefreshOffer {
         sequence: msg.sequence_number.into(),
-        bisq_hash: BisqHash::Sha256(
+        bisq_hash: SequencedMessageHash::new(
             sha256::Hash::from_slice(&msg.hash_of_payload)
                 .expect("Couldn't unwrap RefreshOfferMessage.hash_of_data"),
         ),
     }
 }
 
-pub fn open_offer(entry: ProtectedStorageEntry, hash: BisqHash) -> Option<OpenOffer> {
+pub fn open_offer(entry: ProtectedStorageEntry, hash: SequencedMessageHash) -> Option<OpenOffer> {
     let created_at =
         SystemTime::UNIX_EPOCH + Duration::from_millis(entry.creation_time_stamp as u64);
     let storage_payload = entry.storage_payload?;

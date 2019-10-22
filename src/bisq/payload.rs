@@ -5,8 +5,7 @@ pub mod kind;
 
 use super::{constants::*, hash::*};
 use crate::prelude::{ripemd160, sha256, Hash};
-use openssl::{dsa::Dsa, hash::MessageDigest, pkey::*, sign::Verifier};
-use prost::Message;
+use openssl::{dsa::Dsa, pkey::*, sign::Verifier};
 use rand::{thread_rng, Rng};
 use std::{
     io,
@@ -39,8 +38,8 @@ impl From<BaseCurrencyNetwork> for MessageVersion {
 }
 
 impl StoragePayload {
-    pub fn bisq_hash(&self) -> BisqHash {
-        BisqHash::Sha256(self.sha256())
+    pub fn bisq_hash(&self) -> SequencedMessageHash {
+        SequencedMessageHash::new(self.sha256())
     }
 
     fn signing_pub_key_bytes(&self) -> Option<&Vec<u8>> {
@@ -72,7 +71,7 @@ impl ProtectedStorageEntry {
     fn owner_pub_key(&self) -> Option<PKey<Public>> {
         PKey::from_dsa(Dsa::public_key_from_der(&self.owner_pub_key_bytes).ok()?).ok()
     }
-    pub fn verify(&self) -> Option<BisqHash> {
+    pub fn verify(&self) -> Option<SequencedMessageHash> {
         let payload = self.storage_payload.as_ref()?;
         if payload.signing_pub_key_bytes()? != &self.owner_pub_key_bytes {
             warn!("Invalid public key in ProtectedStorageEntry");
@@ -102,8 +101,8 @@ impl ProtectedStorageEntry {
     }
 }
 impl RefreshOfferMessage {
-    pub fn payload_hash(&self) -> BisqHash {
-        BisqHash::Sha256(
+    pub fn payload_hash(&self) -> SequencedMessageHash {
+        SequencedMessageHash::new(
             sha256::Hash::from_slice(&self.hash_of_payload)
                 .expect("Couldn't unwrap RefreshOfferMessage.hash_of_data"),
         )
@@ -138,7 +137,7 @@ impl RefreshOfferMessage {
 }
 
 impl PersistableNetworkPayload {
-    pub fn bisq_hash(&self) -> BisqHash {
+    pub fn bisq_hash(&self) -> PersistentMessageHash {
         let inner = match self
             .message
             .as_ref()
@@ -168,7 +167,7 @@ impl PersistableNetworkPayload {
                 ripemd160::Hash::hash(&hash.into_inner())
             }
         };
-        BisqHash::RIPEMD160(inner)
+        PersistentMessageHash::new(inner)
     }
 }
 
