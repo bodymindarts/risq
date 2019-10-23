@@ -1,7 +1,7 @@
 mod hloc;
 mod trade;
 
-pub use hloc::Hloc;
+pub use hloc::*;
 pub use trade::Trade;
 
 #[cfg(feature = "statistics")]
@@ -47,6 +47,9 @@ mod inner {
         }
         pub fn trades(&self) -> impl DoubleEndedIterator<Item = &Trade> {
             self.trades.inner.iter()
+        }
+        pub fn hloc(&self, query: HlocQuery) -> Vec<Hloc> {
+            Hloc::from_trades(&self.trades.inner, query)
         }
     }
 

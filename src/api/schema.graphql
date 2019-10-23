@@ -15,6 +15,9 @@ type Query {
   "Returns null unless --features \"statistics\" is enabled"
   hloc(
     market: MarketPair!
+    timestampFrom: UnixSecs,
+    timestampTo: UnixSecs,
+    interval: Interval,
   ): [Hloc!] @juniper(ownership: "owned"),
   offers(
     market: MarketPair,
@@ -60,6 +63,17 @@ scalar UnixSecs
 enum Direction {
   BUY
   SELL
+}
+
+enum Interval {
+  MINUTE,
+  HALFHOUR,
+  HOUR,
+  HALFDAY,
+  DAY,
+  WEEK,
+  MONTH,
+  YEAR,
 }
 
 type Currency {

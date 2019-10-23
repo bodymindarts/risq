@@ -9,7 +9,7 @@ use crate::{
     domain::{
         amount::NumberWithPrecision,
         currency::Currency,
-        market,
+        market::Market,
         offer::{message::*, *},
         statistics,
     },
@@ -76,7 +76,7 @@ pub fn open_offer(entry: ProtectedStorageEntry, hash: SequencedMessageHash) -> O
                 counter.bisq_internal_precision(),
             ))
         };
-        let market = market::from_pair(base, counter)?;
+        let market = Market::from_currency_pair(base, counter)?;
         Some(OpenOffer::new(
             hash,
             market,
@@ -113,7 +113,7 @@ pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistic
             .ok()?;
         let base = Currency::from_code(&payload.base_currency)?;
         let counter = Currency::from_code(&payload.counter_currency)?;
-        let market = market::from_pair(base, counter)?;
+        let market = Market::from_currency_pair(base, counter)?;
         Some(statistics::Trade::new(
             market,
             direction,
