@@ -10,6 +10,9 @@ build-with-checker:
 build-with-stats:
 	cargo build --features "statistics"
 
+build-all:
+	cargo build --features "all"
+
 run: build
 	RUST_LOG=debug target/debug/risq daemon
 
