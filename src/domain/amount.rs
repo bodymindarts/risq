@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::ops::*;
 
-#[derive(Clone, PartialEq, Debug, Copy)]
+#[derive(Eq, Clone, Debug, Copy)]
 pub struct NumberWithPrecision {
     base_amount: u64,
     precision: u32,
@@ -113,6 +113,13 @@ impl Div<u64> for NumberWithPrecision {
     }
 }
 
+impl PartialEq for NumberWithPrecision {
+    fn eq(&self, other: &NumberWithPrecision) -> bool {
+        let target_precision = self.precision.max(other.precision);
+        self.with_precision(target_precision).base_amount
+            == other.with_precision(target_precision).base_amount
+    }
+}
 impl PartialOrd for NumberWithPrecision {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let target_precision = self.precision.max(other.precision);
@@ -121,6 +128,14 @@ impl PartialOrd for NumberWithPrecision {
                 .base_amount
                 .cmp(&other.with_precision(target_precision).base_amount),
         )
+    }
+}
+impl Ord for NumberWithPrecision {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let target_precision = self.precision.max(other.precision);
+        self.with_precision(target_precision)
+            .base_amount
+            .cmp(&other.with_precision(target_precision).base_amount)
     }
 }
 

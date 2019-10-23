@@ -32,16 +32,35 @@ mod inner {
     }
 
     lazy_static! {
-        static ref ONE_MINUTE: Duration = Duration::minutes(1);
-        static ref THIRTY_MINUTES: Duration = Duration::minutes(30);
-        static ref ONE_HOUR: Duration = Duration::hours(1);
-        static ref TWELVE_HOURS: Duration = Duration::hours(12);
-        static ref ONE_DAY: Duration = Duration::days(1);
-        static ref THREE_DAYS: Duration = Duration::days(3);
-        static ref ONE_WEEK: Duration = Duration::weeks(1);
-        static ref SIXTY_DAYS: Duration = Duration::days(60);
-        static ref ONE_YEAR: Duration = Duration::days(365);
-        static ref FIVE_YEARS: Duration = Duration::days(1826);
+        static ref ONE_MINUTE: chrono::Duration = chrono::Duration::minutes(1);
+        static ref THIRTY_MINUTES: chrono::Duration = chrono::Duration::minutes(30);
+        static ref ONE_HOUR: chrono::Duration = chrono::Duration::hours(1);
+        static ref TWELVE_HOURS: chrono::Duration = chrono::Duration::hours(12);
+        static ref ONE_DAY: chrono::Duration = chrono::Duration::days(1);
+        static ref THREE_DAYS: chrono::Duration = chrono::Duration::days(3);
+        static ref ONE_WEEK: chrono::Duration = chrono::Duration::weeks(1);
+        static ref SIXTY_DAYS: chrono::Duration = chrono::Duration::days(60);
+        static ref ONE_YEAR: chrono::Duration = chrono::Duration::days(365);
+        static ref FIVE_YEARS: chrono::Duration = chrono::Duration::days(1826);
+    }
+
+    struct IntervalIterator {
+        current: DateTime<Utc>,
+        end: DateTime<Utc>,
+        interval: HlocInterval,
+    }
+    impl Iterator for IntervalIterator {
+        type Item = (SystemTime, SystemTime);
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.current < self.end {
+                let next = self.current + self.interval;
+                let ret = (self.current.into(), next.into());
+                self.current = next;
+                Some(ret)
+            } else {
+                None
+            }
+        }
     }
 
     impl HlocInterval {
@@ -61,7 +80,18 @@ mod inner {
                 HlocInterval::Year
             }
         }
-        fn apropriate_floor(&self, time: DateTime<Utc>) -> DateTime<Utc> {
+
+        fn intervals(&self, start: SystemTime, end: SystemTime) -> IntervalIterator {
+            let start: DateTime<Utc> = self.appropriate_floor(start.into());
+            let end: DateTime<Utc> = self.appropriate_floor(end.into()) + *self;
+            IntervalIterator {
+                current: start,
+                end,
+                interval: *self,
+            }
+        }
+
+        fn appropriate_floor(&self, time: DateTime<Utc>) -> DateTime<Utc> {
             let time = time.with_second(0).unwrap();
             let time = match *self {
                 HlocInterval::Minute => return time,
@@ -111,25 +141,40 @@ mod inner {
             let to = from.max(timestamp_to.unwrap_or_else(SystemTime::now));
             let interval = interval.unwrap_or_else(|| HlocInterval::from_range(&from, &to));
 
-            for (start, end) in Hloc::intervals(from, to, interval) {}
-            Vec::new()
-        }
+            let mut ret = Vec::new();
+            let mut trades = history.iter().filter(|t| t.market.pair == market.pair);
+            let mut trade = match trades.next() {
+                None => return ret,
+                Some(next) => next,
+            };
+            for (period_start, end) in interval.intervals(from, to) {
+                while trade.timestamp < period_start {
+                    trade = match trades.next() {
+                        None => return ret,
+                        Some(next) => next,
+                    };
+                }
+                if trade.timestamp >= end {
+                    continue;
+                }
 
-        fn intervals(
-            start: SystemTime,
-            end: SystemTime,
-            interval: HlocInterval,
-        ) -> impl Iterator<Item = (SystemTime, SystemTime)> {
-            let mut start: DateTime<Utc> = start.into();
-            let end: DateTime<Utc> = end.into();
-            let mut intervals = Vec::new();
-            while start < end {
-                intervals.push((start, start + interval));
-                start = start + interval;
+                let mut current = Hloc {
+                    period_start,
+                    high: NumberWithPrecision::new(0, 0),
+                };
+                while trade.timestamp < end {
+                    current.high = current.high.max(trade.price);
+                    trade = match trades.next() {
+                        None => {
+                            ret.push(current);
+                            return ret;
+                        }
+                        Some(next) => next,
+                    };
+                }
+                ret.push(current);
             }
-            intervals
-                .into_iter()
-                .map(|(start, end)| (start.into(), end.into()))
+            ret
         }
     }
 
@@ -155,6 +200,7 @@ mod inner {
             }
         }
     }
+
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -162,31 +208,31 @@ mod inner {
         fn appropriate_floor() {
             let date = Utc.ymd(2016, 7, 8).and_hms(13, 45, 11);
             assert!(
-                HlocInterval::Minute.apropriate_floor(date)
+                HlocInterval::Minute.appropriate_floor(date)
                     == Utc.ymd(2016, 7, 8).and_hms(13, 45, 0)
             );
             assert!(
-                HlocInterval::HalfHour.apropriate_floor(date)
+                HlocInterval::HalfHour.appropriate_floor(date)
                     == Utc.ymd(2016, 7, 8).and_hms(13, 30, 0)
             );
             assert!(
-                HlocInterval::Hour.apropriate_floor(date) == Utc.ymd(2016, 7, 8).and_hms(13, 0, 0)
+                HlocInterval::Hour.appropriate_floor(date) == Utc.ymd(2016, 7, 8).and_hms(13, 0, 0)
             );
             assert!(
-                HlocInterval::HalfDay.apropriate_floor(date)
+                HlocInterval::HalfDay.appropriate_floor(date)
                     == Utc.ymd(2016, 7, 8).and_hms(12, 0, 0)
             );
             assert!(
-                HlocInterval::Day.apropriate_floor(date) == Utc.ymd(2016, 7, 8).and_hms(0, 0, 0)
+                HlocInterval::Day.appropriate_floor(date) == Utc.ymd(2016, 7, 8).and_hms(0, 0, 0)
             );
             assert!(
-                HlocInterval::Week.apropriate_floor(date) == Utc.ymd(2016, 7, 4).and_hms(0, 0, 0)
+                HlocInterval::Week.appropriate_floor(date) == Utc.ymd(2016, 7, 4).and_hms(0, 0, 0)
             );
             assert!(
-                HlocInterval::Month.apropriate_floor(date) == Utc.ymd(2016, 7, 1).and_hms(0, 0, 0)
+                HlocInterval::Month.appropriate_floor(date) == Utc.ymd(2016, 7, 1).and_hms(0, 0, 0)
             );
             assert!(
-                HlocInterval::Year.apropriate_floor(date) == Utc.ymd(2016, 1, 1).and_hms(0, 0, 0)
+                HlocInterval::Year.appropriate_floor(date) == Utc.ymd(2016, 1, 1).and_hms(0, 0, 0)
             );
         }
 

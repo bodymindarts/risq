@@ -288,6 +288,12 @@ impl HlocFields for Hloc {
     ) -> FieldResult<UnixSecs> {
         Ok(self.period_start.into())
     }
+    fn field_formatted_high(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.high.format(TARGET_PRECISION))
+    }
 }
 
 lazy_static! {
