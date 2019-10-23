@@ -140,7 +140,7 @@ impl From<PriceDataRaw> for PriceData {
         Self {
             currency,
             price,
-            timestamp: UNIX_EPOCH + Duration::from_secs(timestamp_sec),
+            timestamp: UNIX_EPOCH + Duration::from_millis(timestamp_sec),
             provider,
         }
     }
