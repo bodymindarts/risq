@@ -1,7 +1,9 @@
+use crate::domain::amount::*;
 use std::time::SystemTime;
 
 pub struct Hloc {
     pub period_start: SystemTime,
+    pub high: NumberWithPrecision,
 }
 
 #[cfg(feature = "statistics")]
@@ -200,20 +202,5 @@ mod inner {
             assert!(date + HlocInterval::Month == Utc.ymd(2016, 8, 8).and_hms(0, 0, 0));
             assert!(date + HlocInterval::Year == Utc.ymd(2017, 7, 8).and_hms(0, 0, 0));
         }
-
-        // #[test]
-        // fn interval_start_times() {
-        //     let date = Utc.ymd(2016, 7, 8).and_hms(0, 0, 0);
-        //     let intervals =
-        //         Hloc::interval_start_times(date, date + Duration::days(1), HlocInterval::Day);
-        //     assert!(intervals.len() == 1);
-        //     assert!(intervals[0] == date);
-        //     let intervals =
-        //         Hloc::interval_start_times(date, date + Duration::weeks(3), HlocInterval::Week);
-        //     assert!(intervals.len() == 3);
-        //     assert!(intervals[0] == date);
-        //     assert!(intervals[1] == date + Duration::weeks(1));
-        //     assert!(intervals[2] == date + Duration::weeks(2));
-        // }
     }
 }
