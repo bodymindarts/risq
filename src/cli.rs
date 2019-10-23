@@ -26,7 +26,7 @@ fn app() -> App<'static, 'static> {
          (visible_alias: "d")
          (@arg API_PORT: --("api-port") default_value("7477") {port} "API port")
          (@arg LOG_LEVEL: -l --("log-level") default_value("info") {level} "(error|warn|info|debug|trace)")
-         (@arg NETWORK: -n --network default_value[BtcMainnet] {network} "(BtcRegtest|BtcTestnet|BtcMainnet)")
+         (@arg NETWORK: -n --network default_value("BtcMainnet") {network} "(BtcRegtest|BtcTestnet|BtcMainnet)")
          (@arg P2P_PORT: -p --("p2p-port") default_value("5000") {port} "Port of p2p node")
          (@arg TOR_ACTIVE: --("tor-active") default_value("true") {boolean} "Run daemon behind tor")
          (@arg TOR_CONTROL_PORT: --("tor-controll-port") default_value("9051") {port} "Tor Control port")
