@@ -136,6 +136,15 @@ impl QueryFields for Query {
         ))
     }
     #[cfg(not(feature = "statistics"))]
+    fn field_hloc(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Hloc, juniper_from_schema::Walked>,
+        _market: MarketPair,
+    ) -> FieldResult<Option<Vec<Hloc>>> {
+        Ok(None)
+    }
+    #[cfg(not(feature = "statistics"))]
     fn field_trades(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
@@ -264,12 +273,31 @@ impl TradeFields for Trade {
     }
 }
 
+impl HlocFields for Hloc {
+    fn field_period_start(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<UnixSecs> {
+        Ok(self.period_start.into())
+    }
+}
+
 impl From<SystemTime> for UnixMillis {
     fn from(time: SystemTime) -> Self {
         UnixMillis(
             time.duration_since(UNIX_EPOCH)
                 .expect("Time went backwards")
                 .as_millis()
+                .to_string(),
+        )
+    }
+}
+impl From<SystemTime> for UnixSecs {
+    fn from(time: SystemTime) -> Self {
+        UnixSecs(
+            time.duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_secs()
                 .to_string(),
         )
     }

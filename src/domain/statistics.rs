@@ -43,6 +43,10 @@ impl Trade {
     }
 }
 
+pub struct Hloc {
+    pub period_start: SystemTime,
+}
+
 #[cfg(feature = "statistics")]
 pub use inner::*;
 #[cfg(feature = "statistics")]
