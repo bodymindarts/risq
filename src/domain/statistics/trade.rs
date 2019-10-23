@@ -44,3 +44,28 @@ impl Trade {
         }
     }
 }
+
+#[cfg(feature = "statistics")]
+pub struct TradeHistory {
+    inner: Vec<Trade>,
+}
+#[cfg(feature = "statistics")]
+impl TradeHistory {
+    pub(super) fn new() -> Self {
+        Self { inner: Vec::new() }
+    }
+    pub(super) fn insert(&mut self, trade: Trade) {
+        for n in (0..=self.inner.len()).rev() {
+            if n == 0 || trade.timestamp > self.inner[n - 1].timestamp {
+                self.inner.insert(n, trade);
+                break;
+            }
+        }
+    }
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &Trade> {
+        self.inner.iter()
+    }
+    pub fn first_trade_time(&self) -> Option<SystemTime> {
+        self.inner.get(0).map(|t| t.timestamp)
+    }
+}
