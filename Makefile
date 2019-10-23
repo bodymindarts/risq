@@ -23,7 +23,7 @@ check:
 	cargo watch -x check
 
 test:
-	cargo watch -s 'cargo test --features "all"'
+	RUST_BACKTRACE=full cargo watch -s 'cargo test --features "all" -- --nocapture'
 
 test-in-ci:
 	cargo test --all-features --verbose --locked
