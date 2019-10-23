@@ -10,6 +10,8 @@ use crate::{
     p2p::TorConfig,
 };
 use clap::{clap_app, crate_version, App, Arg, ArgMatches, SubCommand};
+use env_logger::Env;
+use log::Level;
 use query::*;
 use reqwest;
 use std::{collections::HashMap, str::FromStr};
@@ -23,6 +25,7 @@ fn app() -> App<'static, 'static> {
          (about: "Runs the risq p2p node")
          (visible_alias: "d")
          (@arg API_PORT: --("api-port") default_value("7477") {port} "API port")
+         (@arg LOG_LEVEL: -l --("log-level") default_value("info") {level} "(error|warn|info|debug|trace)")
          (@arg NETWORK: -n --network default_value[BtcMainnet] {network} "(BtcRegtest|BtcTestnet|BtcMainnet)")
          (@arg P2P_PORT: -p --("p2p-port") default_value("5000") {port} "Port of p2p node")
          (@arg TOR_ACTIVE: --("tor-active") default_value("true") {boolean} "Run daemon behind tor")
@@ -105,6 +108,12 @@ fn boolean(b: String) -> Result<(), String> {
         Ok(_) => Ok(()),
     }
 }
+fn level(level: String) -> Result<(), String> {
+    match Level::from_str(&level) {
+        Err(_) => Err(format!("'{}' is not a valid logging level", level).into()),
+        Ok(_) => Ok(()),
+    }
+}
 
 fn daemon(matches: &ArgMatches) {
     let mut private_key_path = dirs::home_dir().expect("Couldn't determin home dir");
@@ -114,6 +123,9 @@ fn daemon(matches: &ArgMatches) {
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
     let server_port = matches.value_of("P2P_PORT").unwrap().parse().unwrap();
     let tor_active: bool = matches.value_of("TOR_ACTIVE").unwrap().parse().unwrap();
+    let level: String = matches.value_of("LOG_LEVEL").unwrap().parse().unwrap();
+    let env = Env::default().filter_or("RUST_LOG", level);
+    env_logger::init_from_env(env);
     let (tor_proxy_port, tor_config) = if tor_active {
         (
             Some(matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap()),
