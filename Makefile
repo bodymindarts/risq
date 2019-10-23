@@ -20,13 +20,7 @@ check:
 	cargo watch -x check
 
 test:
-	cargo watch -x test
-
-test-checker:
-	cargo watch -s 'cargo test --features "checker"'
-
-test-stats:
-	cargo watch -s 'cargo test --features "statistics"'
+	cargo watch -s 'cargo test --features "all"'
 
 test-in-ci:
 	cargo test --all-features --verbose --locked
