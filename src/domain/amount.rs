@@ -1,4 +1,5 @@
-use std::ops::{Div, Mul};
+use std::cmp::Ordering;
+use std::ops::*;
 
 #[derive(Clone, PartialEq, Debug, Copy)]
 pub struct NumberWithPrecision {
@@ -38,6 +39,16 @@ impl NumberWithPrecision {
             ret.push('0');
         }
         ret.chars().rev().collect()
+    }
+
+    fn with_precision(&self, target_precision: u32) -> Self {
+        let mut rest_amount = self.base_amount;
+        if target_precision > self.precision {
+            rest_amount = rest_amount * 10_u64.pow(target_precision - self.precision);
+        } else if self.precision > target_precision {
+            rest_amount = rest_amount / 10_u64.pow(self.precision - target_precision);
+        }
+        Self::new(rest_amount, target_precision)
     }
 }
 
@@ -99,6 +110,17 @@ impl Div<u64> for NumberWithPrecision {
             panic!("Cannot divide by zero-valued `NumberWithPrecision`!");
         }
         NumberWithPrecision::new(self.base_amount / rhs, self.precision)
+    }
+}
+
+impl PartialOrd for NumberWithPrecision {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let target_precision = self.precision.max(other.precision);
+        Some(
+            self.with_precision(target_precision)
+                .base_amount
+                .cmp(&other.with_precision(target_precision).base_amount),
+        )
     }
 }
 
