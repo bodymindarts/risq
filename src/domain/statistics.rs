@@ -1,51 +1,8 @@
-use super::{
-    amount::*,
-    market::Market,
-    offer::{OfferDirection, OfferId},
-};
-use crate::bisq::PersistentMessageHash;
-use std::time::SystemTime;
+mod hloc;
+mod trade;
 
-#[derive(Clone)]
-pub struct Trade {
-    pub market: &'static Market,
-    pub direction: OfferDirection,
-    pub offer_id: OfferId,
-    pub price: NumberWithPrecision,
-    pub amount: NumberWithPrecision,
-    pub volume: NumberWithPrecision,
-    pub payment_method_id: String,
-    pub timestamp: SystemTime,
-    pub hash: PersistentMessageHash,
-}
-impl Trade {
-    pub fn new(
-        market: &'static Market,
-        direction: OfferDirection,
-        offer_id: OfferId,
-        price: NumberWithPrecision,
-        amount: NumberWithPrecision,
-        payment_method_id: String,
-        timestamp: SystemTime,
-        hash: PersistentMessageHash,
-    ) -> Self {
-        Self {
-            market,
-            direction,
-            offer_id,
-            price,
-            amount,
-            volume: price * amount,
-            payment_method_id,
-            timestamp,
-            hash,
-        }
-    }
-}
-
-pub struct Hloc {
-    pub period_start: SystemTime,
-}
+pub use hloc::Hloc;
+pub use trade::Trade;
 
 #[cfg(feature = "statistics")]
 pub use inner::*;
