@@ -14,7 +14,7 @@ mod inner {
         domain::{CommandResult, FutureCommandResult},
         prelude::*,
     };
-    use std::{collections::HashSet, sync::Arc, time::Instant};
+    use std::{collections::HashSet, sync::Arc};
 
     pub struct StatsCacheInner {
         trades: TradeHistory,

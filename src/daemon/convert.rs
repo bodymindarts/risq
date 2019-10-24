@@ -104,21 +104,15 @@ pub use statistics::*;
 #[cfg(feature = "statistics")]
 mod statistics {
     use crate::{
-        bisq::payload::{
-            offer_payload, persistable_network_payload, storage_payload, PersistableNetworkPayload,
-            ProtectedStorageEntry, RefreshOfferMessage,
-        },
+        bisq::payload::{offer_payload, persistable_network_payload, PersistableNetworkPayload},
         domain::{
-            amount::NumberWithPrecision,
-            currency::Currency,
-            market::Market,
-            offer::{message::*, *},
+            amount::NumberWithPrecision, currency::Currency, market::Market, offer::OfferDirection,
             statistics,
         },
     };
     use std::{
         convert::TryFrom,
-        time::{Duration, SystemTime, UNIX_EPOCH},
+        time::{Duration, UNIX_EPOCH},
     };
 
     pub fn trade_statistics2(payload: PersistableNetworkPayload) -> Option<statistics::Trade> {

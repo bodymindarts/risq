@@ -160,7 +160,7 @@ impl QueryFields for Query {
         timestamp_to: Option<UnixSecs>,
         interval: Option<Interval>,
     ) -> FieldResult<Option<Vec<Hloc>>> {
-        use std::{convert::TryInto, time::SystemTime};
+        use std::convert::TryInto;
 
         let stats = &executor.context().stats_cache;
         Ok(Some(
