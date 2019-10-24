@@ -95,7 +95,6 @@ There is also a query explorer exposed under [http://localhost:7477/graphqli](ht
 As this is a proof of concept there are a number of limitations.
 - No data is persisted so bootstrap is required for each run.
 - Only 1 connection to a seed node is currently established. If the initial data sync fails then daemon will not bootstrap properly or be able to join the p2p network.
-- Currently only 1 read-only endpoint is provided (offers).
 - Not much effort has been made to make the output look pretty or be perticularly usefull other than seeing that things are alive.
 
 ## Node Checker
