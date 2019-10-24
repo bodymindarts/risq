@@ -14,88 +14,60 @@ jobs:
   - in_parallel:
     - { get: repo }
     - { get: pipeline-tasks }
-    - do:
-      - { get: version, trigger: true, params: { bump: patch, pre: rc }, passed: [shipit] }
-      - { put: version, params: { file: version/number } }
-  - task: set-dev-version
-    config:
-      image_resource:
-        type: docker-image
-        source: {repository: (( grab meta.pipeline_image ))}
-      platform: linux
-      inputs:
-      - name: version
-      - name: repo
-      - name: pipeline-tasks
-      outputs:
-      - name: out-repo
-      run:
-        path: pipeline-tasks/ci/tasks/set-dev-version.sh
-      params:
-        BRANCH: (( grab meta.git_branch ))
-  - put: repo
-    params:
-      repository: out-repo/git
-      rebase: true
-- name: patch
-  public: true
-  plan:
+    - { get: version, trigger: true, params: { bump: patch, pre: rc }, passed: [shipit] }
   - in_parallel:
-    - { get: repo }
-    - { get: pipeline-tasks }
+    - { put: version, params: { file: version/number } }
     - do:
-      - { get: version, params: { bump: patch, pre: rc } }
-      - { put: version, params: { file: version/number } }
-  - task: set-dev-version
-    config:
-      image_resource:
-        type: docker-image
-        source: {repository: (( grab meta.pipeline_image ))}
-      platform: linux
-      inputs:
-      - name: version
-      - name: repo
-      - name: pipeline-tasks
-      outputs:
-      - name: out-repo
-      run:
-        path: pipeline-tasks/ci/tasks/set-dev-version.sh
-      params:
-        BRANCH: (( grab meta.git_branch ))
-  - put: repo
-    params:
-      repository: out-repo/git
-      rebase: true
-
+      - task: set-dev-version
+        config:
+          image_resource:
+            type: docker-image
+            source: {repository: (( grab meta.pipeline_image ))}
+          platform: linux
+          inputs:
+          - name: version
+          - name: repo
+          - name: pipeline-tasks
+          outputs:
+          - name: out-repo
+          run:
+            path: pipeline-tasks/ci/tasks/set-dev-version.sh
+          params:
+            BRANCH: (( grab meta.git_branch ))
+      - put: repo
+        params:
+          repository: out-repo/git
+          rebase: true
 - name: minor
   public: true
   plan:
   - in_parallel:
     - { get: repo }
     - { get: pipeline-tasks }
+    - { get: version, params: { bump: minor, pre: rc } }
+  - in_parallel:
+    - { put: version, params: { file: version/number } }
     - do:
-      - { get: version, params: { bump: minor, pre: rc } }
-      - { put: version, params: { file: version/number } }
-  - task: set-dev-version
-    config:
-      image_resource:
-        type: docker-image
-        source: {repository: (( grab meta.pipeline_image ))}
-      platform: linux
-      inputs:
-      - name: version
-      - name: repo
-      - name: pipeline-tasks
-      outputs:
-      - name: out-repo
-      run:
-        path: pipeline-tasks/ci/tasks/set-dev-version.sh
-      params:
-        BRANCH: (( grab meta.git_branch ))
-  - put: repo
-    params:
-      repository: out-repo/git
-      rebase: true
+      - task: set-dev-version
+        config:
+          image_resource:
+            type: docker-image
+            source: {repository: (( grab meta.pipeline_image ))}
+          platform: linux
+          inputs:
+          - name: version
+          - name: repo
+          - name: pipeline-tasks
+          outputs:
+          - name: out-repo
+          run:
+            path: pipeline-tasks/ci/tasks/set-dev-version.sh
+          params:
+            BRANCH: (( grab meta.git_branch ))
+      - put: repo
+        params:
+          repository: out-repo/git
+          rebase: true
 
 - name: major
   public: true
@@ -103,29 +75,30 @@ jobs:
   - in_parallel:
     - { get: repo }
     - { get: pipeline-tasks }
+    - { get: version, params: { bump: minor, pre: rc } }
+  - in_parallel:
+    - { put: version, params: { file: version/number } }
     - do:
-      - { get: version, params: { bump: major, pre: rc } }
-      - { put: version, params: { file: version/number } }
-  - task: set-dev-version
-    config:
-      image_resource:
-        type: docker-image
-        source: {repository: (( grab meta.pipeline_image ))}
-      platform: linux
-      inputs:
-      - name: version
-      - name: repo
-      - name: pipeline-tasks
-      outputs:
-      - name: out-repo
-      run:
-        path: pipeline-tasks/ci/tasks/set-dev-version.sh
-      params:
-        BRANCH: (( grab meta.git_branch ))
-  - put: repo
-    params:
-      repository: out-repo/git
-      rebase: true
+      - task: set-dev-version
+        config:
+          image_resource:
+            type: docker-image
+            source: {repository: (( grab meta.pipeline_image ))}
+          platform: linux
+          inputs:
+          - name: version
+          - name: repo
+          - name: pipeline-tasks
+          outputs:
+          - name: out-repo
+          run:
+            path: pipeline-tasks/ci/tasks/set-dev-version.sh
+          params:
+            BRANCH: (( grab meta.git_branch ))
+      - put: repo
+        params:
+          repository: out-repo/git
+          rebase: true
 
 - name: build-pipeline-image
   public: true
