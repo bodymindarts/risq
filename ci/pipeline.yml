@@ -9,8 +9,26 @@ meta:
   pipeline_image: (( concat meta.dockerhub_org "/risq-pipeline-image" ))
   crates_api_token: (( param "Please specify the crates.io api token" ))
 
+groups:
+- name: release
+  jobs:
+    - test
+    - rc
+    - shipit
+    - build-minimal
+    - build-arm-unknown-linux-gnueabihf
+- name: version
+  jobs:
+    - auto-bump-patch
+    - minor
+    - major
+- name: images
+  jobs:
+    - build-pipeline-image
+    - build-arm-unknown-linux-gnueabihf-image
+
 jobs:
-- name: bump-patch
+- name: auto-bump-patch
   plan:
   - in_parallel:
     - { get: repo }
@@ -105,19 +123,19 @@ jobs:
   public: true
   serial: true
   plan:
-    - {get: pipeline-images-def, trigger: true}
+    - {get: pipeline-image-def, trigger: true}
     - put: pipeline-image
       params:
-        build: pipeline-images-def/ci/images/pipeline
+        build: pipeline-image-def/ci/images/pipeline
 
 - name: build-arm-unknown-linux-gnueabihf-image
   public: true
   serial: true
   plan:
-    - {get: pipeline-images-def, trigger: true}
+    - {get: arm-unknown-linux-gnueabihf-image-def, trigger: true}
     - put: arm-unknown-linux-gnueabihf-image
       params:
-        build: pipeline-images-def/ci/images/arm-unknown-linux-gnueabihf
+        build: arm-unknown-linux-gnueabihf-image-def/ci/images/arm-unknown-linux-gnueabihf
 
 - name: test
   public: true
@@ -141,6 +159,15 @@ jobs:
           - path: cargo-target-dir
         run:
           path: pipeline-tasks/ci/tasks/run-tests.sh
+
+- name: build-minimal
+  public: true
+  serial: true
+  plan:
+  - in_parallel:
+    - { get: repo, trigger: true }
+    - { get: pipeline-tasks }
+  - in_parallel:
     - task: assert-minimal-build
       config:
         platform: linux
@@ -153,8 +180,35 @@ jobs:
         caches:
           - path: cargo-home
           - path: cargo-target-dir
+        params:
+          TARGET: minimal
         run:
-          path: pipeline-tasks/ci/tasks/build-minimal.sh
+          path: pipeline-tasks/ci/tasks/build-release.sh
+
+- name: build-arm-unknown-linux-gnueabihf
+  public: true
+  serial: true
+  plan:
+  - in_parallel:
+    - { get: repo, trigger: true }
+    - { get: pipeline-tasks }
+  - in_parallel:
+    - task: assert-arm-unknown-linux-gnueabihf-build
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( concat meta.dockerhub_org "/arm-unknown-linux-gnueabihf" ))}
+        inputs:
+        - name: pipeline-tasks
+        - name: repo
+        caches:
+          - path: cargo-home
+          - path: cargo-target-dir
+        params:
+          TARGET: arm-unknown-linux-gnueabihf
+        run:
+          path: pipeline-tasks/ci/tasks/build-release.sh
 
 - name: rc
   public: true
@@ -163,7 +217,10 @@ jobs:
   - in_parallel:
     - get: repo
       trigger: true
-      passed: [test]
+      passed:
+      - test
+      - build-minimal
+      - build-arm-unknown-linux-gnueabihf
     - { get: version, params: { pre: rc } }
   - put: version
     params: { file: version/number }
@@ -254,13 +311,21 @@ resources:
     branch: (( grab meta.git_branch ))
     paths: [ci/tasks/*, Makefile]
     private_key: (( grab meta.github_private_key ))
-- name: pipeline-images-def
+- name: pipeline-image-def
   type: git
   source:
     uri: (( grab meta.git_uri ))
     branch: (( grab meta.git_branch ))
-    paths: [ci/images/*]
+    paths: [ci/images/pipeline/*]
     private_key: (( grab meta.github_private_key ))
+- name: arm-unknown-linux-gnueabihf-image-def
+  type: git
+  source:
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    paths: [ci/images/arm-unknown-linux-gnueabihf/*]
+    private_key: (( grab meta.github_private_key ))
+
 - name: pipeline-image
   type: docker-image
   source:
