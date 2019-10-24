@@ -20,8 +20,6 @@ if [[ "$(cat ${REPO_ROOT}/ci/release_notes.md | wc -l | tr -d [:space:])" == "1"
   exit 1
 fi
 
-mv new_change_log.md CHANGELOG.md
-
 TARGET="x86_64-unknown-linux-gnu"
 rustup target add ${TARGET}
 
@@ -34,6 +32,7 @@ $(cat ci/release_notes.md)
 
 $(cat CHANGELOG.md)
 EOF
+mv new_change_log.md CHANGELOG.md
 
 sed -i'' "0,/version/{s/version.*/version = \"${VERSION}\"/}" Cargo.toml
 sed -i'' "/^name = \"risq/,/version/{s/version.*/version = \"${VERSION}\"/}" ./Cargo.lock
