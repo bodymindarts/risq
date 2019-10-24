@@ -17,6 +17,7 @@ groups:
     - shipit
     - build-minimal
     - build-arm-unknown-linux-gnueabihf
+    - verify
 - name: version
   jobs:
     - auto-bump-patch
@@ -233,7 +234,7 @@ jobs:
     - { get: version, passed: [rc], params: {bump: final} }
     - { get: repo, passed: [rc] }
     - { get: pipeline-tasks }
-  - task: github-release
+  - task: prepare
     config:
       image_resource:
         type: docker-image
@@ -243,19 +244,78 @@ jobs:
       - name: version
       - name: repo
       - name: pipeline-tasks
-      caches:
-        - path: cargo-home
-        - path: cargo-target-dir
       outputs:
-      - name: gh-release
-      - name: out-repo
-      run:
-        path: pipeline-tasks/ci/tasks/github-release.sh
+      - name: prepared-repo
       params:
         BRANCH: (( grab meta.git_branch ))
-  - put: repo
-    params:
-      repository: out-repo/git
+      run:
+        path: pipeline-tasks/ci/tasks/prepare-shipit.sh
+  - in_parallel:
+    - put: repo
+      params:
+        repository: out-repo/git
+        tag: version/number
+        tag_prefix: "v"
+    - task: build-x86_64-unknown-linux-gnu
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( grab meta.pipeline_image ))}
+        inputs:
+        - name: version
+        - name: pipeline-tasks
+        - name: prepared-repo
+        outputs:
+        - name: x86_64-unknown-linux-gnu
+        caches:
+          - path: cargo-home
+          - path: cargo-target-dir
+        params:
+          TARGET: x86_64-unknown-linux-gnu
+          REPO: prepared-repo/git
+          OUT: x86_64-unknown-linux-gnu
+        run:
+          path: pipeline-tasks/ci/tasks/build-release.sh
+    - task: build-arm-unknown-linux-gnueabihf
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( concat meta.dockerhub_org "/arm-unknown-linux-gnueabihf" ))}
+        inputs:
+        - name: version
+        - name: pipeline-tasks
+        - name: prepared-repo
+        outputs:
+        - name: arm-unknown-linux-gnueabihf
+        caches:
+          - path: cargo-home
+          - path: cargo-target-dir
+        params:
+          TARGET: arm-unknown-linux-gnueabihf
+          REPO: prepared-repo/git
+          OUT: arm-unknown-linux-gnueabihf
+        run:
+          path: pipeline-tasks/ci/tasks/build-release.sh
+  - task: github-release
+    config:
+      image_resource:
+        type: docker-image
+        source: {repository: (( grab meta.pipeline_image ))}
+      platform: linux
+      inputs:
+      - name: x86_64-unknown-linux-gnu
+      - name: arm-unknown-linux-gnueabihf
+      - name: version
+      - name: prepared-repo
+      - name: pipeline-tasks
+      outputs:
+      - name: gh-release
+      params:
+        BRANCH: (( grab meta.git_branch ))
+      run:
+        path: pipeline-tasks/ci/tasks/github-release.sh
   - put: github-release
     params:
       name:   gh-release/name
@@ -280,6 +340,12 @@ jobs:
         - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/publish-to-crates.sh
+
+- name: verify
+  plan:
+  - in_parallel:
+    - { get: repo, passed: [shipit], trigger: true }
+    - { get: pipeline-tasks }
   - task: verify-publish
     config:
       image_resource:
@@ -291,7 +357,6 @@ jobs:
       - name: pipeline-tasks
       caches:
         - path: cargo-home
-        - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/verify-publish.sh
 
@@ -300,7 +365,7 @@ resources:
 - name: repo
   type: git
   source:
-    ignore_paths: ["ci/*[^md]", Makefile]
+    ignore_paths: ["ci/*[^md]"]
     uri: (( grab meta.git_uri ))
     branch: (( grab meta.git_branch ))
     private_key: (( grab meta.github_private_key ))

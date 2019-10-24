@@ -34,6 +34,9 @@ build-minimal-release:
 build-arm-unknown-linux-gnueabihf-release:
 	cargo build --locked --release --all-features --target arm-unknown-linux-gnueabihf
 
+build-x86_64-unknown-linux-gnu-release:
+	cargo build --locked --release --all-features --target x86_64-unknown-linux-gnu
+
 run-tor:
 	scripts/run-tor
 
