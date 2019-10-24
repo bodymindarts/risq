@@ -138,24 +138,40 @@ jobs:
 
 - name: test
   public: true
+  serial: true
   plan:
   - in_parallel:
     - { get: repo, trigger: true }
     - { get: pipeline-tasks }
-  - task: test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: (( grab meta.pipeline_image ))}
-      inputs:
-      - name: pipeline-tasks
-      - name: repo
-      caches:
-        - path: cargo-home
-        - path: cargo-target-dir
-      run:
-        path: pipeline-tasks/ci/tasks/run-tests.sh
+  - in_parallel:
+    - task: run-all-test
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( grab meta.pipeline_image ))}
+        inputs:
+        - name: pipeline-tasks
+        - name: repo
+        caches:
+          - path: cargo-home
+          - path: cargo-target-dir
+        run:
+          path: pipeline-tasks/ci/tasks/run-tests.sh
+    - task: assert-minimal-build
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( grab meta.pipeline_image ))}
+        inputs:
+        - name: pipeline-tasks
+        - name: repo
+        caches:
+          - path: cargo-home
+          - path: cargo-target-dir
+        run:
+          path: pipeline-tasks/ci/tasks/build-minimal.sh
 
 - name: rc
   public: true
