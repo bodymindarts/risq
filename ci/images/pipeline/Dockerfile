@@ -22,5 +22,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
             xz-utils \
             iproute2 \
             && rm -rf /var/lib/apt/lists/*
-
-COPY docker.sh /docker.sh
