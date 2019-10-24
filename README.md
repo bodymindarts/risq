@@ -88,7 +88,7 @@ curl --header "Content-Type:application/json" \
      http://localhost:7477/graphql | jq
 ```
 
-There is also a query explorer exposed under [http://localhost:7477/graphqli](http://localhost:7477/graphqli) that can help you when developing a query.
+There is also a query explorer exposed under [http://localhost:7477/graphiql](http://localhost:7477/graphiql) that can help you when developing a query.
 
 ## Limitations
 
