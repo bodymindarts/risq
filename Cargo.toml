@@ -14,6 +14,7 @@ statistics = []
 fail-on-warnings = []
 
 all = ["checker", "statistics"]
+vendored-openssl = ["openssl/vendored"]
 
 [dependencies]
 actix = "0.8.3"
