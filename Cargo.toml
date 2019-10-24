@@ -12,6 +12,7 @@ description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) 
 checker = []
 statistics = []
 fail-on-warnings = []
+vendored-openssl = ["openssl/vendored"]
 
 all = ["checker", "statistics"]
 
