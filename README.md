@@ -28,7 +28,7 @@ $ brew install tor
 Then use the [make](./Makefile) commands for building / testing / running
 Eg:
 ```
-$ make build
+$ make build-all
 ```
 
 ## Demo
@@ -59,7 +59,7 @@ $ ./target/debug/risq help daemon
 Run the daemon after starting tor:
 ```
 $ make run-tor
-$ RUST_LOG=debug ./target/debug/risq d
+$ ./target/debug/risq d
 ```
 
 It will take a while to bootstrap the data from the seed node (currently no data is persisted so bootstrap must execute every time you start the daemon).
@@ -68,21 +68,27 @@ From a different console you can check that the api is running via:
 ```
 $ curl localhost:7477/ping
 pong
-$ curl -s localhost:7477/offers | jq
-{
-  "offers": []
-}
 ```
 
-Or use the cli to print the offers (once its bootstraped)
+Or use the cli to get the open offers (once its bootstraped)
 ```
-$ ./target/debug/risq offers
-OPEN OFFERS
-Sell fixed 5000 25000000(10000000)
-Buy fixed 303000000 1000000(1000000)
-Buy market 0.0099 1000000(1000000)
-Buy market -0.0111 1110000(1110000)
+$ ./target/debug/risq offers --market USD | wc -l
+  56
 ```
+
+## Api
+
+The api that the daemon exposes uses a [graphql schema](./src/api/schema.graphql). You can read about the background of graphql [here](https://graphql.org/).
+
+To access data you must send a `POST` request to `/graphql` with the query attached as a string in the request body:
+```
+curl --header "Content-Type:application/json" \
+     -XPOST \
+     --data '{ "query": "{ offers(market: \"btc_usd\") { id } }" }' \
+     http://localhost:7477/graphql | jq
+```
+
+There is also a query explorer exposed under [http://localhost:7477/graphqli](http://localhost:7477/graphqli) that can help you when developing a query.
 
 ## Limitations
 
