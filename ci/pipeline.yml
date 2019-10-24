@@ -105,19 +105,19 @@ jobs:
   public: true
   serial: true
   plan:
-    - {get: pipeline-images-def, trigger: true}
+    - {get: pipeline-image-def, trigger: true}
     - put: pipeline-image
       params:
-        build: pipeline-images-def/ci/images/pipeline
+        build: pipeline-image-def/ci/images/pipeline
 
 - name: build-arm-unknown-linux-gnueabihf-image
   public: true
   serial: true
   plan:
-    - {get: pipeline-images-def, trigger: true}
+    - {get: arm-unknown-linux-gnueabihf-image-def, trigger: true}
     - put: arm-unknown-linux-gnueabihf-image
       params:
-        build: pipeline-images-def/ci/images/arm-unknown-linux-gnueabihf
+        build: pipeline-image-def/ci/images/arm-unknown-linux-gnueabihf
 
 - name: test
   public: true
@@ -293,13 +293,21 @@ resources:
     branch: (( grab meta.git_branch ))
     paths: [ci/tasks/*, Makefile]
     private_key: (( grab meta.github_private_key ))
-- name: pipeline-images-def
+- name: pipeline-image-def
   type: git
   source:
     uri: (( grab meta.git_uri ))
     branch: (( grab meta.git_branch ))
-    paths: [ci/images/*]
+    paths: [ci/images/pipeline/*]
     private_key: (( grab meta.github_private_key ))
+- name: arm-unknown-linux-gnueabihf-image-def
+  type: git
+  source:
+    uri: (( grab meta.git_uri ))
+    branch: (( grab meta.git_branch ))
+    paths: [ci/images/arm-unknown-linux-gnueabihf/*]
+    private_key: (( grab meta.github_private_key ))
+
 - name: pipeline-image
   type: docker-image
   source:
