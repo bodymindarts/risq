@@ -28,7 +28,7 @@ test:
 test-in-ci:
 	cargo test --all-features --verbose --locked
 build-minimal-in-ci:
-	cargo build --no-default-features --features "fail-on-warnings"
+	cargo build --locked --no-default-features --features "fail-on-warnings"
 
 run-tor:
 	scripts/run-tor
