@@ -18,9 +18,8 @@ use juniper_from_schema::graphql_schema_from_file;
 use lazy_static::lazy_static;
 use std::{
     collections::HashMap,
-    convert::TryInto,
     sync::Arc,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 pub fn graphql(
@@ -106,6 +105,8 @@ impl QueryFields for Query {
         sort: Sort,
     ) -> FieldResult<Option<Vec<Trade>>> {
         use either::*;
+        use std::{convert::TryInto, time::SystemTime};
+
         let stats = &executor.context().stats_cache;
         let market = market
             .as_ref()
@@ -159,6 +160,8 @@ impl QueryFields for Query {
         timestamp_to: Option<UnixSecs>,
         interval: Option<Interval>,
     ) -> FieldResult<Option<Vec<Hloc>>> {
+        use std::{convert::TryInto, time::SystemTime};
+
         let stats = &executor.context().stats_cache;
         Ok(Some(
             stats.hloc(HlocQuery {
