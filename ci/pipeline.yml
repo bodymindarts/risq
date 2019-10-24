@@ -163,7 +163,7 @@ jobs:
           - path: cargo-home
           - path: cargo-target-dir
         params:
-          - TARGET: minimal
+          TARGET: minimal
         run:
           path: pipeline-tasks/ci/tasks/build-release.sh
 
@@ -175,12 +175,12 @@ jobs:
     - { get: repo, trigger: true }
     - { get: pipeline-tasks }
   - in_parallel:
-    - task: assert-minimal-build
+    - task: assert-arm-unknown-linux-gnueabihf-build
       config:
         platform: linux
         image_resource:
           type: docker-image
-          source: {repository: (( grab meta.pipeline_image ))}
+          source: {repository: (( concat meta.dockerhub_org "/arm-unknown-linux-gnueabihf" ))}
         inputs:
         - name: pipeline-tasks
         - name: repo
@@ -188,7 +188,7 @@ jobs:
           - path: cargo-home
           - path: cargo-target-dir
         params:
-          - TARGET: arm-unknown-linux-gnueabihf
+          TARGET: arm-unknown-linux-gnueabihf
         run:
           path: pipeline-tasks/ci/tasks/build-release.sh
 
