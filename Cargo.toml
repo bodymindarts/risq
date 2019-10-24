@@ -1,6 +1,6 @@
 [package]
 name = "risq"
-version = "0.0.7"
+version = "0.0.8-dev"
 authors = ["Justin Carter <justin@misthos.io>"]
 edition = "2018"
 license = "AGPL-3.0"
@@ -8,7 +8,6 @@ repository = "https://github.com/bodymindarts/risq"
 description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) in rust"
 
 [features]
-default = ["all"]
 
 checker = []
 statistics = []
@@ -23,6 +22,7 @@ bitcoin = "0.21.0"
 bitcoin_hashes = "0.7.1"
 bufstream = "0.1.4"
 bytes = "0.4.12"
+chrono = "0.4.9"
 dirs = "2.0.2"
 env_logger = "0.7.0"
 either = "1.5.3"

@@ -9,7 +9,6 @@ use crate::{
     prelude::*,
 };
 use actix_web::{web, Error, HttpResponse};
-use either::*;
 use juniper::{
     self,
     http::{graphiql::graphiql_source, GraphQLRequest},
@@ -19,6 +18,7 @@ use juniper_from_schema::graphql_schema_from_file;
 use lazy_static::lazy_static;
 use std::{
     collections::HashMap,
+    convert::TryInto,
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -105,6 +105,7 @@ impl QueryFields for Query {
         limit: i32,
         sort: Sort,
     ) -> FieldResult<Option<Vec<Trade>>> {
+        use either::*;
         let stats = &executor.context().stats_cache;
         let market = market
             .as_ref()
@@ -112,12 +113,10 @@ impl QueryFields for Query {
             .unwrap_or_else(|| ALL_MARKETS);
         let direction = direction.map(OfferDirection::from);
         let timestamp_from = timestamp_from
-            .and_then(|t| t.parse::<u64>().ok())
-            .map(|secs| UNIX_EPOCH + Duration::from_secs(secs))
+            .and_then(|t| t.try_into().ok())
             .unwrap_or(UNIX_EPOCH);
         let timestamp_to = timestamp_to
-            .and_then(|t| t.parse::<u64>().ok())
-            .map(|secs| UNIX_EPOCH + Duration::from_secs(secs))
+            .and_then(|t| t.try_into().ok())
             .unwrap_or_else(SystemTime::now);
         let iter = stats
             .trades()
@@ -147,6 +146,40 @@ impl QueryFields for Query {
         _limit: i32,
         _sort: Sort,
     ) -> FieldResult<Option<Vec<Trade>>> {
+        Ok(None)
+    }
+
+    #[cfg(feature = "statistics")]
+    fn field_hloc(
+        &self,
+        executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Hloc, juniper_from_schema::Walked>,
+        market: MarketPair,
+        timestamp_from: Option<UnixSecs>,
+        timestamp_to: Option<UnixSecs>,
+        interval: Option<Interval>,
+    ) -> FieldResult<Option<Vec<Hloc>>> {
+        let stats = &executor.context().stats_cache;
+        Ok(Some(
+            stats.hloc(HlocQuery {
+                market: Market::from_pair(&market)
+                    .ok_or_else(|| format!("MarketPair '{}' does not exist", market.0))?,
+                timestamp_from: timestamp_from.and_then(|t| t.try_into().ok()),
+                timestamp_to: timestamp_to.and_then(|t| t.try_into().ok()),
+                interval: interval.map(HlocInterval::from),
+            }),
+        ))
+    }
+    #[cfg(not(feature = "statistics"))]
+    fn field_hloc(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Hloc, juniper_from_schema::Walked>,
+        _market: MarketPair,
+        _timestamp_from: Option<UnixSecs>,
+        _timestamp_to: Option<UnixSecs>,
+        _interval: Option<Interval>,
+    ) -> FieldResult<Option<Vec<Hloc>>> {
         Ok(None)
     }
 
@@ -192,22 +225,6 @@ impl QueryFields for Query {
 
 const TARGET_PRECISION: u32 = 8;
 
-impl From<OfferDirection> for Direction {
-    fn from(direction: OfferDirection) -> Direction {
-        match direction {
-            OfferDirection::Buy => Direction::Buy,
-            OfferDirection::Sell => Direction::Sell,
-        }
-    }
-}
-impl From<Direction> for OfferDirection {
-    fn from(direction: Direction) -> OfferDirection {
-        match direction {
-            Direction::Buy => OfferDirection::Buy,
-            Direction::Sell => OfferDirection::Sell,
-        }
-    }
-}
 impl TradeFields for Trade {
     fn field_market_pair(
         &self,
@@ -264,14 +281,54 @@ impl TradeFields for Trade {
     }
 }
 
-impl From<SystemTime> for UnixMillis {
-    fn from(time: SystemTime) -> Self {
-        UnixMillis(
-            time.duration_since(UNIX_EPOCH)
-                .expect("Time went backwards")
-                .as_millis()
-                .to_string(),
-        )
+impl HlocFields for Hloc {
+    fn field_period_start(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<UnixSecs> {
+        Ok(self.period_start.into())
+    }
+    fn field_formatted_high(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.high.format(TARGET_PRECISION))
+    }
+    fn field_formatted_low(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.low.format(TARGET_PRECISION))
+    }
+    fn field_formatted_open(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.open.format(TARGET_PRECISION))
+    }
+    fn field_formatted_close(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.close.format(TARGET_PRECISION))
+    }
+    fn field_formatted_volume_left(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_left.format(TARGET_PRECISION))
+    }
+    fn field_formatted_volume_right(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_right.format(TARGET_PRECISION))
+    }
+    fn field_formatted_avg(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok((self.volume_right / self.volume_left).format(TARGET_PRECISION))
     }
 }
 
@@ -442,5 +499,71 @@ impl OpenOfferFields for OpenOffer {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
         Ok(self.display_volume.format(TARGET_PRECISION))
+    }
+}
+
+mod convert {
+    use super::*;
+    use crate::domain::offer::OfferDirection;
+    use std::{convert::TryFrom, time::SystemTime};
+
+    impl From<OfferDirection> for Direction {
+        fn from(direction: OfferDirection) -> Direction {
+            match direction {
+                OfferDirection::Buy => Direction::Buy,
+                OfferDirection::Sell => Direction::Sell,
+            }
+        }
+    }
+    impl From<Direction> for OfferDirection {
+        fn from(direction: Direction) -> OfferDirection {
+            match direction {
+                Direction::Buy => OfferDirection::Buy,
+                Direction::Sell => OfferDirection::Sell,
+            }
+        }
+    }
+    impl From<SystemTime> for UnixMillis {
+        fn from(time: SystemTime) -> Self {
+            UnixMillis(
+                time.duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_millis()
+                    .to_string(),
+            )
+        }
+    }
+    impl From<SystemTime> for UnixSecs {
+        fn from(time: SystemTime) -> Self {
+            UnixSecs(
+                time.duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_secs()
+                    .to_string(),
+            )
+        }
+    }
+    impl TryFrom<UnixSecs> for SystemTime {
+        type Error = std::num::ParseIntError;
+        fn try_from(secs: UnixSecs) -> Result<Self, Self::Error> {
+            secs.parse::<u64>()
+                .map(|secs| UNIX_EPOCH + Duration::from_secs(secs))
+        }
+    }
+
+    #[cfg(feature = "statistics")]
+    impl From<Interval> for HlocInterval {
+        fn from(interval: Interval) -> Self {
+            match interval {
+                Interval::Minute => HlocInterval::Minute,
+                Interval::Halfhour => HlocInterval::HalfHour,
+                Interval::Hour => HlocInterval::Hour,
+                Interval::Halfday => HlocInterval::HalfDay,
+                Interval::Day => HlocInterval::Day,
+                Interval::Week => HlocInterval::Week,
+                Interval::Month => HlocInterval::Month,
+                Interval::Year => HlocInterval::Year,
+            }
+        }
     }
 }

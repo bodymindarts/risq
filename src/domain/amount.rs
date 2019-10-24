@@ -1,6 +1,7 @@
-use std::ops::{Div, Mul};
+use std::cmp::Ordering;
+use std::ops::*;
 
-#[derive(Clone, PartialEq, Debug, Copy)]
+#[derive(Eq, Clone, Debug, Copy)]
 pub struct NumberWithPrecision {
     base_amount: u64,
     precision: u32,
@@ -38,6 +39,16 @@ impl NumberWithPrecision {
             ret.push('0');
         }
         ret.chars().rev().collect()
+    }
+
+    pub fn with_precision(&self, target_precision: u32) -> Self {
+        let mut rest_amount = self.base_amount;
+        if target_precision > self.precision {
+            rest_amount = rest_amount * 10_u64.pow(target_precision - self.precision);
+        } else if self.precision > target_precision {
+            rest_amount = rest_amount / 10_u64.pow(self.precision - target_precision);
+        }
+        Self::new(rest_amount, target_precision)
     }
 }
 
@@ -101,6 +112,56 @@ impl Div<u64> for NumberWithPrecision {
         NumberWithPrecision::new(self.base_amount / rhs, self.precision)
     }
 }
+impl Div<NumberWithPrecision> for NumberWithPrecision {
+    type Output = Self;
+
+    fn div(self, other: NumberWithPrecision) -> Self::Output {
+        if other.base_amount == 0 {
+            panic!("Cannot divide by zero-valued `NumberWithPrecision`!");
+        }
+        let target_precision = self.precision.max(other.precision);
+        let f1 = self.base_amount as f64 / 10_u32.pow(self.precision) as f64;
+        let f2 = other.base_amount as f64 / 10_u32.pow(other.precision) as f64;
+        NumberWithPrecision::new(
+            ((f1 / f2) * 10_f64.powf(target_precision as f64)) as u64,
+            target_precision,
+        )
+    }
+}
+
+impl AddAssign for NumberWithPrecision {
+    fn add_assign(&mut self, other: Self) {
+        let target_precision = self.precision.max(other.precision);
+        *self = self.with_precision(target_precision);
+        self.base_amount += other.with_precision(target_precision).base_amount;
+    }
+}
+
+impl PartialEq for NumberWithPrecision {
+    fn eq(&self, other: &NumberWithPrecision) -> bool {
+        let target_precision = self.precision.max(other.precision);
+        self.with_precision(target_precision).base_amount
+            == other.with_precision(target_precision).base_amount
+    }
+}
+impl PartialOrd for NumberWithPrecision {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let target_precision = self.precision.max(other.precision);
+        Some(
+            self.with_precision(target_precision)
+                .base_amount
+                .cmp(&other.with_precision(target_precision).base_amount),
+        )
+    }
+}
+impl Ord for NumberWithPrecision {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let target_precision = self.precision.max(other.precision);
+        self.with_precision(target_precision)
+            .base_amount
+            .cmp(&other.with_precision(target_precision).base_amount)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -120,5 +181,14 @@ mod tests {
         let low_volume = price * amount / 10000;
         assert!(&high_volume.format(8) == "9000.00000000");
         assert!(&low_volume.format(8) == "0.90000000");
+    }
+
+    #[test]
+    fn add_assign() {
+        let mut amount = NumberWithPrecision::new(0, 8);
+        amount += NumberWithPrecision::new(10000, 4);
+        assert!(amount == NumberWithPrecision::new(1, 0));
+        amount += NumberWithPrecision::new(123456789, 8);
+        assert!(amount == NumberWithPrecision::new(2234567890, 9));
     }
 }

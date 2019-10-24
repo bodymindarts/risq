@@ -10,6 +10,9 @@ build-with-checker:
 build-with-stats:
 	cargo build --features "statistics"
 
+build-all:
+	cargo build --features "all"
+
 run: build
 	RUST_LOG=debug target/debug/risq daemon
 
@@ -20,13 +23,7 @@ check:
 	cargo watch -x check
 
 test:
-	cargo watch -x test
-
-test-checker:
-	cargo watch -s 'cargo test --features "checker"'
-
-test-stats:
-	cargo watch -s 'cargo test --features "statistics"'
+	RUST_BACKTRACE=full cargo watch -s 'cargo test --features "all" -- --nocapture'
 
 test-in-ci:
 	cargo test --all-features --verbose --locked

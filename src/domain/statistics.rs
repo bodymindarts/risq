@@ -1,53 +1,14 @@
-use super::{
-    amount::*,
-    market::Market,
-    offer::{OfferDirection, OfferId},
-};
-use crate::bisq::PersistentMessageHash;
-use std::time::SystemTime;
+mod hloc;
+mod trade;
 
-#[derive(Clone)]
-pub struct Trade {
-    pub market: &'static Market,
-    pub direction: OfferDirection,
-    pub offer_id: OfferId,
-    pub price: NumberWithPrecision,
-    pub amount: NumberWithPrecision,
-    pub volume: NumberWithPrecision,
-    pub payment_method_id: String,
-    pub timestamp: SystemTime,
-    pub hash: PersistentMessageHash,
-}
-impl Trade {
-    pub fn new(
-        market: &'static Market,
-        direction: OfferDirection,
-        offer_id: OfferId,
-        price: NumberWithPrecision,
-        amount: NumberWithPrecision,
-        payment_method_id: String,
-        timestamp: SystemTime,
-        hash: PersistentMessageHash,
-    ) -> Self {
-        Self {
-            market,
-            direction,
-            offer_id,
-            price,
-            amount,
-            volume: price * amount,
-            payment_method_id,
-            timestamp,
-            hash,
-        }
-    }
-}
+pub use hloc::*;
+pub use trade::Trade;
 
 #[cfg(feature = "statistics")]
 pub use inner::*;
 #[cfg(feature = "statistics")]
 mod inner {
-    use super::*;
+    use super::{trade::TradeHistory, *};
     use crate::{
         bisq::PersistentMessageHash,
         domain::{CommandResult, FutureCommandResult},
@@ -55,22 +16,6 @@ mod inner {
     };
     use std::{collections::HashSet, sync::Arc};
 
-    pub struct TradeHistory {
-        inner: Vec<Trade>,
-    }
-    impl TradeHistory {
-        fn new() -> Self {
-            Self { inner: Vec::new() }
-        }
-        fn insert(&mut self, trade: Trade) {
-            for n in (0..=self.inner.len()).rev() {
-                if n == 0 || trade.timestamp > self.inner[n - 1].timestamp {
-                    self.inner.insert(n, trade);
-                    break;
-                }
-            }
-        }
-    }
     pub struct StatsCacheInner {
         trades: TradeHistory,
         hashes: HashSet<PersistentMessageHash>,
@@ -85,7 +30,10 @@ mod inner {
             }
         }
         pub fn trades(&self) -> impl DoubleEndedIterator<Item = &Trade> {
-            self.trades.inner.iter()
+            self.trades.iter()
+        }
+        pub fn hloc(&self, query: HlocQuery) -> Vec<Hloc> {
+            Hloc::from_trades(&self.trades, query)
         }
     }
 

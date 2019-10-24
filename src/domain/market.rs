@@ -17,6 +17,15 @@ impl Market {
             self.left
         }
     }
+
+    pub fn from_currency_pair(left: &Currency, right: &Currency) -> Option<&'static Market> {
+        ALL.iter()
+            .find(|m| m.left.code == left.code && m.right.code == right.code)
+    }
+
+    pub fn from_pair(market_pair: &str) -> Option<&'static Market> {
+        ALL.iter().find(|m| m.pair == market_pair)
+    }
 }
 
 macro_rules! new_market {
@@ -30,11 +39,6 @@ macro_rules! new_market {
             right,
         }
     }};
-}
-
-pub fn from_pair(left: &Currency, right: &Currency) -> Option<&'static Market> {
-    ALL.iter()
-        .find(|m| m.left.code == left.code && m.right.code == right.code)
 }
 
 impl From<&Currency> for &Market {

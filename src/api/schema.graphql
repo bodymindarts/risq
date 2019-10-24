@@ -12,6 +12,13 @@ type Query {
     limit: Int = 100,
     sort: Sort = DESC
   ): [Trade!] @juniper(ownership: "owned"),
+  "Returns null unless --features \"statistics\" is enabled"
+  hloc(
+    market: MarketPair!
+    timestampFrom: UnixSecs,
+    timestampTo: UnixSecs,
+    interval: Interval,
+  ): [Hloc!] @juniper(ownership: "owned"),
   offers(
     market: MarketPair,
     direction: Direction
@@ -37,6 +44,17 @@ type Trade {
   tradeDate: UnixMillis! @juniper(ownership: "owned")
 }
 
+type Hloc {
+  periodStart: UnixSecs! @juniper(ownership: "owned")
+  formattedHigh: String! @juniper(ownership: "owned")
+  formattedLow: String! @juniper(ownership: "owned")
+  formattedOpen: String! @juniper(ownership: "owned")
+  formattedClose: String! @juniper(ownership: "owned")
+  formattedVolumeLeft: String! @juniper(ownership: "owned")
+  formattedVolumeRight: String! @juniper(ownership: "owned")
+  formattedAvg: String! @juniper(ownership: "owned")
+}
+
 "Number of milliseconds since Epoch as string"
 scalar UnixMillis
 "Number of secs since Epoch as string"
@@ -45,6 +63,17 @@ scalar UnixSecs
 enum Direction {
   BUY
   SELL
+}
+
+enum Interval {
+  MINUTE,
+  HALFHOUR,
+  HOUR,
+  HALFDAY,
+  DAY,
+  WEEK,
+  MONTH,
+  YEAR,
 }
 
 type Currency {
