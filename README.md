@@ -30,7 +30,7 @@ To play around with the last version published from our [release pipeline](https
 $ cargo install risq
 $ risq help
 ```
-(Read more about the pipeline setup [here](./ci/README.md)
+(Read more about the pipeline setup [here](./ci/README.md))
 
 Or use the [make](./Makefile) commands for building / testing / running
 Eg:
