@@ -17,6 +17,7 @@ groups:
     - shipit
     - build-minimal
     - build-arm-unknown-linux-gnueabihf
+    - verify
 - name: version
   jobs:
     - auto-bump-patch
@@ -280,6 +281,12 @@ jobs:
         - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/publish-to-crates.sh
+
+- name: verify
+  plan:
+  - in_parallel:
+    - { get: repo, passed: [shipit], trigger: true }
+    - { get: pipeline-tasks }
   - task: verify-publish
     config:
       image_resource:
@@ -291,7 +298,6 @@ jobs:
       - name: pipeline-tasks
       caches:
         - path: cargo-home
-        - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/verify-publish.sh
 
