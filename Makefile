@@ -27,8 +27,12 @@ test:
 
 test-in-ci:
 	cargo test --all-features --verbose --locked
-build-minimal-in-ci:
-	cargo build --locked --no-default-features --features "fail-on-warnings"
+
+build-minimal-release:
+	cargo build --locked --release --no-default-features --features "fail-on-warnings"
+
+build-arm-unknown-linux-gnueabihf-release:
+	cargo build --locked --release --all-features --target "arm-unknown-linux-gnueabihf"
 
 run-tor:
 	scripts/run-tor

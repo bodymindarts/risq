@@ -8,4 +8,4 @@ pushd repo
 
 export CARGO_TARGET_DIR="../cargo-target-dir"
 
-make build-minimal-in-ci
+make build-${TARGET}-release
