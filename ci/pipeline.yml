@@ -5,7 +5,8 @@ meta:
   github_access_token: (( param "Please specify access token for creating releases" ))
   git_uri: (( param "Please specify the uri to the git repo" ))
   git_branch: (( param "Please specify the branch to checkout" ))
-  pipeline_image: (( param "Please specify the name of the image for pipline tasks" ))
+  dockerhub_org: (( param "Please specify the name of the dockerhub org" ))
+  pipeline_image: (( concat meta.dockerhub_org "/risq-pipeline-image" ))
   crates_api_token: (( param "Please specify the crates.io api token" ))
 
 jobs:
@@ -104,10 +105,19 @@ jobs:
   public: true
   serial: true
   plan:
-    - {get: pipeline-image-def, trigger: true}
+    - {get: pipeline-images-def, trigger: true}
     - put: pipeline-image
       params:
-        build: pipeline-image-def/ci/ci_image
+        build: pipeline-images-def/ci/images/pipeline
+
+- name: build-arm-unknown-linux-gnueabihf-image
+  public: true
+  serial: true
+  plan:
+    - {get: pipeline-images-def, trigger: true}
+    - put: arm-unknown-linux-gnueabihf-image
+      params:
+        build: pipeline-images-def/ci/images/arm-unknown-linux-gnueabihf
 
 - name: test
   public: true
@@ -244,12 +254,12 @@ resources:
     branch: (( grab meta.git_branch ))
     paths: [ci/tasks/*, Makefile]
     private_key: (( grab meta.github_private_key ))
-- name: pipeline-image-def
+- name: pipeline-images-def
   type: git
   source:
     uri: (( grab meta.git_uri ))
     branch: (( grab meta.git_branch ))
-    paths: [ci/ci_image/*]
+    paths: [ci/images/*]
     private_key: (( grab meta.github_private_key ))
 - name: pipeline-image
   type: docker-image
@@ -258,6 +268,13 @@ resources:
     username: ((docker-hub-username))
     password: ((docker-hub-password))
     repository: (( grab meta.pipeline_image ))
+- name: arm-unknown-linux-gnueabihf-image
+  type: docker-image
+  source:
+    email: ((docker-hub-email))
+    username: ((docker-hub-username))
+    password: ((docker-hub-password))
+    repository: (( concat meta.dockerhub_org "/arm-unknown-linux-gnueabihf" ))
 - name: version
   type: semver
   source:
