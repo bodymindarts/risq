@@ -15,6 +15,10 @@ if [[ ! -f ${REPO_ROOT}/ci/release_notes.md ]]; then
   echo >&2 "ci/release_notes.md not found.  Did you forget to write them?"
   exit 1
 fi
+if [[ "$(cat ${REPO_ROOT}/ci/release_notes.md | wc -l | tr -d [:space:])" == "1" ]];then
+  echo >&2 "ci/release_notes.md only contains 1 line. Did you forget to write them?"
+  exit 1
+fi
 
 TARGET="x86_64-unknown-linux-gnu"
 rustup target add ${TARGET}
