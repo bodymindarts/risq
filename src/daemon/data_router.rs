@@ -6,7 +6,7 @@ use crate::{
     },
     domain::{
         offer::{message::*, OfferBook},
-        statistics::StatsCache,
+        statistics::{StatsCache, Trade},
         CommandResult,
     },
     p2p::{dispatch::Receive, message::Broadcast, Broadcaster, ConnectionId},
@@ -78,9 +78,20 @@ impl DataRouter {
         data.into_iter().for_each(|w| {
             self.route_storage_entry_wrapper(Some(w), Self::ignore_command_result());
         });
+        let mut trades = if cfg!(feature = "statistics") {
+            Some(Vec::new())
+        } else {
+            None
+        };
         payloads.into_iter().for_each(|p| {
-            self.route_persistable_network_payload(Some(p), Self::ignore_command_result());
-        })
+            self.route_persistable_network_payload(
+                Some(p),
+                trades.as_mut(),
+                Self::ignore_command_result(),
+            );
+        });
+        #[cfg(feature = "statistics")]
+        arbiter_spawn!(self.stats_cache.bootstrap(trades.unwrap()));
     }
     fn should_deliver_sequenced(
         &mut self,
@@ -159,6 +170,7 @@ impl DataRouter {
     fn route_persistable_network_payload(
         &mut self,
         payload: Option<PersistableNetworkPayload>,
+        trades: Option<&mut Vec<Trade>>,
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
         let payload = payload?;
@@ -170,7 +182,11 @@ impl DataRouter {
             #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => {
                 if let Some(trade) = convert::trade_statistics2(payload) {
-                    arbiter_spawn!(self.stats_cache.add(trade).then(result_handler))
+                    if let Some(trades) = trades {
+                        trades.push(trade)
+                    } else {
+                        arbiter_spawn!(self.stats_cache.add(trade).then(result_handler))
+                    }
                 }
             }
             _ => (),
@@ -224,6 +240,7 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
             DataRouterDispatch::AddPersistableNetworkPayload(msg) => {
                 self.route_persistable_network_payload(
                     msg.payload.as_ref().map(Clone::clone),
+                    None,
                     self.handle_command_result(origin, msg),
                 );
             }

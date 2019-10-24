@@ -52,7 +52,9 @@ pub struct TradeHistory {
 #[cfg(feature = "statistics")]
 impl TradeHistory {
     pub(super) fn new() -> Self {
-        Self { inner: Vec::new() }
+        Self {
+            inner: Vec::with_capacity(60000),
+        }
     }
     pub(super) fn insert(&mut self, trade: Trade) {
         for n in (0..=self.inner.len()).rev() {
@@ -61,6 +63,11 @@ impl TradeHistory {
                 break;
             }
         }
+    }
+    pub(super) fn insert_all(&mut self, trades: impl IntoIterator<Item = Trade>) {
+        self.inner.extend(trades.into_iter());
+        self.inner
+            .sort_unstable_by(|a, b| a.timestamp.cmp(&b.timestamp));
     }
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &Trade> {
         self.inner.iter()

@@ -146,12 +146,7 @@ impl PartialEq for NumberWithPrecision {
 }
 impl PartialOrd for NumberWithPrecision {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let target_precision = self.precision.max(other.precision);
-        Some(
-            self.with_precision(target_precision)
-                .base_amount
-                .cmp(&other.with_precision(target_precision).base_amount),
-        )
+        Some(self.cmp(other))
     }
 }
 impl Ord for NumberWithPrecision {

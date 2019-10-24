@@ -29,6 +29,12 @@ mod inner {
                 CommandResult::Ignored
             }
         }
+        fn bootstrap(&mut self, trades: Vec<Trade>) {
+            let mut hashes = self.hashes.clone();
+            self.trades
+                .insert_all(trades.into_iter().filter(|t| hashes.insert(t.hash)));
+            self.hashes = hashes;
+        }
         pub fn trades(&self) -> impl DoubleEndedIterator<Item = &Trade> {
             self.trades.iter()
         }
@@ -56,6 +62,14 @@ mod inner {
                 .write()
                 .map(move |mut inner| inner.insert(trade))
                 .map_err(|_| MailboxError::Closed)
+        }
+        pub fn bootstrap(&self, trades: Vec<Trade>) -> impl Future<Item = (), Error = ()> {
+            self.inner
+                .write()
+                .map(move |mut inner| {
+                    inner.bootstrap(trades);
+                })
+                .then(|_| Ok(()))
         }
 
         pub fn inner(
