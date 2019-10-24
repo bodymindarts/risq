@@ -3,5 +3,5 @@
 
 ## Improvements
 - better responsiveness of api during bootstrapping via bulk insert of trade history
-- test that the there are no warnings when building without any features in ci pipeline
+- test that there are no warnings when building without any features in ci pipeline
 - automatically commit version as <version>-dev in Cargo.{toml,lock} after a version bump
