@@ -294,6 +294,42 @@ impl HlocFields for Hloc {
     ) -> FieldResult<String> {
         Ok(self.high.format(TARGET_PRECISION))
     }
+    fn field_formatted_low(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.low.format(TARGET_PRECISION))
+    }
+    fn field_formatted_open(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.open.format(TARGET_PRECISION))
+    }
+    fn field_formatted_close(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.close.format(TARGET_PRECISION))
+    }
+    fn field_formatted_volume_left(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_left.format(TARGET_PRECISION))
+    }
+    fn field_formatted_volume_right(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_right.format(TARGET_PRECISION))
+    }
+    fn field_formatted_avg(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok((self.volume_right / self.volume_left).format(TARGET_PRECISION))
+    }
 }
 
 lazy_static! {

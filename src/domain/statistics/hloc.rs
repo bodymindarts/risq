@@ -4,6 +4,11 @@ use std::time::SystemTime;
 pub struct Hloc {
     pub period_start: SystemTime,
     pub high: NumberWithPrecision,
+    pub low: NumberWithPrecision,
+    pub open: NumberWithPrecision,
+    pub close: NumberWithPrecision,
+    pub volume_left: NumberWithPrecision,
+    pub volume_right: NumberWithPrecision,
 }
 
 #[cfg(feature = "statistics")]
@@ -160,10 +165,19 @@ mod inner {
 
                 let mut current = Hloc {
                     period_start,
-                    high: NumberWithPrecision::new(0, 0),
+                    high: trade.price,
+                    low: trade.price,
+                    open: trade.price,
+                    close: trade.price,
+                    volume_left: NumberWithPrecision::new(0, 4),
+                    volume_right: NumberWithPrecision::new(0, 4),
                 };
                 while trade.timestamp < end {
                     current.high = current.high.max(trade.price);
+                    current.low = current.low.min(trade.price);
+                    current.close = trade.price;
+                    current.volume_left += trade.amount;
+                    current.volume_right += trade.volume;
                     trade = match trades.next() {
                         None => {
                             ret.push(current);

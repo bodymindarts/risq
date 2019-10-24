@@ -47,12 +47,12 @@ type Trade {
 type Hloc {
   periodStart: UnixSecs! @juniper(ownership: "owned")
   formattedHigh: String! @juniper(ownership: "owned")
-  # formattedLow: String! @juniper(ownership: "owned")
-  # formattedOpen: String! @juniper(ownership: "owned")
-  # formattedClose: String! @juniper(ownership: "owned")
-  # formattedVolumeLeft: String! @juniper(ownership: "owned")
-  # formattedVolumeRight: String! @juniper(ownership: "owned")
-  # formattedAvg: String! @juniper(ownership: "owned")
+  formattedLow: String! @juniper(ownership: "owned")
+  formattedOpen: String! @juniper(ownership: "owned")
+  formattedClose: String! @juniper(ownership: "owned")
+  formattedVolumeLeft: String! @juniper(ownership: "owned")
+  formattedVolumeRight: String! @juniper(ownership: "owned")
+  formattedAvg: String! @juniper(ownership: "owned")
 }
 
 "Number of milliseconds since Epoch as string"

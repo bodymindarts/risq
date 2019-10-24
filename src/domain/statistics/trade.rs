@@ -37,7 +37,7 @@ impl Trade {
             offer_id,
             price,
             amount,
-            volume: price * amount,
+            volume: (price * amount).with_precision(market.right.bisq_internal_precision()),
             payment_method_id,
             timestamp,
             hash,
