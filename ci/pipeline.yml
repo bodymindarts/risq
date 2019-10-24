@@ -9,8 +9,26 @@ meta:
   pipeline_image: (( concat meta.dockerhub_org "/risq-pipeline-image" ))
   crates_api_token: (( param "Please specify the crates.io api token" ))
 
+groups:
+- name: release
+  jobs:
+    - test
+    - rc
+    - shipit
+    - build-minimal
+    - build-arm-unknown-linux-gnueabihf
+- name: version
+  jobs:
+    - auto-bump-patch
+    - minor
+    - major
+- name: images
+  jobs:
+    - build-pipeline-image
+    - build-arm-unknown-linux-gnueabihf-image
+
 jobs:
-- name: bump-patch
+- name: auto-bump-patch
   plan:
   - in_parallel:
     - { get: repo }
@@ -117,7 +135,7 @@ jobs:
     - {get: arm-unknown-linux-gnueabihf-image-def, trigger: true}
     - put: arm-unknown-linux-gnueabihf-image
       params:
-        build: pipeline-image-def/ci/images/arm-unknown-linux-gnueabihf
+        build: arm-unknown-linux-gnueabihf-image-def/ci/images/arm-unknown-linux-gnueabihf
 
 - name: test
   public: true
