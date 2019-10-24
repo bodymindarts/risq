@@ -6,6 +6,7 @@ use crate::{
 use actix_web::{middleware::Logger, web, App, HttpServer, Result};
 use std::io;
 
+#[allow(unused_variables)]
 pub fn listen(
     port: u16,
     offer_book: Addr<OfferBook>,
@@ -13,9 +14,13 @@ pub fn listen(
 ) -> Result<(), io::Error> {
     let gql_context = GraphQLContextWrapper {
         #[cfg(feature = "statistics")]
-        stats_cache: stats_cache.expect("StatsCache empty"),
+        stats_cache: stats_cache.unwrap(),
         offer_book,
     };
+    listen_with_context(port, gql_context)
+}
+
+fn listen_with_context(port: u16, gql_context: GraphQLContextWrapper) -> Result<(), io::Error> {
     let schema = std::sync::Arc::new(create_schema());
 
     HttpServer::new(move || {

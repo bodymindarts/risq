@@ -1,15 +1,13 @@
 mod query;
 
-#[cfg(feature = "checker")]
-use crate::checker;
 use crate::{
     api::Client,
-    bisq::{constants::*, NodeAddress},
+    bisq::constants::*,
     daemon::{self, DaemonConfig},
     domain::{currency::Currency, market::Market},
     p2p::TorConfig,
 };
-use clap::{clap_app, crate_version, App, Arg, ArgMatches, SubCommand};
+use clap::{clap_app, crate_version, App, ArgMatches};
 use env_logger::Env;
 use log::Level;
 use query::*;
@@ -39,35 +37,8 @@ fn app() -> App<'static, 'static> {
          (@arg MARKET: --("market") default_value("all") {market} "Filter by market pair")
         )
     );
-    if cfg!(feature = "checker") {
-        app.subcommand(
-            SubCommand::with_name("check-node")
-                .about("Send a ping to a node. Used for monitoring.")
-                .arg(
-                    Arg::with_name("TOR_SOCKS_PORT")
-                        .long("tor-socks-port")
-                        .validator(port)
-                        .default_value("9050"),
-                )
-                .arg(
-                    Arg::with_name("NETWORK")
-                        .long("network")
-                        .short("n")
-                        .validator(network)
-                        .default_value("BtcMainnet"),
-                )
-                .arg(Arg::with_name("NODE_HOST").index(1).required(true))
-                .arg(
-                    Arg::with_name("NODE_PORT")
-                        .index(2)
-                        .required(true)
-                        .validator(port),
-                )
-                .after_help("Returns exit code 0 on success, 2 otherwise."),
-        )
-    } else {
-        app
-    }
+
+    add_checker_cmd(app)
 }
 
 pub fn run() -> () {
@@ -178,9 +149,45 @@ fn offers(matches: &ArgMatches) {
         Err(_) => println!("Error trying to reach api"),
     }
 }
+#[cfg(not(feature = "checker"))]
+fn add_checker_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
+    app
+}
+#[cfg(feature = "checker")]
+fn add_checker_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
+    use clap::{Arg, SubCommand};
+    app.subcommand(
+        SubCommand::with_name("check-node")
+            .about("Send a ping to a node. Used for monitoring.")
+            .arg(
+                Arg::with_name("TOR_SOCKS_PORT")
+                    .long("tor-socks-port")
+                    .validator(port)
+                    .default_value("9050"),
+            )
+            .arg(
+                Arg::with_name("NETWORK")
+                    .long("network")
+                    .short("n")
+                    .validator(network)
+                    .default_value("BtcMainnet"),
+            )
+            .arg(Arg::with_name("NODE_HOST").index(1).required(true))
+            .arg(
+                Arg::with_name("NODE_PORT")
+                    .index(2)
+                    .required(true)
+                    .validator(port),
+            )
+            .after_help("Returns exit code 0 on success, 2 otherwise."),
+    )
+}
 
 #[cfg(feature = "checker")]
 fn check_node(matches: &ArgMatches) {
+    use crate::bisq::NodeAddress;
+    use crate::checker;
+
     let socks_port = matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap();
     let host_name: String = matches.value_of("NODE_HOST").unwrap().into();
     let port = matches.value_of("NODE_PORT").unwrap().parse().unwrap();

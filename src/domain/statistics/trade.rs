@@ -20,6 +20,7 @@ pub struct Trade {
     pub timestamp: SystemTime,
     pub hash: PersistentMessageHash,
 }
+#[cfg(feature = "statistics")]
 impl Trade {
     pub fn new(
         market: &'static Market,

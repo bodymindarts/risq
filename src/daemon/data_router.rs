@@ -39,6 +39,7 @@ trait ResultHandler: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), (
 impl<F> ResultHandler for F where F: FnOnce(Result<CommandResult, MailboxError>) -> Result<(), ()> {}
 
 impl DataRouter {
+    #[allow(unused_variables)]
     pub fn start(
         offer_book: Addr<OfferBook>,
         broadcaster: Addr<Broadcaster>,
@@ -167,6 +168,7 @@ impl DataRouter {
         }
         .into()
     }
+    #[allow(unused_variables)]
     fn route_persistable_network_payload(
         &mut self,
         payload: Option<PersistableNetworkPayload>,
