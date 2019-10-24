@@ -25,7 +25,14 @@ $ curl https://sh.rustup.rs -sSf | sh
 $ brew install tor
 ```
 
-Then use the [make](./Makefile) commands for building / testing / running
+To play around with the last version published from our [release pipeline](https://ci.misthos.io/teams/main/pipelines/risq) you can:
+```
+$ cargo install risq
+$ risq help
+```
+(Read more about the pipeline setup [here](./ci/README.md)
+
+Or use the [make](./Makefile) commands for building / testing / running
 Eg:
 ```
 $ make build-all
