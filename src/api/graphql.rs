@@ -505,6 +505,45 @@ impl OpenOfferFields for OpenOffer {
     }
 }
 
+impl TickerFields for Ticker {
+    fn field_market_pair(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<MarketPair> {
+        Ok(MarketPair(self.market.pair.clone()))
+    }
+    fn field_formatted_last(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(Some(self.last.format(TARGET_PRECISION)))
+    }
+    fn field_formatted_high(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(Some(self.high.format(TARGET_PRECISION)))
+    }
+    fn field_formatted_low(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(Some(self.low.format(TARGET_PRECISION)))
+    }
+    fn field_formatted_volume_left(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_left.format(TARGET_PRECISION))
+    }
+    fn field_formatted_volume_right(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_right.format(TARGET_PRECISION))
+    }
+}
+
 mod convert {
     use super::*;
     use crate::domain::offer::OfferDirection;
