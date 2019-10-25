@@ -156,8 +156,8 @@ jobs:
         - name: pipeline-tasks
         - name: repo
         caches:
-          - path: cargo-home
-          - path: cargo-target-dir
+        - path: cargo-home
+        - path: cargo-target-dir
         run:
           path: pipeline-tasks/ci/tasks/run-tests.sh
 
@@ -179,8 +179,8 @@ jobs:
         - name: pipeline-tasks
         - name: repo
         caches:
-          - path: cargo-home
-          - path: cargo-target-dir
+        - path: cargo-home
+        - path: cargo-target-dir
         params:
           TARGET: minimal
         run:
@@ -204,8 +204,8 @@ jobs:
         - name: pipeline-tasks
         - name: repo
         caches:
-          - path: cargo-home
-          - path: cargo-target-dir
+        - path: cargo-home
+        - path: cargo-target-dir
         params:
           TARGET: arm-unknown-linux-gnueabihf
         run:
@@ -269,8 +269,8 @@ jobs:
         outputs:
         - name: x86_64-unknown-linux-gnu
         caches:
-          - path: cargo-home
-          - path: cargo-target-dir
+        - path: cargo-home
+        - path: cargo-target-dir
         params:
           TARGET: x86_64-unknown-linux-gnu
           REPO: prepared-repo/git
@@ -290,8 +290,8 @@ jobs:
         outputs:
         - name: arm-unknown-linux-gnueabihf
         caches:
-          - path: cargo-home
-          - path: cargo-target-dir
+        - path: cargo-home
+        - path: cargo-target-dir
         params:
           TARGET: arm-unknown-linux-gnueabihf
           REPO: prepared-repo/git
@@ -336,8 +336,8 @@ jobs:
       params:
         CRATES_API_TOKEN: (( grab meta.crates_api_token ))
       caches:
-        - path: cargo-home
-        - path: cargo-target-dir
+      - path: cargo-home
+      - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/publish-to-crates.sh
 
@@ -356,7 +356,7 @@ jobs:
       - name: version
       - name: pipeline-tasks
       caches:
-        - path: cargo-home
+      - path: cargo-home
       run:
         path: pipeline-tasks/ci/tasks/verify-publish.sh
 
