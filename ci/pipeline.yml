@@ -234,7 +234,7 @@ jobs:
     - { get: version, passed: [rc], params: {bump: final} }
     - { get: repo, passed: [rc] }
     - { get: pipeline-tasks }
-  - task: github-release
+  - task: prepare
     config:
       image_resource:
         type: docker-image
@@ -244,16 +244,71 @@ jobs:
       - name: version
       - name: repo
       - name: pipeline-tasks
-      caches:
-        - path: cargo-home
-        - path: cargo-target-dir
       outputs:
-      - name: gh-release
-      - name: out-repo
-      run:
-        path: pipeline-tasks/ci/tasks/github-release.sh
+      - name: prepared-repo
       params:
         BRANCH: (( grab meta.git_branch ))
+      run:
+        path: pipeline-tasks/ci/tasks/prepare-shipit.sh
+  - in_parallel:
+    - task: build-x86_64-unknown-linux-gnu
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( grab meta.pipeline_image ))}
+        inputs:
+        - name: pipeline-tasks
+        - name: prepared-repo
+        outputs:
+        - name: x86_64-unknown-linux-gnu
+        caches:
+          - path: cargo-home
+          - path: cargo-target-dir
+        params:
+          TARGET: x86_64-unknown-linux-gnu
+          REPO: prepared-repo/git
+          OUT: x86_64-unknown-linux-gnu-release
+        run:
+          path: pipeline-tasks/ci/tasks/build-release.sh
+    - task: build-arm-unknown-linux-gnueabihf
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( concat meta.dockerhub_org "/arm-unknown-linux-gnueabihf" ))}
+        inputs:
+        - name: pipeline-tasks
+        - name: prepared-repo
+        outputs:
+        - name: build-arm-unknown-linux-gnueabihf
+        caches:
+          - path: cargo-home
+          - path: cargo-target-dir
+        params:
+          TARGET: arm-unknown-linux-gnueabihf
+          REPO: prepared-repo/git
+          OUT: arm-unknown-linux-gnueabihf
+        run:
+          path: pipeline-tasks/ci/tasks/build-release.sh
+  - task: github-release
+    config:
+      image_resource:
+        type: docker-image
+        source: {repository: (( grab meta.pipeline_image ))}
+      platform: linux
+      inputs:
+      - name: x86_64-unknown-linux-gnu
+      - name: arm-unknown-linux-gnueabihf
+      - name: version
+      - name: out-repo
+      - name: pipeline-tasks
+      outputs:
+      - name: gh-release
+      params:
+        BRANCH: (( grab meta.git_branch ))
+      run:
+        path: pipeline-tasks/ci/tasks/github-release.sh
   - put: repo
     params:
       repository: out-repo/git
@@ -306,7 +361,7 @@ resources:
 - name: repo
   type: git
   source:
-    ignore_paths: ["ci/*[^md]", Makefile]
+    ignore_paths: ["ci/*[^md]"]
     uri: (( grab meta.git_uri ))
     branch: (( grab meta.git_branch ))
     private_key: (( grab meta.github_private_key ))
