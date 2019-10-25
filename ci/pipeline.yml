@@ -303,7 +303,7 @@ jobs:
       - name: x86_64-unknown-linux-gnu
       - name: arm-unknown-linux-gnueabihf
       - name: version
-      - name: out-repo
+      - name: prepared-repo
       - name: pipeline-tasks
       outputs:
       - name: gh-release

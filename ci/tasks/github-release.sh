@@ -5,7 +5,7 @@ set -eu
 VERSION=$(cat version/number)
 BINARY=risq
 WORKSPACE="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../../" >/dev/null && pwd )"
-REPO_ROOT="${WORKSPACE}/out-repo/git"
+REPO_ROOT="${WORKSPACE}/prepared-repo/git"
 RELEASE_ROOT="${WORKSPACE}/gh-release"
 RELEASE_NAME="risq release"
 
