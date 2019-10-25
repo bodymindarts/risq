@@ -537,19 +537,19 @@ impl TickerFields for Ticker {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Option<String>> {
-        Ok(Some(self.last.format(TARGET_PRECISION)))
+        Ok(self.last.map(|l| l.format(TARGET_PRECISION)))
     }
     fn field_formatted_high(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Option<String>> {
-        Ok(Some(self.high.format(TARGET_PRECISION)))
+        Ok(self.high.map(|h| h.format(TARGET_PRECISION)))
     }
     fn field_formatted_low(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Option<String>> {
-        Ok(Some(self.low.format(TARGET_PRECISION)))
+        Ok(self.low.map(|l| l.format(TARGET_PRECISION)))
     }
     fn field_formatted_volume_left(
         &self,

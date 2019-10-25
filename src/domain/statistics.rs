@@ -12,19 +12,18 @@ pub use inner::*;
 mod inner {
     use super::{trade::TradeHistory, *};
     use crate::{
-        bisq::PersistentMessageHash,
-        domain::{market::Market, CommandResult, FutureCommandResult},
+        domain::{market::Market, offer::OfferId, CommandResult, FutureCommandResult},
         prelude::*,
     };
     use std::{collections::HashSet, sync::Arc};
 
     pub struct StatsCacheInner {
         trades: TradeHistory,
-        hashes: HashSet<PersistentMessageHash>,
+        ids: HashSet<OfferId>,
     }
     impl StatsCacheInner {
         fn insert(&mut self, trade: Trade) -> CommandResult {
-            if self.hashes.insert(trade.hash) {
+            if self.ids.insert(trade.offer_id.clone()) {
                 self.trades.insert(trade);
                 CommandResult::Accepted
             } else {
@@ -32,10 +31,13 @@ mod inner {
             }
         }
         fn bootstrap(&mut self, trades: Vec<Trade>) {
-            let mut hashes = self.hashes.clone();
-            self.trades
-                .insert_all(trades.into_iter().filter(|t| hashes.insert(t.hash)));
-            self.hashes = hashes;
+            let mut ids = self.ids.clone();
+            self.trades.insert_all(
+                trades
+                    .into_iter()
+                    .filter(|t| ids.insert(t.offer_id.clone())),
+            );
+            self.ids = ids;
         }
         pub fn trades(&self) -> impl DoubleEndedIterator<Item = &Trade> {
             self.trades.iter()
@@ -43,8 +45,8 @@ mod inner {
         pub fn hloc(&self, query: HlocQuery) -> Vec<Hloc> {
             Hloc::from_trades(&self.trades, query)
         }
-        pub fn ticker(&self, market_pair: Option<&Market>) -> Vec<Ticker> {
-            Vec::new()
+        pub fn ticker(&self, market: Option<&'static Market>) -> Vec<Ticker> {
+            Ticker::from_trades(&self.trades, market)
         }
     }
 
@@ -57,7 +59,7 @@ mod inner {
             Some(Self {
                 inner: Arc::new(locks::RwLock::new(StatsCacheInner {
                     trades: TradeHistory::new(),
-                    hashes: HashSet::new(),
+                    ids: HashSet::new(),
                 })),
             })
         }
