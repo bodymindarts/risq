@@ -258,6 +258,7 @@ jobs:
           type: docker-image
           source: {repository: (( grab meta.pipeline_image ))}
         inputs:
+        - name: version
         - name: pipeline-tasks
         - name: prepared-repo
         outputs:
@@ -278,10 +279,11 @@ jobs:
           type: docker-image
           source: {repository: (( concat meta.dockerhub_org "/arm-unknown-linux-gnueabihf" ))}
         inputs:
+        - name: version
         - name: pipeline-tasks
         - name: prepared-repo
         outputs:
-        - name: build-arm-unknown-linux-gnueabihf
+        - name: arm-unknown-linux-gnueabihf
         caches:
           - path: cargo-home
           - path: cargo-target-dir
