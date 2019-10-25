@@ -12,6 +12,7 @@ pub use inner::*;
 mod inner {
     use super::{trade::TradeHistory, *};
     use crate::{
+        bisq::PersistentMessageHash,
         domain::{market::Market, offer::OfferId, CommandResult, FutureCommandResult},
         prelude::*,
     };
@@ -19,11 +20,11 @@ mod inner {
 
     pub struct StatsCacheInner {
         trades: TradeHistory,
-        ids: HashSet<OfferId>,
+        ids: HashSet<PersistentMessageHash>,
     }
     impl StatsCacheInner {
         fn insert(&mut self, trade: Trade) -> CommandResult {
-            if self.ids.insert(trade.offer_id.clone()) {
+            if self.ids.insert(trade.hash) {
                 self.trades.insert(trade);
                 CommandResult::Accepted
             } else {
@@ -32,11 +33,8 @@ mod inner {
         }
         fn bootstrap(&mut self, trades: Vec<Trade>) {
             let mut ids = self.ids.clone();
-            self.trades.insert_all(
-                trades
-                    .into_iter()
-                    .filter(|t| ids.insert(t.offer_id.clone())),
-            );
+            self.trades
+                .insert_all(trades.into_iter().filter(|t| ids.insert(t.hash)));
             self.ids = ids;
         }
         pub fn trades(&self) -> impl DoubleEndedIterator<Item = &Trade> {

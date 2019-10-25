@@ -250,6 +250,9 @@ impl QueryFields for Query {
 const TARGET_PRECISION: u32 = 8;
 
 impl TradeFields for Trade {
+    fn field_hash(&self, _executor: &juniper::Executor<'_, GraphQLContext>) -> FieldResult<String> {
+        Ok(self.hash.0.to_string())
+    }
     fn field_market_pair(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,

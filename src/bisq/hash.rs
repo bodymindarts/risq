@@ -2,7 +2,7 @@ use crate::prelude::{ripemd160, sha256, Hash};
 use prost::Message;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct PersistentMessageHash(ripemd160::Hash);
+pub struct PersistentMessageHash(pub ripemd160::Hash);
 impl PersistentMessageHash {
     pub fn new(inner: ripemd160::Hash) -> Self {
         PersistentMessageHash(inner)
