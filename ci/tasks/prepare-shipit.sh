@@ -16,9 +16,6 @@ if [[ "$(cat ${REPO_ROOT}/ci/release_notes.md | wc -l | tr -d [:space:])" == "1"
   exit 1
 fi
 
-TARGET="x86_64-unknown-linux-gnu"
-rustup target add ${TARGET}
-
 pushd $REPO_ROOT
 
 cat <<EOF >new_change_log.md
