@@ -15,5 +15,13 @@ export CARGO_TARGET_DIR="../cargo-target-dir"
 make build-${TARGET}-release
 
 if [[ "${OUT}" != "none" ]]; then
-  mv ${CARGO_TARGET_DIR}/${TARGET}/release/${BINARY} ${OUT}/${BINARY}-${TARGET}
+  set -x
+  cd ${CARGO_TARGET_DIR}/${TARGET}/release
+  mkdir ${BINARY}-${TARGET}
+  mv ./${BINARY} ${BINARY}-${TARGET}/
+
+  tar -czvf ${BINARY}-${TARGET}.tar.gz ${BINARY}-${TARGET}
+
+  mv ${BINARY}-${TARGET}.tar.gz ${OUT}/
+
 fi
