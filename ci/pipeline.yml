@@ -251,11 +251,14 @@ jobs:
       run:
         path: pipeline-tasks/ci/tasks/prepare-shipit.sh
   - in_parallel:
-    - put: repo
-      params:
-        repository: prepared-repo/git
-        tag: version/number
-        tag_prefix: "v"
+    - do:
+      - put: repo
+        params:
+          repository: prepared-repo/git
+          tag: version/number
+          tag_prefix: "v"
+      - put: version
+        params: { bump: final }
     - task: build-x86_64-unknown-linux-gnu
       config:
         platform: linux
@@ -322,8 +325,6 @@ jobs:
       tag:    gh-release/tag
       body:   gh-release/notes.md
       globs: [gh-release/artifacts/*]
-  - put: version
-    params: { bump: final }
   - task: publish-to-crates
     config:
       image_resource:
