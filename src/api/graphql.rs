@@ -149,6 +149,27 @@ impl QueryFields for Query {
     ) -> FieldResult<Option<Vec<Trade>>> {
         Ok(None)
     }
+    #[cfg(feature = "statistics")]
+    fn field_ticker(
+        &self,
+        executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
+        market: Option<MarketPair>,
+    ) -> FieldResult<Option<Vec<Ticker>>> {
+        let stats = &executor.context().stats_cache;
+        Ok(Some(
+            stats.ticker(market.and_then(|m| Market::from_pair(&m))),
+        ))
+    }
+    #[cfg(not(feature = "statistics"))]
+    fn field_ticker(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
+        _market: Option<MarketPair>,
+    ) -> FieldResult<Option<Vec<Ticker>>> {
+        Ok(None)
+    }
 
     #[cfg(feature = "statistics")]
     fn field_hloc(
@@ -502,6 +523,45 @@ impl OpenOfferFields for OpenOffer {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
         Ok(self.display_volume.format(TARGET_PRECISION))
+    }
+}
+
+impl TickerFields for Ticker {
+    fn field_market_pair(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<MarketPair> {
+        Ok(MarketPair(self.market.pair.clone()))
+    }
+    fn field_formatted_last(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(self.last.map(|l| l.format(TARGET_PRECISION)))
+    }
+    fn field_formatted_high(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(self.high.map(|h| h.format(TARGET_PRECISION)))
+    }
+    fn field_formatted_low(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(self.low.map(|l| l.format(TARGET_PRECISION)))
+    }
+    fn field_formatted_volume_left(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_left.format(TARGET_PRECISION))
+    }
+    fn field_formatted_volume_right(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume_right.format(TARGET_PRECISION))
     }
 }
 

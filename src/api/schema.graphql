@@ -13,6 +13,8 @@ type Query {
     sort: Sort = DESC
   ): [Trade!] @juniper(ownership: "owned"),
   "Returns null unless --features \"statistics\" is enabled"
+  ticker(market: MarketPair): [Ticker!] @juniper(ownership: "owned")
+  "Returns null unless --features \"statistics\" is enabled"
   hloc(
     market: MarketPair!
     timestampFrom: UnixSecs,
@@ -53,6 +55,15 @@ type Hloc {
   formattedVolumeLeft: String! @juniper(ownership: "owned")
   formattedVolumeRight: String! @juniper(ownership: "owned")
   formattedAvg: String! @juniper(ownership: "owned")
+}
+
+type Ticker {
+  marketPair: MarketPair! @juniper(ownership: "owned"),
+  formattedLast: String @juniper(ownership: "owned"),
+  formattedHigh: String @juniper(ownership: "owned"),
+  formattedLow: String @juniper(ownership: "owned"),
+  formattedVolumeLeft: String! @juniper(ownership: "owned")
+  formattedVolumeRight: String! @juniper(ownership: "owned")
 }
 
 "Number of milliseconds since Epoch as string"
