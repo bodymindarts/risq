@@ -15,5 +15,5 @@ export CARGO_TARGET_DIR="../cargo-target-dir"
 make build-${TARGET}-release
 
 if [[ "${OUT}" != "none" ]]; then
-  mv ${CARGO_TARGET_DIR}/${TARGET}/release/${BINARY} ${RELEASE_ROOT}/artifacts/${BINARY}-${TARGET}
+  mv ${CARGO_TARGET_DIR}/${TARGET}/release/${BINARY} ${OUT}/${BINARY}-${TARGET}
 fi
