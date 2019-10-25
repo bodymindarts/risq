@@ -13,7 +13,7 @@ mod inner {
     use super::{trade::TradeHistory, *};
     use crate::{
         bisq::PersistentMessageHash,
-        domain::{CommandResult, FutureCommandResult},
+        domain::{market::Market, CommandResult, FutureCommandResult},
         prelude::*,
     };
     use std::{collections::HashSet, sync::Arc};
@@ -42,6 +42,9 @@ mod inner {
         }
         pub fn hloc(&self, query: HlocQuery) -> Vec<Hloc> {
             Hloc::from_trades(&self.trades, query)
+        }
+        pub fn ticker(&self, market_pair: Option<&Market>) -> Vec<Ticker> {
+            Vec::new()
         }
     }
 

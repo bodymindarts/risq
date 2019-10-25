@@ -149,6 +149,19 @@ impl QueryFields for Query {
     ) -> FieldResult<Option<Vec<Trade>>> {
         Ok(None)
     }
+    #[cfg(feature = "statistics")]
+    fn field_ticker(
+        &self,
+        executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
+        market: Option<MarketPair>,
+    ) -> FieldResult<Option<Vec<Ticker>>> {
+        let stats = &executor.context().stats_cache;
+        Ok(Some(
+            stats.ticker(market.and_then(|m| Market::from_pair(&m))),
+        ))
+    }
+    #[cfg(not(feature = "statistics"))]
     fn field_ticker(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
