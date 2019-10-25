@@ -269,7 +269,7 @@ jobs:
         params:
           TARGET: x86_64-unknown-linux-gnu
           REPO: prepared-repo/git
-          OUT: x86_64-unknown-linux-gnu-release
+          OUT: x86_64-unknown-linux-gnu
         run:
           path: pipeline-tasks/ci/tasks/build-release.sh
     - task: build-arm-unknown-linux-gnueabihf
