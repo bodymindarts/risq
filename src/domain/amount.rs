@@ -1,6 +1,11 @@
 use std::cmp::Ordering;
 use std::ops::*;
 
+#[cfg(feature = "statistics")]
+pub const ZERO: NumberWithPrecision = NumberWithPrecision {
+    base_amount: 0,
+    precision: 8,
+};
 #[derive(Eq, Clone, Debug, Copy)]
 pub struct NumberWithPrecision {
     base_amount: u64,
