@@ -14,10 +14,10 @@ groups:
   jobs:
     - test
     - rc
-    - shipit
+    - release
     - build-minimal
     - build-arm-unknown-linux-gnueabihf
-    - verify
+    - publish
 - name: version
   jobs:
     - auto-bump-patch
@@ -34,7 +34,7 @@ jobs:
   - in_parallel:
     - { get: repo }
     - { get: pipeline-tasks }
-    - { get: version, trigger: true, params: { bump: patch, pre: rc }, passed: [shipit] }
+    - { get: version, trigger: true, params: { bump: patch, pre: rc }, passed: [release] }
   - in_parallel:
     - { put: version, params: { file: version/number } }
     - do:
@@ -226,7 +226,7 @@ jobs:
   - put: version
     params: { file: version/number }
 
-- name: shipit
+- name: release
   public: true
   serial: true
   plan:
@@ -249,7 +249,7 @@ jobs:
       params:
         BRANCH: (( grab meta.git_branch ))
       run:
-        path: pipeline-tasks/ci/tasks/prepare-shipit.sh
+        path: pipeline-tasks/ci/tasks/prepare-repo.sh
   - in_parallel:
     - do:
       - put: repo
@@ -325,6 +325,12 @@ jobs:
       tag:    gh-release/tag
       body:   gh-release/notes.md
       globs: [gh-release/artifacts/*]
+
+- name: publish
+  plan:
+  - in_parallel:
+    - { get: repo, passed: [release], trigger: true }
+    - { get: pipeline-tasks }
   - task: publish-to-crates
     config:
       image_resource:
@@ -333,7 +339,7 @@ jobs:
       platform: linux
       inputs:
       - name: pipeline-tasks
-      - name: prepared-repo
+      - name: repo
       params:
         CRATES_API_TOKEN: (( grab meta.crates_api_token ))
       caches:
@@ -341,12 +347,6 @@ jobs:
         - path: cargo-target-dir
       run:
         path: pipeline-tasks/ci/tasks/publish-to-crates.sh
-
-- name: verify
-  plan:
-  - in_parallel:
-    - { get: repo, passed: [shipit], trigger: true }
-    - { get: pipeline-tasks }
   - task: verify-publish
     config:
       image_resource:
