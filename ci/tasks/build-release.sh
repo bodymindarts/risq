@@ -2,26 +2,31 @@
 
 set -eu
 
+VERSION=""
+if [[ -f version/number ]];then
+  VERSION="$(cat version/number)"
+fi
+
 REPO=${REPO:-repo}
 BINARY=risq
 OUT=${OUT:-none}
-
-export CARGO_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../../" >/dev/null && pwd )/cargo-home"
+WORKSPACE="$(pwd)"
+export CARGO_HOME="$(pwd)/cargo-home"
+export CARGO_TARGET_DIR="$(pwd)/cargo-target-dir"
 
 pushd ${REPO}
 
-export CARGO_TARGET_DIR="../cargo-target-dir"
 
 make build-${TARGET}-release
 
 if [[ "${OUT}" != "none" ]]; then
   set -x
   cd ${CARGO_TARGET_DIR}/${TARGET}/release
-  mkdir ${BINARY}-${TARGET}
-  mv ./${BINARY} ${BINARY}-${TARGET}/
+  OUT_DIR="${BINARY}-${TARGET}-${VERSION}"
+  mkdir "${OUT_DIR}"
+  mv ./${BINARY} ${OUT_DIR}
+  tar -czvf ${OUT_DIR}.tar.gz ${OUT_DIR}
 
-  tar -czvf ${BINARY}-${TARGET}.tar.gz ${BINARY}-${TARGET}
-
-  mv ${BINARY}-${TARGET}.tar.gz ${OUT}/
+  mv ${OUT_DIR}.tar.gz ${WORKSPACE}/${OUT}/
 
 fi
