@@ -59,8 +59,33 @@ mod inner {
                     Some(next) => next,
                 };
             }
+            let mut missing_markets: HashMap<&String, &mut Ticker> = tickers
+                .iter_mut()
+                .filter_map(|(market, ticker)| {
+                    if ticker.last.is_none() {
+                        Some((*market, ticker))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            loop {
+                if missing_markets.len() == 0 {
+                    return Self::to_return(tickers);
+                }
+                if let Some(ticker) = missing_markets.remove(&next.market.pair) {
+                    ticker.last = Some(next.price);
+                    ticker.high = Some(next.price);
+                    ticker.low = Some(next.price);
+                }
 
-            Self::to_return(tickers)
+                next = match trades.next() {
+                    None => {
+                        return Self::to_return(tickers);
+                    }
+                    Some(next) => next,
+                };
+            }
         }
         fn to_return(tickers: HashMap<&String, Ticker>) -> Vec<Ticker> {
             let mut ret: Vec<Ticker> = tickers.into_iter().map(|(_, ticker)| ticker).collect();
