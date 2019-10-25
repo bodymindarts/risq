@@ -1,7 +1,9 @@
 mod hloc;
+mod ticker;
 mod trade;
 
 pub use hloc::*;
+pub use ticker::Ticker;
 pub use trade::Trade;
 
 #[cfg(feature = "statistics")]

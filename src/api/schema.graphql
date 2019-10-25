@@ -55,6 +55,15 @@ type Hloc {
   formattedAvg: String! @juniper(ownership: "owned")
 }
 
+type Ticker {
+  marketPair: MarketPair! @juniper(ownership: "owned"),
+  formattedLast: String @juniper(ownership: "owned"),
+  formattedHigh: String @juniper(ownership: "owned"),
+  formattedLow: String @juniper(ownership: "owned"),
+  formattedVolumeLeft: String! @juniper(ownership: "owned")
+  formattedVolumeRight: String! @juniper(ownership: "owned")
+}
+
 "Number of milliseconds since Epoch as string"
 scalar UnixMillis
 "Number of secs since Epoch as string"
