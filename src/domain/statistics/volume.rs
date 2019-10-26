@@ -17,7 +17,7 @@ mod inner {
         market::*,
         statistics::{interval::*, trade::*},
     };
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::time::SystemTime;
 
     impl Volume {
         pub fn from_trades(
