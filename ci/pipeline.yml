@@ -328,7 +328,8 @@ jobs:
 - name: publish
   plan:
   - in_parallel:
-    - { get: repo, passed: [release], trigger: true }
+    - { get: repo, passed: [release] }
+    - { get: version, passed: [release], trigger: true }
     - { get: pipeline-tasks }
   - task: publish-to-crates
     config:
@@ -337,6 +338,7 @@ jobs:
         source: {repository: (( grab meta.pipeline_image ))}
       platform: linux
       inputs:
+      - name: version
       - name: pipeline-tasks
       - name: repo
       params:

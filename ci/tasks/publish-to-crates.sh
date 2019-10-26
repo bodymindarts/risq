@@ -2,7 +2,11 @@
 
 set -e
 
+VERSION="$(cat version/number)"
+
 pushd repo
+
+git checkout "v${VERSION}"
 
 cat <<EOF | cargo login
 ${CRATES_API_TOKEN}
