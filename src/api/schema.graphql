@@ -4,37 +4,42 @@ schema {
 
 type Query {
   offers(
-    market: MarketPair,
+    market: MarketPair
     direction: Direction
-  ): [OpenOffer!]! @juniper(ownership: "owned"),
+  ): [OpenOffer!]! @juniper(ownership: "owned")
+
   currencies: [Currency!]!
+
   markets: [Market!]!
 
   depth(market: MarketPair!): Depth! @juniper(ownership: "owned")
 
   "Returns null unless --features \"statistics\" is enabled"
   ticker(market: MarketPair): [Ticker!] @juniper(ownership: "owned")
+
   "Returns null unless --features \"statistics\" is enabled"
   trades(
-    market: MarketPair,
-    direction: Direction,
-    timestampFrom: UnixSecs,
-    timestampTo: UnixSecs,
-    limit: Int = 100,
+    market: MarketPair
+    direction: Direction
+    timestampFrom: UnixSecs
+    timestampTo: UnixSecs
+    limit: Int = 100
     sort: Sort = DESC
-  ): [Trade!] @juniper(ownership: "owned"),
+  ): [Trade!] @juniper(ownership: "owned")
+
   "Returns null unless --features \"statistics\" is enabled"
   hloc(
     market: MarketPair!
-    timestampFrom: UnixSecs,
-    timestampTo: UnixSecs,
-    interval: Interval,
-  ): [Hloc!] @juniper(ownership: "owned"),
+    timestampFrom: UnixSecs
+    timestampTo: UnixSecs
+    interval: Interval
+  ): [Hloc!] @juniper(ownership: "owned")
+
   "Returns null unless --features \"statistics\" is enabled"
   volumes(
     market: MarketPair
-    interval: Interval,
-  ): [Volume!] @juniper(ownership: "owned"),
+    interval: Interval
+  ): [Volume!] @juniper(ownership: "owned")
 }
 
 enum Sort {
@@ -43,13 +48,13 @@ enum Sort {
 }
 
 type Trade {
-  marketPair: MarketPair! @juniper(ownership: "owned"),
-  direction: Direction! @juniper(ownership: "owned"),
-  paymentMethodId: String!,
-  offerId: ID! @juniper(ownership: "owned"),
-  formattedPrice: String! @juniper(ownership: "owned"),
-  formattedAmount: String! @juniper(ownership: "owned"),
-  formattedVolume: String! @juniper(ownership: "owned"),
+  marketPair: MarketPair! @juniper(ownership: "owned")
+  direction: Direction! @juniper(ownership: "owned")
+  paymentMethodId: String!
+  offerId: ID! @juniper(ownership: "owned")
+  formattedPrice: String! @juniper(ownership: "owned")
+  formattedAmount: String! @juniper(ownership: "owned")
+  formattedVolume: String! @juniper(ownership: "owned")
   "Number of milliseconds since Epoch as string"
   tradeDate: UnixMillis! @juniper(ownership: "owned")
 }
@@ -72,10 +77,10 @@ type Volume {
 }
 
 type Ticker {
-  marketPair: MarketPair! @juniper(ownership: "owned"),
-  formattedLast: String @juniper(ownership: "owned"),
-  formattedHigh: String @juniper(ownership: "owned"),
-  formattedLow: String @juniper(ownership: "owned"),
+  marketPair: MarketPair! @juniper(ownership: "owned")
+  formattedLast: String @juniper(ownership: "owned")
+  formattedHigh: String @juniper(ownership: "owned")
+  formattedLow: String @juniper(ownership: "owned")
   formattedVolumeLeft: String! @juniper(ownership: "owned")
   formattedVolumeRight: String! @juniper(ownership: "owned")
 }
@@ -91,54 +96,54 @@ enum Direction {
 }
 
 enum Interval {
-  MINUTE,
-  HALFHOUR,
-  HOUR,
-  HALFDAY,
-  DAY,
-  WEEK,
-  MONTH,
-  YEAR,
+  MINUTE
+  HALFHOUR
+  HOUR
+  HALFDAY
+  DAY
+  WEEK
+  MONTH
+  YEAR
 }
 
 type Currency {
-  code: String!,
-  name: String!,
-  precision: Int! @juniper(ownership: "owned"),
+  code: String!
+  name: String!
+  precision: Int! @juniper(ownership: "owned")
   currencyTypeLowerCase: String!
 }
 
 type Market {
-  pair: String!,
-  name: String!,
-  lName: String!,
-  lSymbol: String!,
-  lPrecision: Int! @juniper(ownership: "owned"),
-  lTypeLowerCase: String!,
-  rName: String!,
-  rSymbol: String!,
-  rPrecision: Int! @juniper(ownership: "owned"),
-  rTypeLowerCase: String!,
+  pair: String!
+  name: String!
+  lName: String!
+  lSymbol: String!
+  lPrecision: Int! @juniper(ownership: "owned")
+  lTypeLowerCase: String!
+  rName: String!
+  rSymbol: String!
+  rPrecision: Int! @juniper(ownership: "owned")
+  rTypeLowerCase: String!
 }
 
 "String of market pair eg. btc_eur"
 scalar MarketPair
 
 type OpenOffer {
-  marketPair: MarketPair! @juniper(ownership: "owned"),
-  id: ID! @juniper(ownership: "owned"),
-  offerDate: UnixMillis! @juniper(ownership: "owned"),,
-  direction: Direction! @juniper(ownership: "owned"),
-  formattedAmount: String! @juniper(ownership: "owned"),
-  formattedMinAmount: String! @juniper(ownership: "owned"),
-  formattedPrice: String! @juniper(ownership: "owned"),
-  formattedVolume: String! @juniper(ownership: "owned"),
-  paymentMethodId: String!,
-  offerFeeTxId: String!,
+  marketPair: MarketPair! @juniper(ownership: "owned")
+  id: ID! @juniper(ownership: "owned")
+  offerDate: UnixMillis! @juniper(ownership: "owned")
+  direction: Direction! @juniper(ownership: "owned")
+  formattedAmount: String! @juniper(ownership: "owned")
+  formattedMinAmount: String! @juniper(ownership: "owned")
+  formattedPrice: String! @juniper(ownership: "owned")
+  formattedVolume: String! @juniper(ownership: "owned")
+  paymentMethodId: String!
+  offerFeeTxId: String!
 }
 
 type Depth {
-  marketPair: MarketPair! @juniper(ownership: "owned"),
-  formattedBuys: [String!]! @juniper(ownership: "owned"),
-  formattedSells: [String!]! @juniper(ownership: "owned"),
+  marketPair: MarketPair! @juniper(ownership: "owned")
+  formattedBuys: [String!]! @juniper(ownership: "owned")
+  formattedSells: [String!]! @juniper(ownership: "owned")
 }
