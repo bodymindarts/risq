@@ -255,8 +255,6 @@ jobs:
       - put: repo
         params:
           repository: prepared-repo/git
-          tag: version/number
-          tag_prefix: "v"
           merge: true
       - put: version
         params: { bump: final }

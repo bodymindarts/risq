@@ -44,6 +44,8 @@ fi
  git merge --no-edit ${BRANCH}
  git add -A
  git status
- git commit -m "Release v${VERSION}")
+ git commit -m "Release v${VERSION}"
+ git tag "v${VERSION}"
+)
 
 cp -a ${REPO_ROOT} ${REPO_OUT}/git
