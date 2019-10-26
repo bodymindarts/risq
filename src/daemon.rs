@@ -39,14 +39,17 @@ pub fn run(
     let offer_book = OfferBook::start(price_feed);
     let stats_cache = StatsCache::new();
 
-    let offer_book_clone = offer_book.clone();
-    let stats_cache_clone = stats_cache.as_ref().map(Clone::clone);
+    // Api Thread
+    let _ = api::listen(
+        api_port,
+        offer_book.clone(),
+        stats_cache.as_ref().map(Clone::clone),
+    );
 
     Arbiter::new().exec_fn(move || {
         // Daemon Thread
         let broadcaster = Broadcaster::start();
-        let data_router =
-            DataRouter::start(offer_book_clone, broadcaster.clone(), stats_cache_clone);
+        let data_router = DataRouter::start(offer_book, broadcaster.clone(), stats_cache);
         let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
 
         Arbiter::new().exec_fn(move || {
@@ -56,9 +59,6 @@ pub fn run(
             server::start(server_port, peers, bootstrap, tor_config);
         });
     });
-
-    // Api Thread
-    let _ = api::listen(api_port, offer_book, stats_cache);
 
     let _ = sys.run();
 }
