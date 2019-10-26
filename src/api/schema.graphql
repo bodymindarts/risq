@@ -9,6 +9,9 @@ type Query {
   ): [OpenOffer!]! @juniper(ownership: "owned"),
   currencies: [Currency!]!
   markets: [Market!]!
+
+  depth(market: MarketPair!): Depth! @juniper(ownership: "owned")
+
   "Returns null unless --features \"statistics\" is enabled"
   ticker(market: MarketPair): [Ticker!] @juniper(ownership: "owned")
   "Returns null unless --features \"statistics\" is enabled"
@@ -132,4 +135,10 @@ type OpenOffer {
   formattedVolume: String! @juniper(ownership: "owned"),
   paymentMethodId: String!,
   offerFeeTxId: String!,
+}
+
+type Depth {
+  marketPair: MarketPair! @juniper(ownership: "owned"),
+  formattedBuys: [String!]! @juniper(ownership: "owned"),
+  formattedSells: [String!]! @juniper(ownership: "owned"),
 }
