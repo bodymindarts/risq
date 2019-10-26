@@ -357,8 +357,6 @@ jobs:
       inputs:
       - name: version
       - name: pipeline-tasks
-      caches:
-      - path: cargo-home
       run:
         path: pipeline-tasks/ci/tasks/verify-publish.sh
 
