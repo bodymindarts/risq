@@ -32,7 +32,6 @@ sed -i'' "/^name = \"risq/,/version/{s/version.*/version = \"${VERSION}\"/}" ./C
 mv ${REPO_ROOT}/ci/release_notes.md          ${REPO_OUT}/notes.md
 echo "Empty - please add release notes here" > ${REPO_ROOT}/ci/release_notes.md
 
-# GIT!
 if [[ -z $(git config --global user.email) ]]; then
   git config --global user.email "risqbot@misthos.io"
 fi
