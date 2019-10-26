@@ -8,12 +8,13 @@ mod volume;
 pub use hloc::*;
 pub use ticker::Ticker;
 pub use trade::Trade;
+pub use volume::Volume;
 
 #[cfg(feature = "statistics")]
 pub use inner::*;
 #[cfg(feature = "statistics")]
 mod inner {
-    use super::{trade::TradeHistory, *};
+    use super::{interval::Interval, trade::TradeHistory, *};
     use crate::{
         domain::{market::Market, offer::OfferId, CommandResult, FutureCommandResult},
         prelude::*,
@@ -50,6 +51,13 @@ mod inner {
         }
         pub fn ticker(&self, market: Option<&'static Market>) -> Vec<Ticker> {
             Ticker::from_trades(&self.trades, market)
+        }
+        pub fn volumes(
+            &self,
+            market: Option<&'static Market>,
+            interval: Option<Interval>,
+        ) -> Vec<Volume> {
+            Volume::from_trades(&self.trades, market, interval)
         }
     }
 

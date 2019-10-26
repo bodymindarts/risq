@@ -20,12 +20,7 @@ mod inner {
         market::*,
         statistics::{interval::*, trade::*},
     };
-    use chrono::*;
-    use lazy_static::lazy_static;
-    use std::{
-        ops::Add,
-        time::{SystemTime, UNIX_EPOCH},
-    };
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     pub struct HlocQuery {
         pub market: &'static Market,
@@ -49,7 +44,7 @@ mod inner {
                 Some(time) => time.max(timestamp_from.unwrap_or(UNIX_EPOCH)),
             };
             let to = from.max(timestamp_to.unwrap_or_else(SystemTime::now));
-            let interval = interval.unwrap_or_else(|| Interval::from_range(&from, &to));
+            let interval = interval.unwrap_or_else(|| Interval::default_for_range(&from, &to));
 
             let mut ret = Vec::new();
             let mut trades = history.iter().filter(|t| t.market.pair == market.pair);

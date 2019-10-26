@@ -47,7 +47,7 @@ impl Iterator for IntervalIterator {
 }
 
 impl Interval {
-    pub fn from_range(from: &SystemTime, to: &SystemTime) -> Self {
+    pub fn default_for_range(from: &SystemTime, to: &SystemTime) -> Self {
         if let Ok(dur) = to.duration_since(*from) {
             match Duration::from_std(dur) {
                 Ok(dur) if dur <= *ONE_HOUR => Interval::Minute,

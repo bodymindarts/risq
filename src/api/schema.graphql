@@ -3,6 +3,14 @@ schema {
 }
 
 type Query {
+  offers(
+    market: MarketPair,
+    direction: Direction
+  ): [OpenOffer!]! @juniper(ownership: "owned"),
+  currencies: [Currency!]!
+  markets: [Market!]!
+  "Returns null unless --features \"statistics\" is enabled"
+  ticker(market: MarketPair): [Ticker!] @juniper(ownership: "owned")
   "Returns null unless --features \"statistics\" is enabled"
   trades(
     market: MarketPair,
@@ -13,20 +21,17 @@ type Query {
     sort: Sort = DESC
   ): [Trade!] @juniper(ownership: "owned"),
   "Returns null unless --features \"statistics\" is enabled"
-  ticker(market: MarketPair): [Ticker!] @juniper(ownership: "owned")
-  "Returns null unless --features \"statistics\" is enabled"
   hloc(
     market: MarketPair!
     timestampFrom: UnixSecs,
     timestampTo: UnixSecs,
     interval: Interval,
   ): [Hloc!] @juniper(ownership: "owned"),
-  offers(
-    market: MarketPair,
-    direction: Direction
-  ): [OpenOffer!]! @juniper(ownership: "owned"),
-  currencies: [Currency!]!
-  markets: [Market!]!
+  "Returns null unless --features \"statistics\" is enabled"
+  volumes(
+    market: MarketPair
+    interval: Interval,
+  ): [Volume!] @juniper(ownership: "owned"),
 }
 
 enum Sort {
@@ -55,6 +60,12 @@ type Hloc {
   formattedVolumeLeft: String! @juniper(ownership: "owned")
   formattedVolumeRight: String! @juniper(ownership: "owned")
   formattedAvg: String! @juniper(ownership: "owned")
+}
+
+type Volume {
+  periodStart: UnixSecs! @juniper(ownership: "owned")
+  formattedVolume: String! @juniper(ownership: "owned")
+  numTrades: Int! @juniper(ownership: "owned")
 }
 
 type Ticker {

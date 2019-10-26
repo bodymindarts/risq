@@ -92,6 +92,81 @@ const ALL_MARKETS: &'static str = "all";
 
 pub struct Query;
 impl QueryFields for Query {
+    fn field_offers(
+        &self,
+        executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+        market: Option<MarketPair>,
+        direction: Option<Direction>,
+    ) -> FieldResult<Vec<OpenOffer>> {
+        let direction = direction.map(OfferDirection::from);
+        let market = market
+            .as_ref()
+            .map(|MarketPair(m)| m.as_ref())
+            .unwrap_or_else(|| ALL_MARKETS);
+        Ok(executor
+            .context()
+            .open_offers
+            .values()
+            .filter(|o| &o.market.pair == market || market == ALL_MARKETS)
+            .filter(|o| !o.is_expired())
+            .filter(|t| direction.is_none() || t.direction == direction.unwrap())
+            .cloned()
+            .collect())
+    }
+
+    fn field_markets(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Market, juniper_from_schema::Walked>,
+    ) -> FieldResult<&Vec<Market>> {
+        Ok(&market::ALL)
+    }
+
+    fn field_currencies(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Currency, juniper_from_schema::Walked>,
+    ) -> FieldResult<&Vec<Currency>> {
+        Ok(&currency::ALL)
+    }
+
+    #[cfg(not(feature = "statistics"))]
+    fn field_ticker(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
+        _market: Option<MarketPair>,
+    ) -> FieldResult<Option<Vec<Ticker>>> {
+        Ok(None)
+    }
+    #[cfg(feature = "statistics")]
+    fn field_ticker(
+        &self,
+        executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
+        market: Option<MarketPair>,
+    ) -> FieldResult<Option<Vec<Ticker>>> {
+        let stats = &executor.context().stats_cache;
+        Ok(Some(
+            stats.ticker(market.and_then(|m| Market::from_pair(&m))),
+        ))
+    }
+
+    #[cfg(not(feature = "statistics"))]
+    fn field_trades(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
+        _market: Option<MarketPair>,
+        _direction: Option<Direction>,
+        _timestamp_from: Option<UnixSecs>,
+        _timestamp_to: Option<UnixSecs>,
+        _limit: i32,
+        _sort: Sort,
+    ) -> FieldResult<Option<Vec<Trade>>> {
+        Ok(None)
+    }
     #[cfg(feature = "statistics")]
     fn field_trades(
         &self,
@@ -135,42 +210,19 @@ impl QueryFields for Query {
                 .collect(),
         ))
     }
+
     #[cfg(not(feature = "statistics"))]
-    fn field_trades(
+    fn field_hloc(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, Trade, juniper_from_schema::Walked>,
-        _market: Option<MarketPair>,
-        _direction: Option<Direction>,
+        _trail: &QueryTrail<'_, Hloc, juniper_from_schema::Walked>,
+        _market: MarketPair,
         _timestamp_from: Option<UnixSecs>,
         _timestamp_to: Option<UnixSecs>,
-        _limit: i32,
-        _sort: Sort,
-    ) -> FieldResult<Option<Vec<Trade>>> {
+        _interval: Option<Interval>,
+    ) -> FieldResult<Option<Vec<Hloc>>> {
         Ok(None)
     }
-    #[cfg(feature = "statistics")]
-    fn field_ticker(
-        &self,
-        executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
-        market: Option<MarketPair>,
-    ) -> FieldResult<Option<Vec<Ticker>>> {
-        let stats = &executor.context().stats_cache;
-        Ok(Some(
-            stats.ticker(market.and_then(|m| Market::from_pair(&m))),
-        ))
-    }
-    #[cfg(not(feature = "statistics"))]
-    fn field_ticker(
-        &self,
-        _executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
-        _market: Option<MarketPair>,
-    ) -> FieldResult<Option<Vec<Ticker>>> {
-        Ok(None)
-    }
-
     #[cfg(feature = "statistics")]
     fn field_hloc(
         &self,
@@ -194,56 +246,30 @@ impl QueryFields for Query {
             }),
         ))
     }
+
     #[cfg(not(feature = "statistics"))]
-    fn field_hloc(
+    fn field_volumes(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, Hloc, juniper_from_schema::Walked>,
-        _market: MarketPair,
-        _timestamp_from: Option<UnixSecs>,
-        _timestamp_to: Option<UnixSecs>,
+        _trail: &QueryTrail<'_, Volume, juniper_from_schema::Walked>,
+        _market: Option<MarketPair>,
         _interval: Option<Interval>,
-    ) -> FieldResult<Option<Vec<Hloc>>> {
+    ) -> FieldResult<Option<Vec<Volume>>> {
         Ok(None)
     }
-
-    fn field_currencies(
-        &self,
-        _executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, Currency, juniper_from_schema::Walked>,
-    ) -> FieldResult<&Vec<Currency>> {
-        Ok(&currency::ALL)
-    }
-
-    fn field_markets(
-        &self,
-        _executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, Market, juniper_from_schema::Walked>,
-    ) -> FieldResult<&Vec<Market>> {
-        Ok(&market::ALL)
-    }
-
-    fn field_offers(
+    #[cfg(feature = "statistics")]
+    fn field_volumes(
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+        _trail: &QueryTrail<'_, Volume, juniper_from_schema::Walked>,
         market: Option<MarketPair>,
-        direction: Option<Direction>,
-    ) -> FieldResult<Vec<OpenOffer>> {
-        let direction = direction.map(OfferDirection::from);
-        let market = market
-            .as_ref()
-            .map(|MarketPair(m)| m.as_ref())
-            .unwrap_or_else(|| ALL_MARKETS);
-        Ok(executor
-            .context()
-            .open_offers
-            .values()
-            .filter(|o| &o.market.pair == market || market == ALL_MARKETS)
-            .filter(|o| !o.is_expired())
-            .filter(|t| direction.is_none() || t.direction == direction.unwrap())
-            .cloned()
-            .collect())
+        interval: Option<Interval>,
+    ) -> FieldResult<Option<Vec<Volume>>> {
+        let stats = &executor.context().stats_cache;
+        Ok(Some(stats.volumes(
+            market.and_then(|m| Market::from_pair(&m)),
+            interval.map(interval::Interval::from),
+        )))
     }
 }
 
@@ -353,6 +379,27 @@ impl HlocFields for Hloc {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
         Ok((self.volume_right / self.volume_left).format(TARGET_PRECISION))
+    }
+}
+
+impl VolumeFields for Volume {
+    fn field_period_start(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<UnixSecs> {
+        Ok(self.period_start.into())
+    }
+    fn field_formatted_volume(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        Ok(self.volume.format(TARGET_PRECISION))
+    }
+    fn field_num_trades(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<i32> {
+        Ok(self.num_trades as i32)
     }
 }
 
