@@ -190,7 +190,7 @@ impl QueryFields for Query {
                     .ok_or_else(|| format!("MarketPair '{}' does not exist", market.0))?,
                 timestamp_from: timestamp_from.and_then(|t| t.try_into().ok()),
                 timestamp_to: timestamp_to.and_then(|t| t.try_into().ok()),
-                interval: interval.map(HlocInterval::from),
+                interval: interval.map(interval::Interval::from),
             }),
         ))
     }
@@ -615,17 +615,17 @@ mod convert {
     }
 
     #[cfg(feature = "statistics")]
-    impl From<Interval> for HlocInterval {
+    impl From<Interval> for interval::Interval {
         fn from(interval: Interval) -> Self {
             match interval {
-                Interval::Minute => HlocInterval::Minute,
-                Interval::Halfhour => HlocInterval::HalfHour,
-                Interval::Hour => HlocInterval::Hour,
-                Interval::Halfday => HlocInterval::HalfDay,
-                Interval::Day => HlocInterval::Day,
-                Interval::Week => HlocInterval::Week,
-                Interval::Month => HlocInterval::Month,
-                Interval::Year => HlocInterval::Year,
+                Interval::Minute => interval::Interval::Minute,
+                Interval::Halfhour => interval::Interval::HalfHour,
+                Interval::Hour => interval::Interval::Hour,
+                Interval::Halfday => interval::Interval::HalfDay,
+                Interval::Day => interval::Interval::Day,
+                Interval::Week => interval::Interval::Week,
+                Interval::Month => interval::Interval::Month,
+                Interval::Year => interval::Interval::Year,
             }
         }
     }
