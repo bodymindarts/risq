@@ -128,21 +128,21 @@ fn daemon(matches: &ArgMatches) {
 
 fn offers(matches: &ArgMatches) {
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
-    let mut args = HashMap::new();
+    let mut vars = HashMap::new();
     let currency: Result<&Currency, ()> = matches.value_of("MARKET").unwrap().parse();
     if let Ok(currency) = currency {
         let market: &Market = currency.into();
-        Offers::add_variables(&market, &mut args);
+        Offers::add_variables(&market, &mut vars);
     }
-    let response: reqwest::Result<Offers> = Client::new(api_port).query(args);
+    let response: reqwest::Result<Offers> = Client::new(api_port).query(vars);
     match response {
-        Ok(get_offers) => {
+        Ok(offers) => {
             println!("OPEN OFFERS");
-            if get_offers.offers.len() == 0 {
+            if offers.len() == 0 {
                 println!("<currently no offers available>");
                 return;
             }
-            for offer in get_offers.offers.into_iter() {
+            for offer in offers {
                 println!("{}", offer)
             }
         }

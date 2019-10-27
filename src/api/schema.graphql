@@ -6,13 +6,11 @@ type Query {
   offers(
     market: MarketPair
     direction: Direction
-  ): [OpenOffer!]! @juniper(ownership: "owned")
+  ): Offers! @juniper(ownership: "owned")
 
   currencies: [Currency!]!
 
   markets: [Market!]!
-
-  depth(market: MarketPair!): Depth! @juniper(ownership: "owned")
 
   "Returns null unless --features \"statistics\" is enabled"
   ticker(market: MarketPair): [Ticker!] @juniper(ownership: "owned")
@@ -40,6 +38,14 @@ type Query {
     market: MarketPair
     interval: Interval
   ): [Volume!] @juniper(ownership: "owned")
+}
+
+type Offers {
+  marketPair: MarketPair!
+  buys: [OpenOffer!]! @juniper(ownership: "as_ref")
+  sells: [OpenOffer!]! @juniper(ownership: "as_ref")
+  formattedBuyPrices: [String!]! @juniper(ownership: "owned")
+  formattedSellPrices: [String!]! @juniper(ownership: "owned")
 }
 
 enum Sort {
@@ -140,10 +146,4 @@ type OpenOffer {
   formattedVolume: String! @juniper(ownership: "owned")
   paymentMethodId: String!
   offerFeeTxId: String!
-}
-
-type Depth {
-  marketPair: MarketPair! @juniper(ownership: "owned")
-  formattedBuys: [String!]! @juniper(ownership: "owned")
-  formattedSells: [String!]! @juniper(ownership: "owned")
 }

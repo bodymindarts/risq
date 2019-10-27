@@ -1,7 +1,6 @@
 use crate::{
     bisq::SequencedMessageHash,
     domain::{
-        amount::*,
         currency::{self, Currency},
         market::{self, Market},
         offer::{message::GetOpenOffers, OfferBook, OfferDirection, OpenOffer},
@@ -91,9 +90,15 @@ pub fn create_schema() -> Schema {
 
 const ALL_MARKETS: &'static str = "all";
 
-pub struct Depth {
-    market: &'static Market,
-    prices: Vec<(OfferDirection, NumberWithPrecision)>,
+pub struct Offers {
+    market: MarketPair,
+    offers: Vec<OpenOffer>,
+}
+
+impl Offers {
+    fn direction(&self, direction: OfferDirection) -> impl Iterator<Item = &OpenOffer> {
+        self.offers.iter().filter(move |o| o.direction == direction)
+    }
 }
 
 pub struct Query;
@@ -101,24 +106,29 @@ impl QueryFields for Query {
     fn field_offers(
         &self,
         executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+        _trail: &QueryTrail<'_, Offers, juniper_from_schema::Walked>,
         market: Option<MarketPair>,
         direction: Option<Direction>,
-    ) -> FieldResult<Vec<OpenOffer>> {
-        let direction = direction.map(OfferDirection::from);
-        let market = market
+    ) -> FieldResult<Offers> {
+        let market_cmp = market
             .as_ref()
             .map(|MarketPair(m)| m.as_ref())
-            .unwrap_or_else(|| ALL_MARKETS);
-        Ok(executor
+            .unwrap_or(ALL_MARKETS);
+        let direction = direction.map(OfferDirection::from);
+        let mut offers: Vec<OpenOffer> = executor
             .context()
             .open_offers
             .values()
-            .filter(|o| &o.market.pair == market || market == ALL_MARKETS)
+            .filter(|o| market_cmp == ALL_MARKETS || o.market.pair == market_cmp)
             .filter(|o| !o.is_expired())
-            .filter(|t| direction.is_none() || t.direction == direction.unwrap())
+            .filter(|o| direction.is_none() || o.direction == direction.unwrap())
             .cloned()
-            .collect())
+            .collect();
+        offers.sort_unstable_by(|a, b| a.display_price.cmp(&b.display_price));
+        Ok(Offers {
+            market: market.unwrap_or_else(|| MarketPair(ALL_MARKETS.to_string())),
+            offers,
+        })
     }
 
     fn field_markets(
@@ -192,7 +202,7 @@ impl QueryFields for Query {
         let market = market
             .as_ref()
             .map(|MarketPair(m)| m.as_ref())
-            .unwrap_or_else(|| ALL_MARKETS);
+            .unwrap_or(ALL_MARKETS);
         let direction = direction.map(OfferDirection::from);
         let timestamp_from = timestamp_from
             .and_then(|t| t.try_into().ok())
@@ -276,30 +286,6 @@ impl QueryFields for Query {
             market.and_then(|m| Market::from_pair(&m)),
             interval.map(interval::Interval::from),
         )))
-    }
-
-    fn field_depth(
-        &self,
-        executor: &juniper::Executor<'_, GraphQLContext>,
-        _trail: &QueryTrail<'_, Depth, juniper_from_schema::Walked>,
-        MarketPair(market): MarketPair,
-    ) -> FieldResult<Depth> {
-        let market = Market::from_pair(&market)
-            .ok_or_else(|| format!("MarketPair '{}' does not exist", market))?;
-        let mut prices: Vec<(OfferDirection, NumberWithPrecision)> = executor
-            .context()
-            .open_offers
-            .values()
-            .filter_map(|o| {
-                if o.market.pair == market.pair {
-                    Some((o.direction, o.display_price))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        prices.sort_unstable_by(|a, b| a.1.cmp(&b.1));
-        Ok(Depth { market, prices })
     }
 }
 
@@ -642,46 +628,47 @@ impl TickerFields for Ticker {
     }
 }
 
-impl DepthFields for Depth {
+impl OffersFields for Offers {
     fn field_market_pair(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
-    ) -> FieldResult<MarketPair> {
-        Ok(MarketPair(self.market.pair.clone()))
+    ) -> FieldResult<&MarketPair> {
+        Ok(&self.market)
     }
 
-    fn field_formatted_buys(
+    fn field_buys(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+    ) -> FieldResult<Vec<&OpenOffer>> {
+        Ok(self.direction(OfferDirection::Buy).collect())
+    }
+
+    fn field_sells(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+    ) -> FieldResult<Vec<&OpenOffer>> {
+        Ok(self.direction(OfferDirection::Sell).collect())
+    }
+
+    fn field_formatted_buy_prices(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Vec<String>> {
         Ok(self
-            .prices
-            .iter()
-            .filter_map(|(d, p)| {
-                if *d == OfferDirection::Buy {
-                    Some(p.format(TARGET_PRECISION))
-                } else {
-                    None
-                }
-            })
-            .rev()
+            .direction(OfferDirection::Buy)
+            .map(|o| o.display_price.format(TARGET_PRECISION))
             .collect())
     }
 
-    fn field_formatted_sells(
+    fn field_formatted_sell_prices(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Vec<String>> {
         Ok(self
-            .prices
-            .iter()
-            .filter_map(|(d, p)| {
-                if *d == OfferDirection::Sell {
-                    Some(p.format(TARGET_PRECISION))
-                } else {
-                    None
-                }
-            })
+            .direction(OfferDirection::Sell)
+            .map(|o| o.display_price.format(TARGET_PRECISION))
             .collect())
     }
 }
