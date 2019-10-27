@@ -326,6 +326,7 @@ jobs:
       globs: [gh-release/artifacts/*]
 
 - name: publish
+  public: true
   plan:
   - in_parallel:
     - { get: repo, passed: [release] }
