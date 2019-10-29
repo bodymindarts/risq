@@ -9,28 +9,41 @@ use crate::{
     prelude::*,
 };
 use data_router::*;
-use std::fs;
+use std::{fs, path::PathBuf};
 
 pub struct DaemonConfig {
     pub api_port: u16,
     pub server_port: u16,
     pub network: BaseCurrencyNetwork,
-    pub tor_config: Option<TorConfig>,
+    pub risq_home: PathBuf,
+    pub tor_control_port: Option<u16>,
     pub tor_proxy_port: Option<u16>,
+    pub hidden_service_port: Option<u16>,
 }
+
+const SERIVCE_PRIVATE_KEY_PATH: &'static str = "tor/service.key";
+
 pub fn run(
     DaemonConfig {
         api_port,
         server_port,
         network,
-        tor_config,
+        risq_home,
+        tor_control_port,
         tor_proxy_port,
+        hidden_service_port,
     }: DaemonConfig,
 ) {
-    if let Some(tor_config) = tor_config.as_ref() {
-        fs::create_dir_all(tor_config.private_key_path.parent().unwrap())
-            .expect("Couldn't create risq dir");
-    }
+    let private_key_path = risq_home.join(SERIVCE_PRIVATE_KEY_PATH);
+    fs::create_dir_all(private_key_path.parent().unwrap()).expect("Couldn't create risq dir");
+    let tor_config = match (tor_control_port, hidden_service_port) {
+        (Some(tc_port), Some(hidden_service_port)) => Some(TorConfig {
+            hidden_service_port,
+            tc_port,
+            private_key_path,
+        }),
+        _ => None,
+    };
 
     let sys = System::new("risq");
 

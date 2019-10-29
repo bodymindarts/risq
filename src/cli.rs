@@ -5,14 +5,13 @@ use crate::{
     bisq::constants::*,
     daemon::{self, DaemonConfig},
     domain::{currency::Currency, market::Market},
-    p2p::TorConfig,
 };
 use clap::{clap_app, crate_version, App, ArgMatches};
 use env_logger::Env;
 use log::Level;
 use query::*;
 use reqwest;
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, env, path::PathBuf, str::FromStr};
 
 fn app() -> App<'static, 'static> {
     let app = clap_app!(risq =>
@@ -86,9 +85,12 @@ fn level(level: String) -> Result<(), String> {
     }
 }
 
+const RISQ_HOME_VAR: &'static str = "RISQ_HOME";
+
 fn daemon(matches: &ArgMatches) {
-    let mut private_key_path = dirs::home_dir().expect("Couldn't determin home dir");
-    private_key_path.push(".risq/tor/service.key");
+    let risq_home = env::var_os(RISQ_HOME_VAR)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| dirs::home_dir().expect("Couldn't determin home dir"));
 
     let network: BaseCurrencyNetwork = matches.value_of("NETWORK").unwrap().parse().unwrap();
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
@@ -97,32 +99,35 @@ fn daemon(matches: &ArgMatches) {
     let level: String = matches.value_of("LOG_LEVEL").unwrap().parse().unwrap();
     let env = Env::default().filter_or("RUST_LOG", level);
     env_logger::init_from_env(env);
-    let (tor_proxy_port, tor_config) = if tor_active {
+    let (tor_proxy_port, tor_control_port, hidden_service_port) = if tor_active {
         (
             Some(matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap()),
-            Some(TorConfig {
-                hidden_service_port: matches
-                    .value_of("TOR_HIDDEN_SERVICE_PORT")
-                    .unwrap()
-                    .parse()
-                    .unwrap(),
-                tc_port: matches
+            Some(
+                matches
                     .value_of("TOR_CONTROL_PORT")
                     .unwrap()
                     .parse()
                     .unwrap(),
-                private_key_path,
-            }),
+            ),
+            Some(
+                matches
+                    .value_of("TOR_HIDDEN_SERVICE_PORT")
+                    .unwrap()
+                    .parse()
+                    .unwrap(),
+            ),
         )
     } else {
-        (None, None)
+        (None, None, None)
     };
     daemon::run(DaemonConfig {
         api_port,
         server_port,
         network,
-        tor_config,
+        risq_home,
+        tor_control_port,
         tor_proxy_port,
+        hidden_service_port,
     });
 }
 
