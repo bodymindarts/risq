@@ -13,10 +13,13 @@ mod domain;
 mod error;
 mod p2p;
 
+#[cfg(not(target_os = "android"))]
 pub mod cli;
 
 #[macro_use]
 extern crate log;
 
+#[cfg(target_os = "android")]
 pub use bisq::constants::BaseCurrencyNetwork;
+#[cfg(target_os = "android")]
 pub use daemon::*;
