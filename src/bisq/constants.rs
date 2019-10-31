@@ -99,7 +99,7 @@ lazy_static! {
         vec
     };
 }
-static SUPPORTED_CAPABILITIES: [Capability; 11] = [
+static SUPPORTED_CAPABILITIES: [Capability; 12] = [
     Capability::TradeStatistics,
     Capability::TradeStatistics2,
     Capability::AccountAgeWitness,
@@ -111,6 +111,7 @@ static SUPPORTED_CAPABILITIES: [Capability; 11] = [
     Capability::BundleOfEnvelopes,
     Capability::SignedAccountAgeWitness,
     Capability::Mediation,
+    Capability::TradeStatisticsHashUpdate,
 ];
 
 #[derive(Debug, Clone, Copy)]
@@ -131,6 +132,8 @@ pub enum Capability {
     BundleOfEnvelopes, // Supports bundling of messages if many messages are sent in short interval
     SignedAccountAgeWitness, // Supports the signed account age witness feature
     Mediation,         // Supports mediation feature
+    RefundAgent,       // Supports refund agent
+    TradeStatisticsHashUpdate,
 }
 impl TryFrom<i32> for Capability {
     type Error = ();
@@ -149,6 +152,8 @@ impl TryFrom<i32> for Capability {
             10 => Ok(Capability::BundleOfEnvelopes),
             11 => Ok(Capability::SignedAccountAgeWitness),
             12 => Ok(Capability::Mediation),
+            13 => Ok(Capability::RefundAgent),
+            14 => Ok(Capability::TradeStatisticsHashUpdate),
             _ => Err(()),
         }
     }
