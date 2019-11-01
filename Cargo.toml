@@ -48,7 +48,7 @@ version = "2.33.0"
 features = [ "suggestions", "color", "unstable"]
 
 [dependencies.reqwest]
-version = "0.9.21"
+version = "0.9.22"
 default-features = false
 features = ["socks"]
 
