@@ -1,3 +1,13 @@
+# [risq release v0.3.1](https://github.com/bodymindarts/risq/releases/tag/v0.3.1)
+
+## Improvements
+
+- pick up `RISQ_HOME` as root data dir
+- Expose / remove code when `target_os = "android"`
+
+## Bug fixes
+- Add capability to handle new TradeStatistics hash
+
 # [risq release v0.3.0](https://github.com/bodymindarts/risq/releases/tag/v0.3.0)
 
 ## Notice
