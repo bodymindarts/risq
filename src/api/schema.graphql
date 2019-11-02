@@ -78,9 +78,11 @@ type Hloc {
 
 type Volume {
   periodStart: UnixSecs! @juniper(ownership: "owned")
+  periodStartDateTime: DateTimeUtc! @juniper(ownership: "owned")
   formattedVolume: String! @juniper(ownership: "owned")
   numTrades: Int! @juniper(ownership: "owned")
 }
+scalar DateTimeUtc
 
 type Ticker {
   marketPair: MarketPair! @juniper(ownership: "owned")

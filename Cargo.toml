@@ -10,7 +10,7 @@ description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) 
 [features]
 
 checker = []
-statistics = ["chrono"]
+statistics = []
 fail-on-warnings = []
 vendored-openssl = ["openssl/vendored"]
 
@@ -23,7 +23,7 @@ bitcoin = "0.21.0"
 bitcoin_hashes = "0.7.1"
 bufstream = "0.1.4"
 bytes = "0.4.12"
-chrono = { version = "0.4.9", optional = true }
+chrono = "0.4.9"
 dirs = "2.0.2"
 env_logger = "0.7.1"
 either = "1.5.3"
