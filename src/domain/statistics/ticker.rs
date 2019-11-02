@@ -8,6 +8,8 @@ pub struct Ticker {
     pub low: Option<NumberWithPrecision>,
     pub volume_left: NumberWithPrecision,
     pub volume_right: NumberWithPrecision,
+    pub buy: Option<NumberWithPrecision>,
+    pub sell: Option<NumberWithPrecision>,
 }
 
 #[cfg(feature = "statistics")]
@@ -15,14 +17,23 @@ pub use inner::*;
 #[cfg(feature = "statistics")]
 mod inner {
     use super::Ticker;
-    use crate::domain::{amount::*, market::*, statistics::trade::*};
+    use crate::domain::{
+        amount::*,
+        market::*,
+        offer::{OfferDirection, OpenOffer},
+        statistics::trade::*,
+    };
     use std::{
         collections::HashMap,
         time::{Duration, SystemTime},
     };
 
     impl Ticker {
-        pub fn from_trades(history: &TradeHistory, market: Option<&'static Market>) -> Vec<Ticker> {
+        pub fn from_trades<'a>(
+            history: &TradeHistory,
+            market: Option<&'static Market>,
+            offers: impl Iterator<Item = &'a OpenOffer>,
+        ) -> Vec<Ticker> {
             let mut tickers = HashMap::new();
             match market {
                 None => {
@@ -37,7 +48,7 @@ mod inner {
             let mut trades = history.iter().rev();
             let mut next = match trades.next() {
                 None => {
-                    return Self::to_return(tickers);
+                    return Self::to_return(tickers, offers);
                 }
                 Some(next) => next,
             };
@@ -54,7 +65,7 @@ mod inner {
                 }
                 next = match trades.next() {
                     None => {
-                        return Self::to_return(tickers);
+                        return Self::to_return(tickers, offers);
                     }
                     Some(next) => next,
                 };
@@ -71,7 +82,7 @@ mod inner {
                 .collect();
             loop {
                 if missing_markets.len() == 0 {
-                    return Self::to_return(tickers);
+                    return Self::to_return(tickers, offers);
                 }
                 if let Some(ticker) = missing_markets.remove(&next.market.pair) {
                     ticker.last = Some(next.price);
@@ -81,13 +92,30 @@ mod inner {
 
                 next = match trades.next() {
                     None => {
-                        return Self::to_return(tickers);
+                        return Self::to_return(tickers, offers);
                     }
                     Some(next) => next,
                 };
             }
         }
-        fn to_return(tickers: HashMap<&String, Ticker>) -> Vec<Ticker> {
+        fn to_return<'a>(
+            mut tickers: HashMap<&String, Ticker>,
+            offers: impl Iterator<Item = &'a OpenOffer>,
+        ) -> Vec<Ticker> {
+            for offer in offers {
+                if let Some(mut ticker) = tickers.get_mut(&offer.market.pair) {
+                    match (ticker.buy, offer.direction) {
+                        (None, OfferDirection::Buy) => ticker.buy = Some(offer.display_price),
+                        (None, OfferDirection::Sell) => ticker.sell = Some(offer.display_price),
+                        (Some(buy), OfferDirection::Buy) => {
+                            ticker.buy = Some(buy.max(offer.display_price))
+                        }
+                        (Some(sell), OfferDirection::Sell) => {
+                            ticker.sell = Some(sell.min(offer.display_price))
+                        }
+                    }
+                }
+            }
             let mut ret: Vec<Ticker> = tickers.into_iter().map(|(_, ticker)| ticker).collect();
             ret.sort_unstable_by(|a, b| a.market.pair.cmp(&b.market.pair));
             ret
@@ -100,6 +128,8 @@ mod inner {
                 low: None,
                 volume_left: ZERO,
                 volume_right: ZERO,
+                buy: None,
+                sell: None,
             }
         }
     }

@@ -163,10 +163,12 @@ impl QueryFields for Query {
         _trail: &QueryTrail<'_, Ticker, juniper_from_schema::Walked>,
         market: Option<MarketPair>,
     ) -> FieldResult<Option<Vec<Ticker>>> {
-        let stats = &executor.context().stats_cache;
-        Ok(Some(
-            stats.ticker(market.and_then(|m| Market::from_pair(&m))),
-        ))
+        let context = executor.context();
+        let stats = &context.stats_cache;
+        Ok(Some(stats.ticker(
+            market.and_then(|m| Market::from_pair(&m)),
+            context.open_offers.values(),
+        )))
     }
 
     #[cfg(not(feature = "statistics"))]
@@ -625,6 +627,18 @@ impl TickerFields for Ticker {
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
         Ok(self.volume_right.format(TARGET_PRECISION))
+    }
+    fn field_formatted_buy(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(self.buy.map(|n| n.format(TARGET_PRECISION)))
+    }
+    fn field_formatted_sell(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Option<String>> {
+        Ok(self.sell.map(|n| n.format(TARGET_PRECISION)))
     }
 }
 

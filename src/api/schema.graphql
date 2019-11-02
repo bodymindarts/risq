@@ -89,6 +89,8 @@ type Ticker {
   formattedLow: String @juniper(ownership: "owned")
   formattedVolumeLeft: String! @juniper(ownership: "owned")
   formattedVolumeRight: String! @juniper(ownership: "owned")
+  formattedBuy: String @juniper(ownership: "owned")
+  formattedSell: String @juniper(ownership: "owned")
 }
 
 "Number of milliseconds since Epoch as string"

@@ -16,7 +16,11 @@ pub use inner::*;
 mod inner {
     use super::{interval::Interval, trade::TradeHistory, *};
     use crate::{
-        domain::{market::Market, offer::OfferId, CommandResult, FutureCommandResult},
+        domain::{
+            market::Market,
+            offer::{OfferId, OpenOffer},
+            CommandResult, FutureCommandResult,
+        },
         prelude::*,
     };
     use std::{collections::HashSet, sync::Arc};
@@ -49,8 +53,12 @@ mod inner {
         pub fn hloc(&self, query: HlocQuery) -> Vec<Hloc> {
             Hloc::from_trades(&self.trades, query)
         }
-        pub fn ticker(&self, market: Option<&'static Market>) -> Vec<Ticker> {
-            Ticker::from_trades(&self.trades, market)
+        pub fn ticker<'a>(
+            &self,
+            market: Option<&'static Market>,
+            offers: impl Iterator<Item = &'a OpenOffer>,
+        ) -> Vec<Ticker> {
+            Ticker::from_trades(&self.trades, market, offers)
         }
         pub fn volumes(
             &self,
