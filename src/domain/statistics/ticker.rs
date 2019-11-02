@@ -104,14 +104,14 @@ mod inner {
         ) -> Vec<Ticker> {
             for offer in offers {
                 if let Some(mut ticker) = tickers.get_mut(&offer.market.pair) {
-                    match (ticker.buy, offer.direction) {
-                        (None, OfferDirection::Buy) => ticker.buy = Some(offer.display_price),
-                        (None, OfferDirection::Sell) => ticker.sell = Some(offer.display_price),
-                        (Some(buy), OfferDirection::Buy) => {
-                            ticker.buy = Some(buy.max(offer.display_price))
+                    match (offer.direction, ticker.buy, ticker.sell) {
+                        (OfferDirection::Buy, _, None) => ticker.sell = Some(offer.display_price),
+                        (OfferDirection::Sell, None, _) => ticker.buy = Some(offer.display_price),
+                        (OfferDirection::Buy, _, Some(sell)) => {
+                            ticker.sell = Some(sell.max(offer.display_price))
                         }
-                        (Some(sell), OfferDirection::Sell) => {
-                            ticker.sell = Some(sell.min(offer.display_price))
+                        (OfferDirection::Sell, Some(buy), _) => {
+                            ticker.buy = Some(buy.min(offer.display_price))
                         }
                     }
                 }
