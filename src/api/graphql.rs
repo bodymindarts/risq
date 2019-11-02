@@ -97,7 +97,7 @@ pub struct Offers {
 }
 
 impl Offers {
-    fn direction(&self, direction: OfferDirection) -> impl Iterator<Item = &OpenOffer> {
+    fn direction(&self, direction: OfferDirection) -> impl DoubleEndedIterator<Item = &OpenOffer> {
         self.offers.iter().filter(move |o| o.direction == direction)
     }
 }
@@ -667,7 +667,7 @@ impl OffersFields for Offers {
         _executor: &juniper::Executor<'_, GraphQLContext>,
         _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
     ) -> FieldResult<Vec<&OpenOffer>> {
-        Ok(self.direction(OfferDirection::Buy).collect())
+        Ok(self.direction(OfferDirection::Buy).rev().collect())
     }
 
     fn field_sells(
