@@ -37,6 +37,7 @@ pub enum OfferDirection {
     Buy,
     Sell,
 }
+#[cfg(feature = "statistics")]
 impl OfferDirection {
     pub fn oposite(&self) -> Self {
         match self {
