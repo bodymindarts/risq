@@ -42,6 +42,10 @@ impl Currency {
     pub fn from_code(code: &str) -> Option<&'static Currency> {
         ALL.iter().find(|c| &c.code == code)
     }
+
+    pub fn is_crypto(&self) -> bool {
+        self.currency_type == CurrencyType::Crypto
+    }
 }
 impl FromStr for &Currency {
     type Err = ();

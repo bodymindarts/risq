@@ -13,7 +13,6 @@ pub use inner::*;
 mod inner {
     use super::*;
     use crate::domain::{
-        currency::*,
         market::*,
         statistics::{interval::*, trade::*},
     };
@@ -30,7 +29,6 @@ mod inner {
                 None => return Vec::new(),
                 Some(time) => time,
             };
-            let btc = Currency::from_code("BTC").unwrap();
 
             let mut ret = Vec::new();
             let mut trades = history
@@ -56,11 +54,7 @@ mod inner {
                     num_trades: 0,
                 };
                 while trade.timestamp < end {
-                    if trade.market.left == btc {
-                        current.volume += trade.amount;
-                    } else {
-                        current.volume += trade.volume;
-                    }
+                    current.volume += trade.volume;
                     current.num_trades += 1;
                     trade = match trades.next() {
                         None => {

@@ -24,21 +24,29 @@ pub struct Trade {
 impl Trade {
     pub fn new(
         market: &'static Market,
-        direction: OfferDirection,
+        mut direction: OfferDirection,
         offer_id: OfferId,
         price: NumberWithPrecision,
-        amount: NumberWithPrecision,
+        mut amount: NumberWithPrecision,
         payment_method_id: String,
         timestamp: SystemTime,
         hash: PersistentMessageHash,
     ) -> Self {
+        let volume = if market.non_btc_side().is_crypto() {
+            direction = direction.oposite();
+            let volume = amount;
+            amount = volume / price;
+            volume
+        } else {
+            (price * amount).with_precision(market.right.bisq_internal_precision())
+        };
         Self {
             market,
             direction,
             offer_id,
             price,
             amount,
-            volume: (price * amount).with_precision(market.right.bisq_internal_precision()),
+            volume,
             payment_method_id,
             timestamp,
             hash,

@@ -37,6 +37,14 @@ pub enum OfferDirection {
     Buy,
     Sell,
 }
+impl OfferDirection {
+    pub fn oposite(&self) -> Self {
+        match self {
+            OfferDirection::Buy => OfferDirection::Sell,
+            OfferDirection::Sell => OfferDirection::Buy,
+        }
+    }
+}
 
 #[derive(Clone, Copy)]
 pub enum OfferPrice {
