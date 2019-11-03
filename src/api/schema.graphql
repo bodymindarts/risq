@@ -44,6 +44,8 @@ type Offers {
   marketPair: MarketPair!
   buys: [OpenOffer!]! @juniper(ownership: "as_ref")
   sells: [OpenOffer!]! @juniper(ownership: "as_ref")
+  btcBuys: [OpenOffer!]! @juniper(ownership: "as_ref")
+  btcSells: [OpenOffer!]! @juniper(ownership: "as_ref")
   formattedBuyPrices: [String!]! @juniper(ownership: "owned")
   formattedSellPrices: [String!]! @juniper(ownership: "owned")
 }
@@ -145,6 +147,7 @@ type OpenOffer {
   id: ID! @juniper(ownership: "owned")
   offerDate: UnixMillis! @juniper(ownership: "owned")
   direction: Direction! @juniper(ownership: "owned")
+  btcDirection: Direction! @juniper(ownership: "owned")
   formattedAmount: String! @juniper(ownership: "owned")
   formattedMinAmount: String! @juniper(ownership: "owned")
   formattedPrice: String! @juniper(ownership: "owned")

@@ -100,6 +100,15 @@ impl Offers {
     fn direction(&self, direction: OfferDirection) -> impl DoubleEndedIterator<Item = &OpenOffer> {
         self.offers.iter().filter(move |o| o.direction == direction)
     }
+
+    fn btc_direction(
+        &self,
+        direction: OfferDirection,
+    ) -> impl DoubleEndedIterator<Item = &OpenOffer> {
+        self.offers
+            .iter()
+            .filter(move |o| o.btc_direction == direction)
+    }
 }
 
 pub struct Query;
@@ -570,6 +579,12 @@ impl OpenOfferFields for OpenOffer {
     ) -> FieldResult<Direction> {
         Ok(self.direction.into())
     }
+    fn field_btc_direction(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<Direction> {
+        Ok(self.btc_direction.into())
+    }
     fn field_payment_method_id(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
@@ -687,6 +702,22 @@ impl OffersFields for Offers {
         _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
     ) -> FieldResult<Vec<&OpenOffer>> {
         Ok(self.direction(OfferDirection::Sell).collect())
+    }
+
+    fn field_btc_buys(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+    ) -> FieldResult<Vec<&OpenOffer>> {
+        Ok(self.btc_direction(OfferDirection::Buy).rev().collect())
+    }
+
+    fn field_btc_sells(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+        _trail: &QueryTrail<'_, OpenOffer, juniper_from_schema::Walked>,
+    ) -> FieldResult<Vec<&OpenOffer>> {
+        Ok(self.btc_direction(OfferDirection::Sell).collect())
     }
 
     fn field_formatted_buy_prices(

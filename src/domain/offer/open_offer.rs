@@ -37,7 +37,6 @@ pub enum OfferDirection {
     Buy,
     Sell,
 }
-#[cfg(feature = "statistics")]
 impl OfferDirection {
     pub fn oposite(&self) -> Self {
         match self {
@@ -65,6 +64,7 @@ pub struct OpenOffer {
     pub market: &'static Market,
     pub id: OfferId,
     pub direction: OfferDirection,
+    pub btc_direction: OfferDirection,
     pub amount: OfferAmount,
     pub payment_method_id: String,
     pub offer_fee_tx_id: String,
@@ -91,11 +91,17 @@ impl OpenOffer {
         created_at: SystemTime,
         sequence: OfferSequence,
     ) -> OpenOffer {
+        let btc_direction = if market.non_btc_side().is_crypto() {
+            direction.oposite()
+        } else {
+            direction
+        };
         Self {
             bisq_hash,
             market,
             id,
             direction,
+            btc_direction,
             price,
             amount,
             payment_method_id,
