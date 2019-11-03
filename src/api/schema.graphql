@@ -67,6 +67,7 @@ type Trade {
 
 type Hloc {
   periodStart: UnixSecs! @juniper(ownership: "owned")
+  periodStartDateTime: DateTimeUtc! @juniper(ownership: "owned")
   formattedHigh: String! @juniper(ownership: "owned")
   formattedLow: String! @juniper(ownership: "owned")
   formattedOpen: String! @juniper(ownership: "owned")

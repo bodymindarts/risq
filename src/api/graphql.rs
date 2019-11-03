@@ -357,6 +357,17 @@ impl HlocFields for Hloc {
     ) -> FieldResult<UnixSecs> {
         Ok(self.period_start.into())
     }
+    fn field_period_start_date_time(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<DateTime<Utc>> {
+        let secs = self
+            .period_start
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs();
+        Ok(Utc.timestamp(secs as i64, 0))
+    }
     fn field_formatted_high(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
