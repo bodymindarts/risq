@@ -1,3 +1,5 @@
+## Changes
+- Only bootstrap from @wiz seednode so as to not add load to the other seed nodes
+
 ## Bug Fixes
-- trades query should always denote volume in BTC
-- return buy and sell fields in ticker query
+- Fix bugs related to markets api
