@@ -39,40 +39,10 @@ pub fn seed_nodes(network: &BaseCurrencyNetwork) -> Vec<NodeAddress> {
             host_name: "m5izk3fvjsjbmkqi.onion".to_string(),
             port: 8001,
         }],
-        BaseCurrencyNetwork::BtcMainnet => vec![
-            NodeAddress {
-                host_name: "5quyxpxheyvzmb2d.onion".to_string(),
-                port: 8000,
-            },
-            NodeAddress {
-                host_name: "s67qglwhkgkyvr74.onion".to_string(),
-                port: 8000,
-            },
-            NodeAddress {
-                host_name: "ef5qnzx6znifo3df.onion".to_string(),
-                port: 8000,
-            },
-            NodeAddress {
-                host_name: "jhgcy2won7xnslrb.onion".to_string(),
-                port: 8000,
-            },
-            NodeAddress {
-                host_name: "3f3cu2yw7u457ztq.onion".to_string(),
-                port: 8000,
-            },
-            NodeAddress {
-                host_name: "723ljisnynbtdohi.onion".to_string(),
-                port: 8000,
-            },
-            NodeAddress {
-                host_name: "rm7b56wbrcczpjvl.onion".to_string(),
-                port: 8000,
-            },
-            NodeAddress {
-                host_name: "fl3mmribyxgrv63c.onion".to_string(),
-                port: 8000,
-            },
-        ],
+        BaseCurrencyNetwork::BtcMainnet => vec![NodeAddress {
+            host_name: "jhgcy2won7xnslrb.onion".to_string(),
+            port: 8000,
+        }],
     }
 }
 
