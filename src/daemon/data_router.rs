@@ -129,16 +129,17 @@ impl DataRouter {
     ) -> Option<()> {
         match entry_wrapper?.message? {
             storage_entry_wrapper::Message::ProtectedStorageEntry(entry) => {
-                self.route_protected_storage_entry(Some(entry), result_handler);
+                self.route_protected_storage_entry(false, Some(entry), result_handler);
             }
             storage_entry_wrapper::Message::ProtectedMailboxStorageEntry(entry) => {
-                self.route_protected_storage_entry(entry.entry, result_handler);
+                self.route_protected_storage_entry(false, entry.entry, result_handler);
             }
         }
         .into()
     }
     fn route_protected_storage_entry(
         &mut self,
+        remove_data: bool,
         entry: Option<ProtectedStorageEntry>,
         result_handler: impl ResultHandler + 'static,
     ) -> Option<()> {
@@ -156,7 +157,17 @@ impl DataRouter {
             StoragePayloadKind::OfferPayload => {
                 convert::open_offer(entry, bisq_hash)
                     .map(|offer| {
-                        arbiter_spawn!(self.offer_book.send(AddOffer(offer)).then(result_handler))
+                        if remove_data {
+                            arbiter_spawn!(self
+                                .offer_book
+                                .send(RemoveOffer(offer))
+                                .then(result_handler))
+                        } else {
+                            arbiter_spawn!(self
+                                .offer_book
+                                .send(AddOffer(offer))
+                                .then(result_handler))
+                        }
                     })
                     .or_else(|| {
                         warn!("Offer didn't convert {:?}", bisq_hash);
@@ -201,6 +212,7 @@ pub enum DataRouterDispatch {
     Bootstrap(Vec<StorageEntryWrapper>, Vec<PersistableNetworkPayload>),
     RefreshOffer(RefreshOfferMessage),
     AddData(AddDataMessage),
+    RemoveData(RemoveDataMessage),
     AddPersistableNetworkPayload(AddPersistableNetworkPayloadMessage),
 }
 
@@ -239,6 +251,13 @@ impl Handler<Receive<DataRouterDispatch>> for DataRouter {
                     self.handle_command_result(origin, data),
                 );
             }
+            DataRouterDispatch::RemoveData(data) => {
+                self.route_protected_storage_entry(
+                    true,
+                    data.protected_storage_entry.clone(),
+                    self.handle_command_result(origin, data),
+                );
+            }
             DataRouterDispatch::AddPersistableNetworkPayload(msg) => {
                 self.route_persistable_network_payload(
                     msg.payload.as_ref().map(Clone::clone),
@@ -264,6 +283,9 @@ impl PayloadExtractor for DataRouterDispatch {
             )),
             network_envelope::Message::AddDataMessage(msg) => {
                 Extract::Succeeded(DataRouterDispatch::AddData(msg))
+            }
+            network_envelope::Message::RemoveDataMessage(msg) => {
+                Extract::Succeeded(DataRouterDispatch::RemoveData(msg))
             }
             network_envelope::Message::RefreshOfferMessage(msg) => {
                 Extract::Succeeded(DataRouterDispatch::RefreshOffer(msg))

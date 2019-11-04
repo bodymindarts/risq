@@ -6,6 +6,10 @@ pub struct AddOffer(pub OpenOffer);
 impl Message for AddOffer {
     type Result = CommandResult;
 }
+pub struct RemoveOffer(pub OpenOffer);
+impl Message for RemoveOffer {
+    type Result = CommandResult;
+}
 
 pub struct RefreshOffer {
     pub bisq_hash: SequencedMessageHash,

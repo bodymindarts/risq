@@ -78,6 +78,24 @@ impl Handler<AddOffer> for OfferBook {
         MessageResult(CommandResult::Ignored)
     }
 }
+impl Handler<RemoveOffer> for OfferBook {
+    type Result = MessageResult<RemoveOffer>;
+    fn handle(
+        &mut self,
+        RemoveOffer(offer): RemoveOffer,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
+        match self.open_offers.get(&offer.bisq_hash) {
+            None => MessageResult(CommandResult::Ignored),
+            Some(_) => {
+                info!("Removing {:?}", offer.id);
+                let offers = Arc::make_mut(&mut self.open_offers);
+                offers.remove(&offer.bisq_hash);
+                MessageResult(CommandResult::Accepted)
+            }
+        }
+    }
+}
 impl Handler<RefreshOffer> for OfferBook {
     type Result = MessageResult<RefreshOffer>;
     fn handle(
