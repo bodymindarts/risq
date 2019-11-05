@@ -15,9 +15,9 @@ macro_rules! for_all_payloads {
         $m!(RemoveMailboxDataMessage,remove_mailbox_data_message);
         $m!(CloseConnectionMessage,close_connection_message);
         $m!(PrefixedSealedAndSignedMessage,prefixed_sealed_and_signed_message);
-        $m!(PayDepositRequest,pay_deposit_request);
-        $m!(PublishDepositTxRequest,publish_deposit_tx_request);
-        $m!(DepositTxPublishedMessage,deposit_tx_published_message);
+        $m!(InputsForDepositTxRequest,inputs_for_deposit_tx_request);
+        $m!(InputsForDepositTxResponse,inputs_for_deposit_tx_response);
+        $m!(DepositTxMessage,deposit_tx_message);
         $m!(CounterCurrencyTransferStartedMessage,counter_currency_transfer_started_message);
         $m!(PayoutTxPublishedMessage,payout_tx_published_message);
         $m!(OpenNewDisputeMessage,open_new_dispute_message);
@@ -44,5 +44,9 @@ macro_rules! for_all_payloads {
         $m!(BundleOfEnvelopes,bundle_of_envelopes);
         $m!(MediatedPayoutTxSignatureMessage,mediated_payout_tx_signature_message);
         $m!(MediatedPayoutTxPublishedMessage,mediated_payout_tx_published_message);
+        $m!(DelayedPayoutTxSignatureRequest,delayed_payout_tx_signature_request);
+        $m!(DelayedPayoutTxSignatureResponse,delayed_payout_tx_signature_response);
+        $m!(DepositTxAndDelayedPayoutTxMessage,deposit_tx_and_delayed_payout_tx_message);
+        $m!(PeerPublishedDelayedPayoutTxMessage,peer_published_delayed_payout_tx_message);
     };
 }

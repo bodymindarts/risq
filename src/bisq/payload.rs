@@ -63,6 +63,9 @@ impl StoragePayload {
             storage_payload::Message::TempProposalPayload(payload) => {
                 &payload.owner_pub_key_encoded
             }
+            storage_payload::Message::RefundAgent(agent) => {
+                &agent.pub_key_ring.as_ref()?.signature_pub_key_bytes
+            }
         }
         .into()
     }
@@ -160,7 +163,7 @@ impl PersistableNetworkPayload {
                     .expect("BlindVotePayload.hash is not correct")
             }
             persistable_network_payload::Message::SignedWitness(witness) => {
-                let mut data = witness.witness_hash.clone();
+                let mut data = witness.account_age_witness_hash.clone();
                 data.extend_from_slice(&witness.signature);
                 data.extend_from_slice(&witness.signer_pub_key);
                 let hash = sha256::Hash::hash(&data);

@@ -28,9 +28,13 @@ impl From<&Message> for Option<CorrelationId> {
             Message::RemoveMailboxDataMessage(_) => None,
             Message::CloseConnectionMessage(_) => None,
             Message::PrefixedSealedAndSignedMessage(_) => None,
-            Message::PayDepositRequest(_) => None,
-            Message::PublishDepositTxRequest(_) => None,
-            Message::DepositTxPublishedMessage(_) => None,
+            Message::InputsForDepositTxRequest(request) => {
+                Some(CorrelationId::S(request.uid.to_owned()))
+            }
+            Message::InputsForDepositTxResponse(response) => {
+                Some(CorrelationId::S(response.uid.to_owned()))
+            }
+            Message::DepositTxMessage(_) => None,
             Message::CounterCurrencyTransferStartedMessage(_) => None,
             Message::PayoutTxPublishedMessage(_) => None,
             Message::OpenNewDisputeMessage(_) => None,
@@ -67,6 +71,14 @@ impl From<&Message> for Option<CorrelationId> {
             Message::BundleOfEnvelopes(_) => None,
             Message::MediatedPayoutTxSignatureMessage(_) => None,
             Message::MediatedPayoutTxPublishedMessage(_) => None,
+            Message::DelayedPayoutTxSignatureRequest(request) => {
+                Some(CorrelationId::S(request.uid.to_owned()))
+            }
+            Message::DelayedPayoutTxSignatureResponse(response) => {
+                Some(CorrelationId::S(response.uid.to_owned()))
+            }
+            Message::DepositTxAndDelayedPayoutTxMessage(_) => None,
+            Message::PeerPublishedDelayedPayoutTxMessage(_) => None,
         }
     }
 }
