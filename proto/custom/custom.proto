@@ -1,0 +1,7 @@
+syntax = "proto3";
+package risq.custom;
+
+message JavaStringMapEntry{
+  string key = 1;
+  string value = 2;
+}

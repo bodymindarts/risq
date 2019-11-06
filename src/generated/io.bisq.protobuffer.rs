@@ -1,7 +1,3 @@
-//
-// Protobuffer v3 definitions of network messages and persisted objects.
-//
-
 // option java_package = "protobuf";
 // option java_multiple_files = true;
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -851,8 +847,8 @@ pub struct Alert {
     pub signature_as_base64: std::string::String,
     #[prost(bytes, tag="5")]
     pub owner_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(btree_map="string, string", tag="6")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="6")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Arbitrator {
@@ -876,8 +872,8 @@ pub struct Arbitrator {
     pub email_address: std::string::String,
     #[prost(string, tag="10")]
     pub info: std::string::String,
-    #[prost(btree_map="string, string", tag="11")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="11")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Mediator {
@@ -897,8 +893,8 @@ pub struct Mediator {
     pub email_address: std::string::String,
     #[prost(string, tag="8")]
     pub info: std::string::String,
-    #[prost(btree_map="string, string", tag="9")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="9")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RefundAgent {
@@ -918,8 +914,8 @@ pub struct RefundAgent {
     pub email_address: std::string::String,
     #[prost(string, tag="8")]
     pub info: std::string::String,
-    #[prost(btree_map="string, string", tag="9")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="9")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Filter {
@@ -933,8 +929,8 @@ pub struct Filter {
     pub signature_as_base64: std::string::String,
     #[prost(bytes, tag="5")]
     pub owner_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(btree_map="string, string", tag="6")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="6")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
     #[prost(string, repeated, tag="7")]
     pub banned_currencies: ::std::vec::Vec<std::string::String>,
     #[prost(string, repeated, tag="8")]
@@ -994,8 +990,8 @@ pub struct TradeStatistics {
     pub deposit_tx_id: std::string::String,
     #[prost(bytes, tag="15")]
     pub signature_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(btree_map="string, string", tag="16")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="16")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TradeStatistics2 {
@@ -1029,8 +1025,8 @@ pub struct TradeStatistics2 {
     pub deposit_tx_id: std::string::String,
     #[prost(bytes, tag="15")]
     pub hash: std::vec::Vec<u8>,
-    #[prost(btree_map="string, string", tag="16")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="16")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MailboxStoragePayload {
@@ -1040,8 +1036,8 @@ pub struct MailboxStoragePayload {
     pub sender_pub_key_for_add_operation_bytes: std::vec::Vec<u8>,
     #[prost(bytes, tag="3")]
     pub owner_pub_key_bytes: std::vec::Vec<u8>,
-    #[prost(btree_map="string, string", tag="4")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="4")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OfferPayload {
@@ -1119,8 +1115,8 @@ pub struct OfferPayload {
     pub is_private_offer: bool,
     #[prost(string, tag="36")]
     pub hash_of_challenge: std::string::String,
-    #[prost(btree_map="string, string", tag="37")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="37")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
     #[prost(int32, tag="38")]
     pub protocol_version: i32,
 }
@@ -1355,8 +1351,8 @@ pub struct PaymentAccountPayload {
     /// not used anymore but we need to keep it in PB for backward compatibility
     #[prost(int64, tag="3")]
     pub max_trade_period: i64,
-    #[prost(btree_map="string, string", tag="15")]
-    pub exclude_from_json_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="15")]
+    pub exclude_from_json_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
     #[prost(oneof="payment_account_payload::Message", tags="4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28")]
     pub message: ::std::option::Option<payment_account_payload::Message>,
 }
@@ -1818,8 +1814,8 @@ pub struct MapValue {
 /// deprecated. Not used anymore.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PersistedEntryMap {
-    #[prost(btree_map="string, message", tag="1")]
-    pub persisted_entry_map: ::std::collections::BTreeMap<std::string::String, ProtectedStorageEntry>,
+    #[prost(map="string, message", tag="1")]
+    pub persisted_entry_map: ::std::collections::HashMap<std::string::String, ProtectedStorageEntry>,
 }
 /// deprecated. Not used anymore.
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -2252,8 +2248,8 @@ pub struct PreferencesPayload {
     pub backup_directory: std::string::String,
     #[prost(bool, tag="9")]
     pub auto_select_arbitrators: bool,
-    #[prost(btree_map="string, bool", tag="10")]
-    pub dont_show_again_map: ::std::collections::BTreeMap<std::string::String, bool>,
+    #[prost(map="string, bool", tag="10")]
+    pub dont_show_again_map: ::std::collections::HashMap<std::string::String, bool>,
     #[prost(bool, tag="11")]
     pub tac_accepted: bool,
     #[prost(bool, tag="12")]
@@ -2284,8 +2280,8 @@ pub struct PreferencesPayload {
     pub sort_market_currencies_numerically: bool,
     #[prost(bool, tag="25")]
     pub use_percentage_based_price: bool,
-    #[prost(btree_map="string, string", tag="26")]
-    pub peer_tag_map: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="26")]
+    pub peer_tag_map: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
     #[prost(string, tag="27")]
     pub bitcoin_nodes: std::string::String,
     #[prost(string, repeated, tag="28")]
@@ -2571,14 +2567,14 @@ pub struct DaoState {
     #[prost(message, repeated, tag="3")]
     pub cycles: ::std::vec::Vec<Cycle>,
     /// Because of the way how PB implements inheritence we need to use the super class as type
-    #[prost(btree_map="string, message", tag="4")]
-    pub unspent_tx_output_map: ::std::collections::BTreeMap<std::string::String, BaseTxOutput>,
-    #[prost(btree_map="string, message", tag="5")]
-    pub issuance_map: ::std::collections::BTreeMap<std::string::String, Issuance>,
+    #[prost(map="string, message", tag="4")]
+    pub unspent_tx_output_map: ::std::collections::HashMap<std::string::String, BaseTxOutput>,
+    #[prost(map="string, message", tag="5")]
+    pub issuance_map: ::std::collections::HashMap<std::string::String, Issuance>,
     #[prost(string, repeated, tag="6")]
     pub confiscated_lockup_tx_list: ::std::vec::Vec<std::string::String>,
-    #[prost(btree_map="string, message", tag="7")]
-    pub spent_info_map: ::std::collections::BTreeMap<std::string::String, SpentInfo>,
+    #[prost(map="string, message", tag="7")]
+    pub spent_info_map: ::std::collections::HashMap<std::string::String, SpentInfo>,
     #[prost(message, repeated, tag="8")]
     pub param_change_list: ::std::vec::Vec<ParamChange>,
     #[prost(message, repeated, tag="9")]
@@ -2612,8 +2608,8 @@ pub struct Proposal {
     #[prost(string, tag="5")]
     pub tx_id: std::string::String,
     /// We leave some index space here in case we add more subclasses
-    #[prost(btree_map="string, string", tag="20")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="20")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
     #[prost(oneof="proposal::Message", tags="6, 7, 8, 9, 10, 11, 12")]
     pub message: ::std::option::Option<proposal::Message>,
 }
@@ -2727,8 +2723,8 @@ pub struct TempProposalPayload {
     pub proposal: ::std::option::Option<Proposal>,
     #[prost(bytes, tag="2")]
     pub owner_pub_key_encoded: std::vec::Vec<u8>,
-    #[prost(btree_map="string, string", tag="3")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="3")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ProposalPayload {
@@ -2822,8 +2818,8 @@ pub struct BlindVote {
     pub encrypted_merit_list: std::vec::Vec<u8>,
     #[prost(int64, tag="5")]
     pub date: i64,
-    #[prost(btree_map="string, string", tag="6")]
-    pub extra_data: ::std::collections::BTreeMap<std::string::String, std::string::String>,
+    #[prost(message, repeated, tag="6")]
+    pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MyBlindVoteList {

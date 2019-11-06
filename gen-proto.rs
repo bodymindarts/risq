@@ -10,7 +10,7 @@ fn generate_protocols() {
     let mut config = prost_build::Config::new();
     config
         .type_attribute("NodeAddress", "#[derive(Eq, Hash)]")
-        .btree_map(&["."])
+        .extern_path(".risq.custom", "crate::bisq::payload::custom_messages")
         .compile_protos(&protocol_files(), &protocol_includes())
         .expect("Error compiling protobuf definitions");
     for file in generated_files() {
@@ -45,12 +45,12 @@ fn generated_files() -> Vec<PathBuf> {
 }
 
 fn protocol_includes() -> Vec<String> {
-    vec!["proto".to_string()]
+    vec!["proto/custom".to_string(), "proto/bisq".to_string()]
 }
 
 fn protocol_files() -> Vec<String> {
     let mut files = vec![];
-    for entry in fs::read_dir("proto").unwrap() {
+    for entry in fs::read_dir("proto/bisq").unwrap() {
         let file = entry.unwrap();
         // skip vim temp files
         if file.file_name().to_str().unwrap().starts_with(".") {
