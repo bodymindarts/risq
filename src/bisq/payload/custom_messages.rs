@@ -4,6 +4,8 @@ use prost::{encoding, DecodeError, Message};
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct JavaStringMapEntry(String, String);
 
+// Java protobuf lib always serializes key and value in map fields
+// Prost skips serializing value if it == the default ("" for string)
 impl Message for JavaStringMapEntry {
     fn encode_raw<B>(&self, buf: &mut B)
     where
@@ -11,6 +13,7 @@ impl Message for JavaStringMapEntry {
         Self: Sized,
     {
         encoding::string::encode(1, &self.0, buf);
+        // Force serializing the value even if empty ("")
         encoding::string::encode(2, &self.1, buf)
     }
 
