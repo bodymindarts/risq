@@ -1,3 +1,12 @@
+# [risq release v0.3.2](https://github.com/bodymindarts/risq/releases/tag/v0.3.2)
+
+## Improvements
+- Only bootstrap from @wiz seednode so as to not add load to the other seed nodes
+- Handle removing offers when receiving RemoveDataMessage
+
+## Bug Fixes
+- Fix issues causing slight differences in returned data vs that of markets api
+
 # [risq release v0.3.1](https://github.com/bodymindarts/risq/releases/tag/v0.3.1)
 
 ## Improvements
