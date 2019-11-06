@@ -14,6 +14,7 @@ import "custom.proto";' | \
 cp ${REPO_ROOT_DIR}/gen-proto.rs ${REPO_ROOT_DIR}/build.rs
 cargo build
 rm ${REPO_ROOT_DIR}/build.rs
+rm ${REPO_ROOT_DIR}/src/generated/risq.custom.rs
 
 TMPDIR=$(mktemp -d -t gen-proto.XXXXXX)
 trap "rm -rf ${TMPDIR}" INT TERM QUIT EXIT
