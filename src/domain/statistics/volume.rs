@@ -54,7 +54,11 @@ mod inner {
                     num_trades: 0,
                 };
                 while trade.timestamp < end {
-                    current.volume += trade.volume;
+                    current.volume += if trade.market.non_btc_side().is_crypto() {
+                        trade.volume
+                    } else {
+                        trade.amount
+                    };
                     current.num_trades += 1;
                     trade = match trades.next() {
                         None => {
