@@ -37,10 +37,7 @@ impl<'a> BtcOffer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        bisq::SequencedMessageHash,
-        domain::{amount::*, market::*, offer::*},
-    };
+    use crate::{bisq::SequencedMessageHash, domain::market::*};
     use bitcoin_hashes::sha256;
     use std::{str::FromStr, time::UNIX_EPOCH};
 
