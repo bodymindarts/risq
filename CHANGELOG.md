@@ -1,3 +1,8 @@
+# [risq release v0.3.3](https://github.com/bodymindarts/risq/releases/tag/v0.3.3)
+
+## Improvements
+- Add formattedBtcVolume and formattedBtcAmount to OpenOffer query
+
 # [risq release v0.3.2](https://github.com/bodymindarts/risq/releases/tag/v0.3.2)
 
 ## Improvements
