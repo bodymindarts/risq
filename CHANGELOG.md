@@ -1,3 +1,8 @@
+# [risq release v0.3.4](https://github.com/bodymindarts/risq/releases/tag/v0.3.4)
+
+## Bug Fixes
+- fix Volumes query
+
 # [risq release v0.3.3](https://github.com/bodymindarts/risq/releases/tag/v0.3.3)
 
 ## Improvements
