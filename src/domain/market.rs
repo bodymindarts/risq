@@ -1,7 +1,7 @@
 use super::currency::Currency;
 use lazy_static::lazy_static;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Market {
     pub pair: String,
     pub name: String,

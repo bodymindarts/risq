@@ -46,31 +46,29 @@ impl OfferDirection {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum OfferPrice {
     Fixed(NumberWithPrecision),
     MarketWithMargin(f64),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct OfferAmount {
     pub total: NumberWithPrecision,
     pub min: NumberWithPrecision,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct OpenOffer {
     pub bisq_hash: SequencedMessageHash,
     pub market: &'static Market,
     pub id: OfferId,
     pub direction: OfferDirection,
-    pub btc_direction: OfferDirection,
     pub amount: OfferAmount,
     pub payment_method_id: String,
     pub offer_fee_tx_id: String,
     pub created_at: SystemTime,
     pub display_price: NumberWithPrecision,
-    pub display_volume: NumberWithPrecision,
 
     pub(super) latest_sequence: OfferSequence,
 
@@ -91,22 +89,20 @@ impl OpenOffer {
         created_at: SystemTime,
         sequence: OfferSequence,
     ) -> OpenOffer {
-        let btc_direction = if market.non_btc_side().is_crypto() {
-            direction.oposite()
+        let display_price = if let OfferPrice::Fixed(price) = price {
+            price
         } else {
-            direction
+            NumberWithPrecision::new(0, 0)
         };
         Self {
             bisq_hash,
             market,
             id,
             direction,
-            btc_direction,
             price,
             amount,
             payment_method_id,
-            display_price: NumberWithPrecision::new(0, 0),
-            display_volume: NumberWithPrecision::new(0, 0),
+            display_price,
             created_at,
             expires_at: created_at + INITIAL_TTL,
             latest_sequence: sequence,
@@ -122,28 +118,24 @@ impl OpenOffer {
         &mut self,
         price_data: &Arc<HashMap<&'static str, PriceData>>,
     ) {
-        match self.price {
-            OfferPrice::MarketWithMargin(margin) => {
-                // logic taken from https://github.com/bisq-network/bisq/blob/master/core/src/main/java/bisq/core/offer/Offer.java#L161
-                let code: &'static str = &self.market.non_btc_side().code;
-                if let Some(data) = price_data.get(code) {
-                    let factor = match (&data.currency.currency_type, self.direction) {
-                        (CurrencyType::Crypto, OfferDirection::Sell)
-                        | (CurrencyType::Fiat, OfferDirection::Buy) => 1.0 - margin,
-                        _ => 1.0 + margin,
-                    };
-                    let display = factor
-                        * data.price
-                        * 10_f64.powf(data.currency.bisq_internal_precision() as f64);
-                    self.display_price = NumberWithPrecision::new(
-                        display as u64,
-                        data.currency.bisq_internal_precision(),
-                    );
-                }
+        if let OfferPrice::MarketWithMargin(margin) = self.price {
+            // logic taken from https://github.com/bisq-network/bisq/blob/master/core/src/main/java/bisq/core/offer/Offer.java#L161
+            let code: &'static str = &self.market.non_btc_side().code;
+            if let Some(data) = price_data.get(code) {
+                let factor = match (&data.currency.currency_type, self.direction) {
+                    (CurrencyType::Crypto, OfferDirection::Sell)
+                    | (CurrencyType::Fiat, OfferDirection::Buy) => 1.0 - margin,
+                    _ => 1.0 + margin,
+                };
+                let display = factor
+                    * data.price
+                    * 10_f64.powf(data.currency.bisq_internal_precision() as f64);
+                self.display_price = NumberWithPrecision::new(
+                    display as u64,
+                    data.currency.bisq_internal_precision(),
+                );
             }
-            OfferPrice::Fixed(price) => self.display_price = price,
         }
-        self.display_volume = self.display_price * self.amount.total;
     }
 
     pub(super) fn would_refresh(&self, sequence: OfferSequence) -> bool {

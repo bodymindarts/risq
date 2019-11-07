@@ -1,3 +1,5 @@
+mod btc_offer;
+
 use crate::{
     bisq::SequencedMessageHash,
     domain::{
@@ -9,6 +11,7 @@ use crate::{
     prelude::*,
 };
 use actix_web::{web, Error, HttpResponse};
+use btc_offer::BtcOffer;
 use chrono::{DateTime, TimeZone, Utc};
 use juniper::{
     self,
@@ -107,7 +110,7 @@ impl Offers {
     ) -> impl DoubleEndedIterator<Item = &OpenOffer> {
         self.offers
             .iter()
-            .filter(move |o| o.btc_direction == direction)
+            .filter(move |o| BtcOffer::new(o).direction() == direction)
     }
 }
 
@@ -579,12 +582,14 @@ impl OpenOfferFields for OpenOffer {
     ) -> FieldResult<Direction> {
         Ok(self.direction.into())
     }
+
     fn field_btc_direction(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<Direction> {
-        Ok(self.btc_direction.into())
+        Ok(BtcOffer::new(self).direction().into())
     }
+
     fn field_payment_method_id(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
@@ -609,6 +614,14 @@ impl OpenOfferFields for OpenOffer {
     ) -> FieldResult<String> {
         Ok(self.amount.total.format(TARGET_PRECISION))
     }
+
+    fn field_formatted_btc_amount(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        let btc_offer = BtcOffer::new(self);
+        Ok(btc_offer.amount().format(TARGET_PRECISION))
+    }
     fn field_formatted_min_amount(
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
@@ -625,7 +638,16 @@ impl OpenOfferFields for OpenOffer {
         &self,
         _executor: &juniper::Executor<'_, GraphQLContext>,
     ) -> FieldResult<String> {
-        Ok(self.display_volume.format(TARGET_PRECISION))
+        let display_volume = self.display_price * self.amount.total;
+        Ok(display_volume.format(TARGET_PRECISION))
+    }
+
+    fn field_formatted_btc_volume(
+        &self,
+        _executor: &juniper::Executor<'_, GraphQLContext>,
+    ) -> FieldResult<String> {
+        let btc_offer = BtcOffer::new(self);
+        Ok(btc_offer.volume().format(TARGET_PRECISION))
     }
 }
 

@@ -1,1 +1,2 @@
-Empty - please add release notes here
+## Improvements
+- Add formattedBtcVolume and formattedBtcAmount to OpenOffer query
