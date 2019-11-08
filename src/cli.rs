@@ -90,7 +90,11 @@ const RISQ_HOME_VAR: &str = "RISQ_HOME";
 fn daemon(matches: &ArgMatches) {
     let risq_home = env::var_os(RISQ_HOME_VAR)
         .map(PathBuf::from)
-        .unwrap_or_else(|| dirs::home_dir().expect("Couldn't determin home dir"));
+        .unwrap_or_else(|| {
+            let mut risq_dir = dirs::home_dir().expect("Couldn't determin home dir");
+            risq_dir.push(".risq");
+            risq_dir
+        });
 
     let network: BaseCurrencyNetwork = matches.value_of("NETWORK").unwrap().parse().unwrap();
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
