@@ -192,7 +192,7 @@ impl DataRouter {
             return None;
         }
 
-        #[warn(clippy::single_match)]
+        #[allow(clippy::single_match)]
         match PersistableNetworkPayloadKind::from(&payload) {
             #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => {

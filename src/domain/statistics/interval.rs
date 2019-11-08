@@ -64,30 +64,30 @@ impl Interval {
         }
     }
 
-    pub fn intervals(&self, start: SystemTime, end: SystemTime) -> IntervalIterator {
+    pub fn intervals(self, start: SystemTime, end: SystemTime) -> IntervalIterator {
         let start: DateTime<Utc> = self.appropriate_floor(start.into());
-        let end: DateTime<Utc> = self.appropriate_floor(end.into()) + *self;
+        let end: DateTime<Utc> = self.appropriate_floor(end.into()) + self;
         IntervalIterator {
             current: start,
             end,
-            interval: *self,
+            interval: self,
         }
     }
 
-    fn appropriate_floor(&self, time: DateTime<Utc>) -> DateTime<Utc> {
+    fn appropriate_floor(self, time: DateTime<Utc>) -> DateTime<Utc> {
         let time = time.with_second(0).unwrap();
-        let time = match *self {
+        let time = match self {
             Interval::Minute => return time,
             Interval::HalfHour if time.minute() >= 30 => return time.with_minute(30).unwrap(),
             Interval::Hour => return time.with_minute(0).unwrap(),
             _ => time.with_minute(0).unwrap(),
         };
-        let time = match *self {
+        let time = match self {
             Interval::HalfDay if time.hour() >= 12 => return time.with_hour(12).unwrap(),
             Interval::Day => return time.with_hour(0).unwrap(),
             _ => time.with_hour(0).unwrap(),
         };
-        match *self {
+        match self {
             Interval::Week => time - Duration::days(time.weekday().num_days_from_monday() as i64),
             Interval::Month => time.with_day0(0).unwrap(),
             Interval::Year => time.with_day0(0).and_then(|t| t.with_month0(0)).unwrap(),

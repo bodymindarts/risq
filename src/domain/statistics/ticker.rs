@@ -48,7 +48,7 @@ mod inner {
             let mut trades = history.iter().rev();
             let mut next = match trades.next() {
                 None => {
-                    return Self::to_return(tickers, offers);
+                    return Self::return_tickers(tickers, offers);
                 }
                 Some(next) => next,
             };
@@ -65,7 +65,7 @@ mod inner {
                 }
                 next = match trades.next() {
                     None => {
-                        return Self::to_return(tickers, offers);
+                        return Self::return_tickers(tickers, offers);
                     }
                     Some(next) => next,
                 };
@@ -81,8 +81,8 @@ mod inner {
                 })
                 .collect();
             loop {
-                if missing_markets.len() == 0 {
-                    return Self::to_return(tickers, offers);
+                if missing_markets.is_empty() {
+                    return Self::return_tickers(tickers, offers);
                 }
                 if let Some(ticker) = missing_markets.remove(&next.market.pair) {
                     ticker.last = Some(next.price);
@@ -92,13 +92,13 @@ mod inner {
 
                 next = match trades.next() {
                     None => {
-                        return Self::to_return(tickers, offers);
+                        return Self::return_tickers(tickers, offers);
                     }
                     Some(next) => next,
                 };
             }
         }
-        fn to_return<'a>(
+        fn return_tickers<'a>(
             mut tickers: HashMap<&String, Ticker>,
             offers: impl Iterator<Item = &'a OpenOffer>,
         ) -> Vec<Ticker> {
