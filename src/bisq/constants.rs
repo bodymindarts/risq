@@ -23,7 +23,7 @@ impl FromStr for BaseCurrencyNetwork {
 
 pub(super) const P2P_NETWORK_VERSION: i32 = 1;
 
-pub fn seed_nodes(network: &BaseCurrencyNetwork) -> Vec<NodeAddress> {
+pub fn seed_nodes(network: BaseCurrencyNetwork) -> Vec<NodeAddress> {
     match network {
         BaseCurrencyNetwork::BtcRegtest => vec![
             NodeAddress {

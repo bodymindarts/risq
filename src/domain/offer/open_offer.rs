@@ -38,7 +38,7 @@ pub enum OfferDirection {
     Sell,
 }
 impl OfferDirection {
-    pub fn oposite(&self) -> Self {
+    pub fn oposite(self) -> Self {
         match self {
             OfferDirection::Buy => OfferDirection::Sell,
             OfferDirection::Sell => OfferDirection::Buy,

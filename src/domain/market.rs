@@ -11,7 +11,7 @@ pub struct Market {
 
 impl Market {
     pub fn non_btc_side(&self) -> &Currency {
-        if &self.left.code == &"BTC" {
+        if self.left.code == "BTC" {
             self.right
         } else {
             self.left

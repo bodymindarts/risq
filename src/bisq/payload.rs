@@ -118,7 +118,7 @@ impl RefreshOfferMessage {
             sequence_number: self.sequence_number,
         }
         .sha256();
-        if hash.into_inner() != &*self.hash_of_data_and_seq_nr {
+        if hash.into_inner() != *self.hash_of_data_and_seq_nr {
             warn!("Error with RefreshOfferMessage.hash_of_data_and_seq_nr");
             return None;
         }

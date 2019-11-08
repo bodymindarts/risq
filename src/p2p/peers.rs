@@ -43,9 +43,9 @@ impl From<(NodeAddress, &PeerInfo)> for Peer {
             supported_capabilities: info
                 .reported_capabilities
                 .as_ref()
-                .or(info.gossiped_capabilities.as_ref())
+                .or_else(|| info.gossiped_capabilities.as_ref())
                 .map(|v| v.iter().map(|c| *c as i32).collect())
-                .unwrap_or(Vec::new()),
+                .unwrap_or_default(),
         }
     }
 }
@@ -140,8 +140,8 @@ impl<D: SendableDispatcher> Peers<D> {
                 addr.clone(),
                 PeerInfo {
                     reported_alive_at,
-                    gossiped_capabilities: gossiped_capabilities,
-                    reported_capabilities: reported_capabilities,
+                    gossiped_capabilities,
+                    reported_capabilities,
                 },
             );
         }
@@ -175,7 +175,10 @@ impl<D: SendableDispatcher> Peers<D> {
             } else {
                 Either::B(fut::ok(()))
             }
-            .then(|_, peers, ctx| fut::ok(peers.do_consolidate_connections(ctx)))
+            .then(|_, peers, ctx| {
+                peers.do_consolidate_connections(ctx);
+                fut::ok(())
+            })
         }));
     }
     fn drop_connection(&mut self, id: &ConnectionId, reason: CloseConnectionReason) {
@@ -259,18 +262,18 @@ impl<D: SendableDispatcher> Peers<D> {
                                   },
                                   peers: &mut Peers<D>,
                                   _ctx| {
-                                peers
+                                if let Some(ref addr) = peers
                                     .identified_connections
                                     .get(&id)
                                     .map(NodeAddress::clone)
-                                    .map(|addr| {
-                                        peers.update_peer_info(
-                                            &addr,
-                                            SystemTime::now(),
-                                            None,
-                                            Some(supported_capabilities),
-                                        )
-                                    });
+                                {
+                                    peers.update_peer_info(
+                                        &addr,
+                                        SystemTime::now(),
+                                        None,
+                                        Some(supported_capabilities),
+                                    )
+                                };
                                 peers.add_to_peer_infos(reported_peers)
                             },
                         )
@@ -303,14 +306,14 @@ impl<D: SendableDispatcher> Peers<D> {
                  date,
                  supported_capabilities,
              }| {
-                node_address.map(|addr| {
+                if let Some(addr) = node_address {
                     self.update_peer_info(
                         &addr,
                         UNIX_EPOCH + Duration::from_millis(date as u64),
                         Some(supported_capabilities),
                         None,
                     )
-                });
+                };
             },
         )
     }
@@ -319,11 +322,13 @@ impl<D: SendableDispatcher> Peers<D> {
         fut::wrap_future(self.keep_alive.send(ReportLastActive))
             .and_then(|alive_times, peers: &mut Self, _| {
                 alive_times.into_iter().for_each(|(id, last_active)| {
-                    peers
+                    if let Some(ref addr) = peers
                         .identified_connections
                         .get(&id)
                         .map(NodeAddress::clone)
-                        .map(|addr| peers.update_peer_info(&addr, last_active, None, None));
+                    {
+                        peers.update_peer_info(addr, last_active, None, None)
+                    }
                 });
                 fut::ok(())
             })

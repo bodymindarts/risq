@@ -70,7 +70,7 @@ impl<D: SendableDispatcher> Bootstrap<D> {
         dispatcher: D,
         proxy_port: Option<u16>,
     ) -> Addr<Bootstrap<D>> {
-        let mut seed_nodes = seed_nodes(&network);
+        let mut seed_nodes = seed_nodes(network);
         seed_nodes.shuffle(&mut thread_rng());
         let (addr_notify, addr_rec) = oneshot::channel();
         Self {

@@ -21,7 +21,7 @@ pub struct DaemonConfig {
     pub hidden_service_port: Option<u16>,
 }
 
-const SERIVCE_PRIVATE_KEY_PATH: &'static str = "tor/service.key";
+const SERIVCE_PRIVATE_KEY_PATH: &str = "tor/service.key";
 
 pub fn run(
     DaemonConfig {

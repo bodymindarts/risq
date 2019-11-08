@@ -92,7 +92,7 @@ pub fn create_schema() -> Schema {
     Schema::new(Query {}, EmptyMutation::new())
 }
 
-const ALL_MARKETS: &'static str = "all";
+const ALL_MARKETS: &str = "all";
 
 pub struct Offers {
     market: MarketPair,

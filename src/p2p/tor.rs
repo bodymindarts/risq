@@ -117,8 +117,8 @@ impl TorControl {
         let response = read_lines(&mut self.0)?.join(" ");
         let mut service_id = "";
         let mut private_key = "";
-        for section in response.split(" ") {
-            let split: Vec<&str> = section.split("=").collect();
+        for section in response.split(' ') {
+            let split: Vec<&str> = section.split('=').collect();
             if split.len() == 2 {
                 match split[0] {
                     "ServiceID" => service_id = split[1],
@@ -146,8 +146,8 @@ impl TorControl {
         let mut cookiefile = "";
         let mut auth_methods = "";
         let mut tor_version = "";
-        for section in response.split(" ") {
-            let split: Vec<&str> = section.split("=").collect();
+        for section in response.split(' ') {
+            let split: Vec<&str> = section.split('=').collect();
             if split.len() == 2 {
                 match split[0] {
                     "COOKIEFILE" => cookiefile = split[1],
@@ -159,7 +159,7 @@ impl TorControl {
         }
         Ok(ProtocolInfo {
             cookiefile: cookiefile.trim_matches('\"').into(),
-            auth_methods: auth_methods.split(",").map(|s| s.into()).collect(),
+            auth_methods: auth_methods.split(',').map(|s| s.into()).collect(),
             tor_version: tor_version.trim_matches('\"').into(),
         })
     }
@@ -176,8 +176,8 @@ impl TorControl {
 
         let mut serverhash = "";
         let mut servernonce = "";
-        for section in response.split(" ") {
-            let split: Vec<&str> = section.split("=").collect();
+        for section in response.split(' ') {
+            let split: Vec<&str> = section.split('=').collect();
             if split.len() == 2 {
                 match split[0] {
                     "SERVERHASH" => serverhash = split[1],
@@ -228,6 +228,7 @@ impl TorControl {
     }
 }
 
+#[allow(clippy::write_with_newline)]
 fn send_command(writer: &mut impl Write, command: String) -> Result<(), io::Error> {
     write!(writer, "{}\r\n", command)?;
     writer.flush()

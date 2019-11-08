@@ -135,7 +135,7 @@ impl DataRouter {
                 self.route_protected_storage_entry(false, entry.entry, result_handler);
             }
         }
-        .into()
+        Some(())
     }
     fn route_protected_storage_entry(
         &mut self,
@@ -153,6 +153,7 @@ impl DataRouter {
         ) {
             return None;
         }
+        #[allow(clippy::single_match)]
         match (&entry).into() {
             StoragePayloadKind::OfferPayload => {
                 convert::open_offer(entry, bisq_hash)
@@ -173,11 +174,10 @@ impl DataRouter {
                         warn!("Offer didn't convert {:?}", bisq_hash);
                         None
                     });
-                ()
             }
             _ => (),
         }
-        .into()
+        Some(())
     }
     #[allow(unused_variables)]
     fn route_persistable_network_payload(
@@ -191,6 +191,8 @@ impl DataRouter {
         if !self.persistent_message_info.insert(bisq_hash) {
             return None;
         }
+
+        #[warn(clippy::single_match)]
         match PersistableNetworkPayloadKind::from(&payload) {
             #[cfg(feature = "statistics")]
             PersistableNetworkPayloadKind::TradeStatistics2 => {
@@ -204,7 +206,7 @@ impl DataRouter {
             }
             _ => (),
         }
-        .into()
+        Some(())
     }
 }
 

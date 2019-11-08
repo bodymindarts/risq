@@ -40,7 +40,7 @@ impl Currency {
     }
 
     pub fn from_code(code: &str) -> Option<&'static Currency> {
-        ALL.iter().find(|c| &c.code == code)
+        ALL.iter().find(|c| c.code == code)
     }
 
     pub fn is_crypto(&self) -> bool {

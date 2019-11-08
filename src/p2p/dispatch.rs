@@ -88,10 +88,7 @@ pub struct ForwardTo<F: Dispatcher + Sized, N: Dispatcher + Sized> {
 }
 impl<F: Dispatcher + Sized, N: Dispatcher + Sized> ForwardTo<F, N> {
     pub fn forward_to<O: Dispatcher + Sized>(self, next: O) -> ForwardTo<Self, O> {
-        ForwardTo {
-            first: self,
-            next: next,
-        }
+        ForwardTo { first: self, next }
     }
 }
 impl<F: Dispatcher + Sized, N: Dispatcher + Sized> Dispatcher for ForwardTo<F, N> {

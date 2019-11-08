@@ -25,20 +25,20 @@ impl NumberWithPrecision {
         let mut rest_amount = self.base_amount;
 
         if target_precision > self.precision {
-            rest_amount = rest_amount * 10_u64.pow(target_precision - self.precision);
+            rest_amount *= 10_u64.pow(target_precision - self.precision);
         } else if self.precision > target_precision {
-            rest_amount = rest_amount / 10_u64.pow(self.precision - target_precision);
+            rest_amount /= 10_u64.pow(self.precision - target_precision);
         }
 
         while ret.len() < target_precision as usize {
             ret.push(char_of_last_digit(rest_amount));
-            rest_amount = rest_amount / 10;
+            rest_amount /= 10;
         }
         ret.push('.');
 
         while rest_amount > 0 {
             ret.push(char_of_last_digit(rest_amount));
-            rest_amount = rest_amount / 10;
+            rest_amount /= 10;
         }
         if ret.len() == target_precision as usize + 1 {
             ret.push('0');
@@ -49,9 +49,9 @@ impl NumberWithPrecision {
     pub fn with_precision(&self, target_precision: u32) -> Self {
         let mut rest_amount = self.base_amount;
         if target_precision > self.precision {
-            rest_amount = rest_amount * 10_u64.pow(target_precision - self.precision);
+            rest_amount *= 10_u64.pow(target_precision - self.precision);
         } else if self.precision > target_precision {
-            rest_amount = rest_amount / 10_u64.pow(self.precision - target_precision);
+            rest_amount /= 10_u64.pow(self.precision - target_precision);
         }
         Self::new(rest_amount, target_precision)
     }
@@ -76,6 +76,7 @@ fn char_of_last_digit(n: u64) -> char {
 impl Mul for NumberWithPrecision {
     type Output = Self;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn mul(self, right: Self) -> Self {
         let (left_precision, right_precision) = (self.precision, right.precision);
         let (mut left_value, mut right_value) = (self.base_amount, right.base_amount);
@@ -84,7 +85,7 @@ impl Mul for NumberWithPrecision {
 
         while res_precision > target_precision {
             if left_value % 10 == 0 {
-                left_value = left_value / 10;
+                left_value /= 10;
                 res_precision -= 1;
             } else {
                 break;
@@ -92,7 +93,7 @@ impl Mul for NumberWithPrecision {
         }
         while res_precision > target_precision {
             if right_value % 10 == 0 {
-                right_value = right_value / 10;
+                right_value /= 10;
                 res_precision -= 1;
             } else {
                 break;
@@ -100,9 +101,9 @@ impl Mul for NumberWithPrecision {
         }
         let mut res = left_value * right_value;
         if res_precision > target_precision {
-            res = res / 10_u64.pow(res_precision - right_precision);
+            res /= 10_u64.pow(res_precision - right_precision);
         } else if res_precision < target_precision {
-            res = res * 10_u64.pow(right_precision - res_precision);
+            res *= 10_u64.pow(right_precision - res_precision);
         }
         NumberWithPrecision::new(res, target_precision)
     }
@@ -110,6 +111,7 @@ impl Mul for NumberWithPrecision {
 impl Div<u64> for NumberWithPrecision {
     type Output = Self;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn div(self, rhs: u64) -> Self::Output {
         if rhs == 0 {
             panic!("Cannot divide by zero-valued `NumberWithPrecision`!");

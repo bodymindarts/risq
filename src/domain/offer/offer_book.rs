@@ -32,7 +32,7 @@ impl Actor for OfferBook {
                                 } else {
                                     let mut offer = offer.clone();
                                     offer.update_display_price(&offer_book.price_data);
-                                    Some((hash.clone(), offer))
+                                    Some((*hash, offer))
                                 }
                             })
                             .collect();

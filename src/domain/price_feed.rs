@@ -30,14 +30,11 @@ impl Actor for PriceFeed {
 }
 impl PriceFeed {
     pub fn start(proxy_port: Option<u16>) -> Addr<PriceFeed> {
-        let client = if proxy_port.is_some() {
+        let client = if let Some(proxy_port) = proxy_port {
             Client::builder()
                 .proxy(
-                    Proxy::http(&format!(
-                        "socks5h://127.0.0.1:{}",
-                        proxy_port.unwrap().to_string()
-                    ))
-                    .expect("Couldn't set proxy"),
+                    Proxy::http(&format!("socks5h://127.0.0.1:{}", proxy_port.to_string()))
+                        .expect("Couldn't set proxy"),
                 )
                 .build()
                 .expect("Couldn't create client")

@@ -75,7 +75,7 @@ impl Handler<ReportLastActive> for KeepAlive {
         MessageResult(
             self.infos
                 .iter()
-                .map(|(id, info)| (*id, info.last_active.clone()))
+                .map(|(id, info)| (*id, info.last_active))
                 .collect(),
         )
     }

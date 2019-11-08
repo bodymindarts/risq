@@ -20,12 +20,13 @@ regtest: build
 	RUST_LOG=debug target/debug/risq daemon -n BtcRegtest --tor-active=false
 
 check:
-	cargo watch -x check
+	cargo watch -x clippy
 
 test:
 	RUST_BACKTRACE=full cargo watch -s 'cargo test --features "all" -- --nocapture'
 
 test-in-ci:
+	cargo clippy --all-features
 	cargo test --all-features --verbose --locked
 
 build-minimal-release:

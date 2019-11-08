@@ -70,7 +70,7 @@ impl Stream for MessageStream {
                 ref mut pos,
             } => {
                 while *pos < buf.len() {
-                    let n = try_ready!(self.reader.poll_read(&mut buf[*pos..(*pos + 1)]));
+                    let n = try_ready!(self.reader.poll_read(&mut buf[*pos..=*pos]));
                     if n == 0 {
                         self.state = MessageStreamState::Empty;
                         return Err(
@@ -79,7 +79,7 @@ impl Stream for MessageStream {
                     }
                     let old_pos = *pos;
                     *pos += n;
-                    if buf[old_pos] & 0b10000000 == 0 {
+                    if buf[old_pos] & 0b1000_0000 == 0 {
                         break;
                     }
                 }

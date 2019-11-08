@@ -40,7 +40,7 @@ fn app() -> App<'static, 'static> {
     add_checker_cmd(app)
 }
 
-pub fn run() -> () {
+pub fn run() {
     let matches = app().get_matches();
     match matches.subcommand() {
         ("daemon", Some(matches)) => daemon(matches),
@@ -59,7 +59,7 @@ fn network(network: String) -> Result<(), String> {
 }
 fn port(port: String) -> Result<(), String> {
     match u16::from_str(&port) {
-        Err(_) => Err(format!("'{}' is not a valid port number", port).into()),
+        Err(_) => Err(format!("'{}' is not a valid port number", port)),
         Ok(_) => Ok(()),
     }
 }
@@ -67,25 +67,25 @@ fn market(market: String) -> Result<(), String> {
     if &market == "all" {
         return Ok(());
     }
-    if let None = Currency::from_code(&market) {
+    if Currency::from_code(&market).is_none() {
         return Err(format!("'{}' is not a valid currency code", market));
     }
     Ok(())
 }
 fn boolean(b: String) -> Result<(), String> {
     match bool::from_str(&b) {
-        Err(_) => Err(format!("'{}' is not a valid boolean", b).into()),
+        Err(_) => Err(format!("'{}' is not a valid boolean", b)),
         Ok(_) => Ok(()),
     }
 }
 fn level(level: String) -> Result<(), String> {
     match Level::from_str(&level) {
-        Err(_) => Err(format!("'{}' is not a valid logging level", level).into()),
+        Err(_) => Err(format!("'{}' is not a valid logging level", level)),
         Ok(_) => Ok(()),
     }
 }
 
-const RISQ_HOME_VAR: &'static str = "RISQ_HOME";
+const RISQ_HOME_VAR: &str = "RISQ_HOME";
 
 fn daemon(matches: &ArgMatches) {
     let risq_home = env::var_os(RISQ_HOME_VAR)

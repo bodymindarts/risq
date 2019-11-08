@@ -87,7 +87,7 @@ impl Connection {
                 });
                 Either::B(
                     receive
-                        .map_err(|e| error::Error::from(e))
+                        .map_err(error::Error::from)
                         .flatten()
                         .and_then(|stream| {
                             TcpStream::from_std(stream.into_inner(), &Handle::default())
@@ -180,8 +180,7 @@ where
                 .clone()
                 .sink_from_err::<error::Error>()
                 .send(msg.into())
-                .map(|_| ())
-                .map_err(|e| e.into()),
+                .map(|_| ()),
         )
     }
 }
@@ -210,7 +209,7 @@ where
                 .send(msg)
                 .and_then(|_| {
                     receive
-                        .map(|response| <M as ResponseExtractor>::extract(response))
+                        .map(<M as ResponseExtractor>::extract)
                         .map_err(|e| e.into())
                 }),
         )
@@ -230,10 +229,13 @@ impl Handler<Shutdown> for Connection {
                 self.writer
                     .clone()
                     .sink_from_err::<error::Error>()
-                    .send(CloseConnectionMessage { reason: reason }.into())
+                    .send(CloseConnectionMessage { reason }.into())
                     .then(|_| Ok(())),
             )
-            .then(|_: Result<(), ()>, _, ctx: &mut Self::Context| fut::ok(ctx.stop())),
+            .then(|_: Result<(), ()>, _, ctx: &mut Self::Context| {
+                ctx.stop();
+                fut::ok(())
+            }),
         );
     }
 }
