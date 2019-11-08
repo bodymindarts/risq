@@ -1,3 +1,3 @@
 FROM rust
 
-RUN cargo install clippy
+RUN rustup component add clippy
