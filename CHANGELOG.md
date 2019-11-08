@@ -1,3 +1,9 @@
+# [risq release v0.3.5](https://github.com/bodymindarts/risq/releases/tag/v0.3.5)
+
+## Bug Fixes
+
+- Fix default `RISQ_HOME` dir (was missing `.risq` part)
+
 # [risq release v0.3.4](https://github.com/bodymindarts/risq/releases/tag/v0.3.4)
 
 ## Bug Fixes

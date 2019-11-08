@@ -1,6 +1,6 @@
 [package]
 name = "risq"
-version = "0.3.5-dev"
+version = "0.3.5"
 authors = ["Justin Carter <justin@misthos.io>"]
 edition = "2018"
 license = "AGPL-3.0"
