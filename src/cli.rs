@@ -113,9 +113,8 @@ fn daemon(matches: &ArgMatches) {
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
     let server_port = matches.value_of("P2P_PORT").unwrap().parse().unwrap();
     let tor_active: bool = matches.value_of("TOR_ACTIVE").unwrap().parse().unwrap();
-    let level: String = matches.value_of("LOG_LEVEL").unwrap().parse().unwrap();
-    let env = Env::default().filter_or("RUST_LOG", level);
-    env_logger::init_from_env(env);
+    init_log(matches);
+
     let (tor_proxy_port, tor_control_port, hidden_service_port) = if tor_active {
         (
             Some(matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap()),
@@ -227,6 +226,12 @@ fn add_dummy_seed_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
                     .short("f")
                     .takes_value(true)
                     .validator(file),
+            )
+            .arg(
+                Arg::with_name("LOG_LEVEL")
+                    .short("l")
+                    .default_value("info")
+                    .validator(level),
             ),
     )
 }
@@ -248,7 +253,15 @@ fn dummy_seed(matches: &ArgMatches) {
     use crate::dummy_seed;
     use std::path::Path;
 
+    init_log(matches);
+
     let port = matches.value_of("P2P_PORT").unwrap().parse().unwrap();
     let fixtures: Option<&Path> = matches.value_of("FIXTURES").map(Path::new);
     dummy_seed::run(port, fixtures);
+}
+
+fn init_log(matches: &ArgMatches) {
+    let level: String = matches.value_of("LOG_LEVEL").unwrap().parse().unwrap();
+    let env = Env::default().filter_or("RUST_LOG", level);
+    env_logger::init_from_env(env);
 }
