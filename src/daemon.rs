@@ -3,7 +3,7 @@ mod data_router;
 
 use crate::{
     api,
-    bisq::constants::BaseCurrencyNetwork,
+    bisq::{constants::BaseCurrencyNetwork, NodeAddress},
     domain::{offer::*, price_feed::PriceFeed, statistics::StatsCache},
     p2p::{dispatch::ActorDispatcher, server, Bootstrap, Broadcaster, Peers, TorConfig},
     prelude::*,
@@ -15,6 +15,7 @@ pub struct DaemonConfig {
     pub api_port: u16,
     pub server_port: u16,
     pub network: BaseCurrencyNetwork,
+    pub force_seed: Option<NodeAddress>,
     pub risq_home: PathBuf,
     pub tor_control_port: Option<u16>,
     pub tor_proxy_port: Option<u16>,
@@ -28,6 +29,7 @@ pub fn run(
         api_port,
         server_port,
         network,
+        force_seed,
         risq_home,
         tor_control_port,
         tor_proxy_port,
@@ -68,7 +70,13 @@ pub fn run(
         Arbiter::new().exec_fn(move || {
             // P2P Thread
             let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
-            let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
+            let bootstrap = Bootstrap::start(
+                network,
+                peers.clone(),
+                dispatcher,
+                tor_proxy_port,
+                force_seed,
+            );
             server::start(server_port, peers, Some(bootstrap), tor_config);
         });
     });
