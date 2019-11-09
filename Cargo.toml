@@ -10,8 +10,9 @@ description = "Re-implementation of Bisq (https://github.com/bisq-network/bisq) 
 [features]
 
 checker = []
-statistics = []
+dummy-seed = []
 fail-on-warnings = []
+statistics = []
 vendored-openssl = ["openssl/vendored"]
 
 all = ["checker", "statistics"]

@@ -13,6 +13,8 @@ mod bisq;
 mod checker;
 mod daemon;
 mod domain;
+#[cfg(feature = "dummy-seed")]
+mod dummy_seed;
 mod error;
 mod p2p;
 

@@ -11,7 +11,12 @@ use env_logger::Env;
 use log::Level;
 use query::*;
 use reqwest;
-use std::{collections::HashMap, env, path::PathBuf, str::FromStr};
+use std::{
+    collections::HashMap,
+    env,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 fn app() -> App<'static, 'static> {
     let app = clap_app!(risq =>
@@ -37,7 +42,8 @@ fn app() -> App<'static, 'static> {
         )
     );
 
-    add_checker_cmd(app)
+    let app = add_checker_cmd(app);
+    add_dummy_seed_cmd(app)
 }
 
 pub fn run() {
@@ -47,6 +53,8 @@ pub fn run() {
         ("offers", Some(matches)) => offers(matches),
         #[cfg(feature = "checker")]
         ("check-node", Some(matches)) => check_node(matches),
+        #[cfg(feature = "dummy-seed")]
+        ("dummy-seed", Some(matches)) => dummy_seed(matches),
         _ => unreachable!(),
     }
 }
@@ -82,6 +90,15 @@ fn level(level: String) -> Result<(), String> {
     match Level::from_str(&level) {
         Err(_) => Err(format!("'{}' is not a valid logging level", level)),
         Ok(_) => Ok(()),
+    }
+}
+#[cfg(feature = "dummy-seed")]
+fn file(file: String) -> Result<(), String> {
+    let path = Path::new(&file);
+    match (path.exists(), path.is_file()) {
+        (true, true) => Ok(()),
+        (false, _) => Err(format!("File '{}' does not exist", file)),
+        (_, false) => Err(format!("'{}' is not a file", file)),
     }
 }
 
@@ -192,6 +209,31 @@ fn add_checker_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
     )
 }
 
+#[cfg(not(feature = "dummy-seed"))]
+fn add_dummy_seed_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
+    app
+}
+#[cfg(feature = "dummy-seed")]
+fn add_dummy_seed_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
+    use clap::{Arg, SubCommand};
+    app.subcommand(
+        SubCommand::with_name("dummy-seed")
+            .about("Start a seed node used for testing")
+            .arg(
+                Arg::with_name("P2P_PORT")
+                    .short("p")
+                    .validator(port)
+                    .default_value("4004"),
+            )
+            .arg(
+                Arg::with_name("FIXTURES")
+                    .short("f")
+                    .takes_value(true)
+                    .validator(file),
+            ),
+    )
+}
+
 #[cfg(feature = "checker")]
 fn check_node(matches: &ArgMatches) {
     use crate::bisq::NodeAddress;
@@ -202,4 +244,13 @@ fn check_node(matches: &ArgMatches) {
     let port = matches.value_of("NODE_PORT").unwrap().parse().unwrap();
     let network: BaseCurrencyNetwork = matches.value_of("NETWORK").unwrap().parse().unwrap();
     checker::check_node(network, NodeAddress { host_name, port }, socks_port);
+}
+
+#[cfg(feature = "dummy-seed")]
+fn dummy_seed(matches: &ArgMatches) {
+    use crate::dummy_seed;;
+
+    let port = matches.value_of("P2P_PORT").unwrap().parse().unwrap();
+    let fixtures: Option<&Path> = matches.value_of("FIXTURES").map(Path::new);
+    dummy_seed::run(port, fixtures);
 }

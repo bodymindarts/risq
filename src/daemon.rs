@@ -69,7 +69,7 @@ pub fn run(
             // P2P Thread
             let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
             let bootstrap = Bootstrap::start(network, peers.clone(), dispatcher, tor_proxy_port);
-            server::start(server_port, peers, bootstrap, tor_config);
+            server::start(server_port, peers, Some(bootstrap), tor_config);
         });
     });
 
