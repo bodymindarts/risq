@@ -11,12 +11,7 @@ use env_logger::Env;
 use log::Level;
 use query::*;
 use reqwest;
-use std::{
-    collections::HashMap,
-    env,
-    path::{Path, PathBuf},
-    str::FromStr,
-};
+use std::{collections::HashMap, env, path::PathBuf, str::FromStr};
 
 fn app() -> App<'static, 'static> {
     let app = clap_app!(risq =>
@@ -94,6 +89,7 @@ fn level(level: String) -> Result<(), String> {
 }
 #[cfg(feature = "dummy-seed")]
 fn file(file: String) -> Result<(), String> {
+    use std::path::Path;
     let path = Path::new(&file);
     match (path.exists(), path.is_file()) {
         (true, true) => Ok(()),
@@ -216,6 +212,7 @@ fn add_dummy_seed_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
 #[cfg(feature = "dummy-seed")]
 fn add_dummy_seed_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
     use clap::{Arg, SubCommand};
+
     app.subcommand(
         SubCommand::with_name("dummy-seed")
             .about("Start a seed node used for testing")
@@ -248,7 +245,8 @@ fn check_node(matches: &ArgMatches) {
 
 #[cfg(feature = "dummy-seed")]
 fn dummy_seed(matches: &ArgMatches) {
-    use crate::dummy_seed;;
+    use crate::dummy_seed;
+    use std::path::Path;
 
     let port = matches.value_of("P2P_PORT").unwrap().parse().unwrap();
     let fixtures: Option<&Path> = matches.value_of("FIXTURES").map(Path::new);
