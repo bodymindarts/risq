@@ -12,6 +12,7 @@ use rand::{thread_rng, Rng};
 use std::{
     io,
     net::{SocketAddr, ToSocketAddrs},
+    str::FromStr,
     vec,
 };
 
@@ -23,6 +24,20 @@ impl ToSocketAddrs for NodeAddress {
     type Iter = vec::IntoIter<SocketAddr>;
     fn to_socket_addrs(&self) -> io::Result<Self::Iter> {
         (&*self.host_name, self.port as u16).to_socket_addrs()
+    }
+}
+impl FromStr for NodeAddress {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut iter = s.split(':');
+        match (iter.next(), iter.next()) {
+            (Some(host_name), Some(port)) if u16::from_str(&port).is_ok() => Ok(Self {
+                host_name: host_name.to_string(),
+                port: u16::from_str(&port).unwrap() as i32,
+            }),
+            (_, Some(_)) => Err("Couldn't parse port".to_string()),
+            _ => Err("Couldn't parse node address".to_string()),
+        }
     }
 }
 

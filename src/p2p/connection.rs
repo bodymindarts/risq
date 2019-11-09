@@ -63,15 +63,9 @@ impl Connection {
     ) -> impl Future<Item = (ConnectionId, Addr<Connection>), Error = error::Error> {
         match proxy_port {
             None => Either::A(
-                TcpStream::connect(
-                    &(addr.host_name.as_str(), addr.port as u16)
-                        .to_socket_addrs()
-                        .unwrap()
-                        .next()
-                        .unwrap(),
-                )
-                .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
-                .map_err(|err| err.into()),
+                TcpStream::connect(&addr.to_socket_addrs().unwrap().next().unwrap())
+                    .map(move |tcp| Connection::from_tcp_stream(tcp, message_version, dispatcher))
+                    .map_err(|err| err.into()),
             ),
             Some(proxy_port) => {
                 let (send, receive) = oneshot::channel::<Result<Socks5Stream, error::Error>>();

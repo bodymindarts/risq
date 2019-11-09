@@ -69,8 +69,12 @@ impl<D: SendableDispatcher> Bootstrap<D> {
         peers: Addr<Peers<D>>,
         dispatcher: D,
         proxy_port: Option<u16>,
+        force_seed: Option<NodeAddress>,
     ) -> Addr<Bootstrap<D>> {
-        let mut seed_nodes = seed_nodes(network);
+        let mut seed_nodes = match force_seed {
+            Some(addr) => vec![addr],
+            None => seed_nodes(network),
+        };
         seed_nodes.shuffle(&mut thread_rng());
         let (addr_notify, addr_rec) = oneshot::channel();
         Self {

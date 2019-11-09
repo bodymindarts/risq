@@ -2,7 +2,7 @@ mod query;
 
 use crate::{
     api::Client,
-    bisq::constants::*,
+    bisq::{constants::*, NodeAddress},
     daemon::{self, DaemonConfig},
     domain::{currency::Currency, market::Market},
 };
@@ -25,6 +25,7 @@ fn app() -> App<'static, 'static> {
          (@arg LOG_LEVEL: -l --("log-level") default_value("info") {level} "(error|warn|info|debug|trace)")
          (@arg NETWORK: -n --network default_value("BtcMainnet") {network} "(BtcRegtest|BtcTestnet|BtcMainnet)")
          (@arg P2P_PORT: -p --("p2p-port") default_value("5000") {port} "Port of p2p node")
+         (@arg FORCE_SEED: --("force-seed") +takes_value {node_address} "Force usage of seed node")
          (@arg TOR_ACTIVE: --("tor-active") default_value("true") {boolean} "Run daemon behind tor")
          (@arg TOR_CONTROL_PORT: --("tor-controll-port") default_value("9051") {port} "Tor Control port")
          (@arg TOR_HIDDEN_SERVICE_PORT: --("tor-hidden-service-port") default_value("9999") {port} "Public port of the hidden service")
@@ -65,6 +66,9 @@ fn port(port: String) -> Result<(), String> {
         Err(_) => Err(format!("'{}' is not a valid port number", port)),
         Ok(_) => Ok(()),
     }
+}
+fn node_address(addr: String) -> Result<(), String> {
+    NodeAddress::from_str(&addr).map(|_| ())
 }
 fn market(market: String) -> Result<(), String> {
     if &market == "all" {
@@ -115,6 +119,10 @@ fn daemon(matches: &ArgMatches) {
     let tor_active: bool = matches.value_of("TOR_ACTIVE").unwrap().parse().unwrap();
     init_log(matches);
 
+    let force_seed = matches
+        .value_of("FORCE_SEED")
+        .and_then(|seed| NodeAddress::from_str(&seed).ok());
+
     let (tor_proxy_port, tor_control_port, hidden_service_port) = if tor_active {
         (
             Some(matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap()),
@@ -140,6 +148,7 @@ fn daemon(matches: &ArgMatches) {
         api_port,
         server_port,
         network,
+        force_seed,
         risq_home,
         tor_control_port,
         tor_proxy_port,
@@ -219,7 +228,7 @@ fn add_dummy_seed_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
                 Arg::with_name("P2P_PORT")
                     .short("p")
                     .validator(port)
-                    .default_value("4004"),
+                    .default_value("4002"),
             )
             .arg(
                 Arg::with_name("FIXTURES")
@@ -238,7 +247,6 @@ fn add_dummy_seed_cmd(app: App<'static, 'static>) -> App<'static, 'static> {
 
 #[cfg(feature = "checker")]
 fn check_node(matches: &ArgMatches) {
-    use crate::bisq::NodeAddress;
     use crate::checker;
 
     let socks_port = matches.value_of("TOR_SOCKS_PORT").unwrap().parse().unwrap();
