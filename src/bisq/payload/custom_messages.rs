@@ -1,6 +1,7 @@
 use bytes::*;
 use prost::{encoding, DecodeError, Message};
 
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct JavaStringMapEntry(String, String);
 

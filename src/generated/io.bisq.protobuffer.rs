@@ -6,6 +6,7 @@
 
 /// Those are messages sent over wire
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NetworkEnvelope {
     #[prost(int32, tag="1")]
     pub message_version: i32,
@@ -14,6 +15,7 @@ pub struct NetworkEnvelope {
 }
 pub mod network_envelope {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="2")]
         PreliminaryGetDataRequest(super::PreliminaryGetDataRequest),
@@ -118,6 +120,7 @@ pub mod network_envelope {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BundleOfEnvelopes {
     #[prost(message, repeated, tag="1")]
     pub envelopes: ::std::vec::Vec<NetworkEnvelope>,
@@ -125,6 +128,7 @@ pub struct BundleOfEnvelopes {
 // get data
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PreliminaryGetDataRequest {
     #[prost(int32, tag="21")]
     pub nonce: i32,
@@ -134,6 +138,7 @@ pub struct PreliminaryGetDataRequest {
     pub supported_capabilities: ::std::vec::Vec<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetDataResponse {
     #[prost(int32, tag="1")]
     pub request_nonce: i32,
@@ -147,6 +152,7 @@ pub struct GetDataResponse {
     pub persistable_network_payload_items: ::std::vec::Vec<PersistableNetworkPayload>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetUpdatedDataRequest {
     #[prost(message, optional, tag="1")]
     pub sender_node_address: ::std::option::Option<NodeAddress>,
@@ -158,6 +164,7 @@ pub struct GetUpdatedDataRequest {
 // peers
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetPeersRequest {
     #[prost(message, optional, tag="1")]
     pub sender_node_address: ::std::option::Option<NodeAddress>,
@@ -169,6 +176,7 @@ pub struct GetPeersRequest {
     pub reported_peers: ::std::vec::Vec<Peer>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetPeersResponse {
     #[prost(int32, tag="1")]
     pub request_nonce: i32,
@@ -178,6 +186,7 @@ pub struct GetPeersResponse {
     pub supported_capabilities: ::std::vec::Vec<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ping {
     #[prost(int32, tag="1")]
     pub nonce: i32,
@@ -185,6 +194,7 @@ pub struct Ping {
     pub last_round_trip_time: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Pong {
     #[prost(int32, tag="1")]
     pub request_nonce: i32,
@@ -192,6 +202,7 @@ pub struct Pong {
 // offer
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct OfferAvailabilityRequest {
     #[prost(string, tag="1")]
     pub offer_id: std::string::String,
@@ -205,6 +216,7 @@ pub struct OfferAvailabilityRequest {
     pub uid: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct OfferAvailabilityResponse {
     #[prost(string, tag="1")]
     pub offer_id: std::string::String,
@@ -222,6 +234,7 @@ pub struct OfferAvailabilityResponse {
     pub refund_agent: ::std::option::Option<NodeAddress>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RefreshOfferMessage {
     #[prost(bytes, tag="1")]
     pub hash_of_data_and_seq_nr: std::vec::Vec<u8>,
@@ -235,21 +248,25 @@ pub struct RefreshOfferMessage {
 // storage
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AddDataMessage {
     #[prost(message, optional, tag="1")]
     pub entry: ::std::option::Option<StorageEntryWrapper>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RemoveDataMessage {
     #[prost(message, optional, tag="1")]
     pub protected_storage_entry: ::std::option::Option<ProtectedStorageEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RemoveMailboxDataMessage {
     #[prost(message, optional, tag="1")]
     pub protected_storage_entry: ::std::option::Option<ProtectedMailboxStorageEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AddPersistableNetworkPayloadMessage {
     #[prost(message, optional, tag="1")]
     pub payload: ::std::option::Option<PersistableNetworkPayload>,
@@ -257,11 +274,13 @@ pub struct AddPersistableNetworkPayloadMessage {
 // misc
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CloseConnectionMessage {
     #[prost(string, tag="1")]
     pub reason: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AckMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -286,6 +305,7 @@ pub struct AckMessage {
     pub error_message: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PrefixedSealedAndSignedMessage {
     #[prost(message, optional, tag="1")]
     pub node_address: ::std::option::Option<NodeAddress>,
@@ -299,6 +319,7 @@ pub struct PrefixedSealedAndSignedMessage {
 // trade
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct InputsForDepositTxRequest {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -352,6 +373,7 @@ pub struct InputsForDepositTxRequest {
     pub refund_agent_node_address: ::std::option::Option<NodeAddress>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct InputsForDepositTxResponse {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -383,6 +405,7 @@ pub struct InputsForDepositTxResponse {
     pub lock_time: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DelayedPayoutTxSignatureRequest {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -394,6 +417,7 @@ pub struct DelayedPayoutTxSignatureRequest {
     pub delayed_payout_tx: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DelayedPayoutTxSignatureResponse {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -405,6 +429,7 @@ pub struct DelayedPayoutTxSignatureResponse {
     pub delayed_payout_tx_signature: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DepositTxAndDelayedPayoutTxMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -418,6 +443,7 @@ pub struct DepositTxAndDelayedPayoutTxMessage {
     pub delayed_payout_tx: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DepositTxMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -429,6 +455,7 @@ pub struct DepositTxMessage {
     pub deposit_tx: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PeerPublishedDelayedPayoutTxMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -438,6 +465,7 @@ pub struct PeerPublishedDelayedPayoutTxMessage {
     pub sender_node_address: ::std::option::Option<NodeAddress>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CounterCurrencyTransferStartedMessage {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -453,6 +481,7 @@ pub struct CounterCurrencyTransferStartedMessage {
     pub uid: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct FinalizePayoutTxRequest {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -466,6 +495,7 @@ pub struct FinalizePayoutTxRequest {
     pub uid: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PayoutTxPublishedMessage {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -477,6 +507,7 @@ pub struct PayoutTxPublishedMessage {
     pub uid: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MediatedPayoutTxPublishedMessage {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -488,6 +519,7 @@ pub struct MediatedPayoutTxPublishedMessage {
     pub uid: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MediatedPayoutTxSignatureMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -499,6 +531,7 @@ pub struct MediatedPayoutTxSignatureMessage {
     pub sender_node_address: ::std::option::Option<NodeAddress>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct OpenNewDisputeMessage {
     #[prost(message, optional, tag="1")]
     pub dispute: ::std::option::Option<Dispute>,
@@ -510,6 +543,7 @@ pub struct OpenNewDisputeMessage {
     pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PeerOpenedDisputeMessage {
     #[prost(message, optional, tag="1")]
     pub dispute: ::std::option::Option<Dispute>,
@@ -521,6 +555,7 @@ pub struct PeerOpenedDisputeMessage {
     pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChatMessage {
     #[prost(int64, tag="1")]
     pub date: i64,
@@ -556,6 +591,7 @@ pub struct ChatMessage {
     pub was_displayed: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DisputeResultMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -567,6 +603,7 @@ pub struct DisputeResultMessage {
     pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PeerPublishedDisputePayoutTxMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -580,6 +617,7 @@ pub struct PeerPublishedDisputePayoutTxMessage {
     pub r#type: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PrivateNotificationMessage {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -591,6 +629,7 @@ pub struct PrivateNotificationMessage {
 // DAO
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetBlocksRequest {
     #[prost(int32, tag="1")]
     pub from_block_height: i32,
@@ -602,6 +641,7 @@ pub struct GetBlocksRequest {
     pub supported_capabilities: ::std::vec::Vec<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetBlocksResponse {
     /// Because of the way how PB implements inheritence we need to use the super class as type
     #[prost(message, repeated, tag="1")]
@@ -610,30 +650,36 @@ pub struct GetBlocksResponse {
     pub request_nonce: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NewBlockBroadcastMessage {
     /// Because of the way how PB implements inheritence we need to use the super class as type
     #[prost(message, optional, tag="1")]
     pub raw_block: ::std::option::Option<BaseBlock>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RepublishGovernanceDataRequest {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NewDaoStateHashMessage {
     #[prost(message, optional, tag="1")]
     pub state_hash: ::std::option::Option<DaoStateHash>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NewProposalStateHashMessage {
     #[prost(message, optional, tag="1")]
     pub state_hash: ::std::option::Option<ProposalStateHash>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NewBlindVoteStateHashMessage {
     #[prost(message, optional, tag="1")]
     pub state_hash: ::std::option::Option<BlindVoteStateHash>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetDaoStateHashesRequest {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -641,6 +687,7 @@ pub struct GetDaoStateHashesRequest {
     pub nonce: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetProposalStateHashesRequest {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -648,6 +695,7 @@ pub struct GetProposalStateHashesRequest {
     pub nonce: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetBlindVoteStateHashesRequest {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -655,6 +703,7 @@ pub struct GetBlindVoteStateHashesRequest {
     pub nonce: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetDaoStateHashesResponse {
     #[prost(message, repeated, tag="1")]
     pub state_hashes: ::std::vec::Vec<DaoStateHash>,
@@ -662,6 +711,7 @@ pub struct GetDaoStateHashesResponse {
     pub request_nonce: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetProposalStateHashesResponse {
     #[prost(message, repeated, tag="1")]
     pub state_hashes: ::std::vec::Vec<ProposalStateHash>,
@@ -669,6 +719,7 @@ pub struct GetProposalStateHashesResponse {
     pub request_nonce: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetBlindVoteStateHashesResponse {
     #[prost(message, repeated, tag="1")]
     pub state_hashes: ::std::vec::Vec<BlindVoteStateHash>,
@@ -683,6 +734,7 @@ pub struct GetBlindVoteStateHashesResponse {
 
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(Eq, Hash)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NodeAddress {
     #[prost(string, tag="1")]
     pub host_name: std::string::String,
@@ -690,6 +742,7 @@ pub struct NodeAddress {
     pub port: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Peer {
     #[prost(message, optional, tag="1")]
     pub node_address: ::std::option::Option<NodeAddress>,
@@ -699,6 +752,7 @@ pub struct Peer {
     pub supported_capabilities: ::std::vec::Vec<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PubKeyRing {
     #[prost(bytes, tag="1")]
     pub signature_pub_key_bytes: std::vec::Vec<u8>,
@@ -706,6 +760,7 @@ pub struct PubKeyRing {
     pub encryption_pub_key_bytes: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SealedAndSigned {
     #[prost(bytes, tag="1")]
     pub encrypted_secret_key: std::vec::Vec<u8>,
@@ -719,12 +774,14 @@ pub struct SealedAndSigned {
 // storage
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct StoragePayload {
     #[prost(oneof="storage_payload::Message", tags="1, 2, 3, 4, 5, 6, 7, 8, 9")]
     pub message: ::std::option::Option<storage_payload::Message>,
 }
 pub mod storage_payload {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="1")]
         Alert(super::Alert),
@@ -749,12 +806,14 @@ pub mod storage_payload {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PersistableNetworkPayload {
     #[prost(oneof="persistable_network_payload::Message", tags="1, 2, 3, 4, 5")]
     pub message: ::std::option::Option<persistable_network_payload::Message>,
 }
 pub mod persistable_network_payload {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="1")]
         AccountAgeWitness(super::AccountAgeWitness),
@@ -769,6 +828,7 @@ pub mod persistable_network_payload {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProtectedStorageEntry {
     #[prost(message, optional, tag="1")]
     pub storage_payload: ::std::option::Option<StoragePayload>,
@@ -784,12 +844,14 @@ pub struct ProtectedStorageEntry {
 // mailbox
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct StorageEntryWrapper {
     #[prost(oneof="storage_entry_wrapper::Message", tags="1, 2")]
     pub message: ::std::option::Option<storage_entry_wrapper::Message>,
 }
 pub mod storage_entry_wrapper {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="1")]
         ProtectedStorageEntry(super::ProtectedStorageEntry),
@@ -798,6 +860,7 @@ pub mod storage_entry_wrapper {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProtectedMailboxStorageEntry {
     #[prost(message, optional, tag="1")]
     pub entry: ::std::option::Option<ProtectedStorageEntry>,
@@ -805,6 +868,7 @@ pub struct ProtectedMailboxStorageEntry {
     pub receivers_pub_key_bytes: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DataAndSeqNrPair {
     #[prost(message, optional, tag="1")]
     pub payload: ::std::option::Option<StoragePayload>,
@@ -814,6 +878,7 @@ pub struct DataAndSeqNrPair {
 // misc
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PrivateNotificationPayload {
     #[prost(string, tag="1")]
     pub message: std::string::String,
@@ -823,6 +888,7 @@ pub struct PrivateNotificationPayload {
     pub sig_public_key_bytes: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PaymentAccountFilter {
     #[prost(string, tag="1")]
     pub payment_method_id: std::string::String,
@@ -836,6 +902,7 @@ pub struct PaymentAccountFilter {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Alert {
     #[prost(string, tag="1")]
     pub message: std::string::String,
@@ -851,6 +918,7 @@ pub struct Alert {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Arbitrator {
     #[prost(message, optional, tag="1")]
     pub node_address: ::std::option::Option<NodeAddress>,
@@ -876,6 +944,7 @@ pub struct Arbitrator {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Mediator {
     #[prost(message, optional, tag="1")]
     pub node_address: ::std::option::Option<NodeAddress>,
@@ -897,6 +966,7 @@ pub struct Mediator {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RefundAgent {
     #[prost(message, optional, tag="1")]
     pub node_address: ::std::option::Option<NodeAddress>,
@@ -918,6 +988,7 @@ pub struct RefundAgent {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Filter {
     #[prost(string, repeated, tag="1")]
     pub banned_node_address: ::std::vec::Vec<std::string::String>,
@@ -959,6 +1030,7 @@ pub struct Filter {
 /// not used anymore from v0.6 on. But leave it for receiving TradeStatistics objects from older
 /// versions and convert it to TradeStatistics2 objects.
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TradeStatistics {
     #[prost(string, tag="1")]
     pub base_currency: std::string::String,
@@ -994,6 +1066,7 @@ pub struct TradeStatistics {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TradeStatistics2 {
     #[prost(string, tag="1")]
     pub base_currency: std::string::String,
@@ -1029,6 +1102,7 @@ pub struct TradeStatistics2 {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MailboxStoragePayload {
     #[prost(message, optional, tag="1")]
     pub prefixed_sealed_and_signed_message: ::std::option::Option<PrefixedSealedAndSignedMessage>,
@@ -1040,6 +1114,7 @@ pub struct MailboxStoragePayload {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct OfferPayload {
     #[prost(string, tag="1")]
     pub id: std::string::String,
@@ -1123,6 +1198,7 @@ pub struct OfferPayload {
 pub mod offer_payload {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Direction {
         PbError = 0,
         Buy = 1,
@@ -1130,6 +1206,7 @@ pub mod offer_payload {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AccountAgeWitness {
     #[prost(bytes, tag="1")]
     pub hash: std::vec::Vec<u8>,
@@ -1137,6 +1214,7 @@ pub struct AccountAgeWitness {
     pub date: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SignedWitness {
     #[prost(enumeration="signed_witness::VerificationMethod", tag="1")]
     pub verification_method: i32,
@@ -1156,6 +1234,7 @@ pub struct SignedWitness {
 pub mod signed_witness {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum VerificationMethod {
         PbError = 0,
         Arbitrator = 1,
@@ -1167,6 +1246,7 @@ pub mod signed_witness {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Dispute {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -1222,6 +1302,7 @@ pub struct Dispute {
     pub delayed_payout_tx_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Attachment {
     #[prost(string, tag="1")]
     pub file_name: std::string::String,
@@ -1229,6 +1310,7 @@ pub struct Attachment {
     pub bytes: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DisputeResult {
     #[prost(string, tag="1")]
     pub trade_id: std::string::String,
@@ -1264,6 +1346,7 @@ pub struct DisputeResult {
 pub mod dispute_result {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Winner {
         PbErrorWinner = 0,
         Buyer = 1,
@@ -1271,6 +1354,7 @@ pub mod dispute_result {
     }
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Reason {
         PbErrorReason = 0,
         Other = 1,
@@ -1287,6 +1371,7 @@ pub mod dispute_result {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Contract {
     #[prost(message, optional, tag="1")]
     pub offer_payload: ::std::option::Option<OfferPayload>,
@@ -1330,6 +1415,7 @@ pub struct Contract {
     pub refund_agent_node_address: ::std::option::Option<NodeAddress>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RawTransactionInput {
     #[prost(int64, tag="1")]
     pub index: i64,
@@ -1343,6 +1429,7 @@ pub struct RawTransactionInput {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PaymentAccountPayload {
     #[prost(string, tag="1")]
     pub id: std::string::String,
@@ -1358,6 +1445,7 @@ pub struct PaymentAccountPayload {
 }
 pub mod payment_account_payload {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="4")]
         AliPayAccountPayload(super::AliPayAccountPayload),
@@ -1410,16 +1498,19 @@ pub mod payment_account_payload {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AliPayAccountPayload {
     #[prost(string, tag="1")]
     pub account_nr: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct WeChatPayAccountPayload {
     #[prost(string, tag="1")]
     pub account_nr: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChaseQuickPayAccountPayload {
     #[prost(string, tag="1")]
     pub email: std::string::String,
@@ -1427,6 +1518,7 @@ pub struct ChaseQuickPayAccountPayload {
     pub holder_name: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClearXchangeAccountPayload {
     #[prost(string, tag="1")]
     pub holder_name: std::string::String,
@@ -1434,6 +1526,7 @@ pub struct ClearXchangeAccountPayload {
     pub email_or_mobile_nr: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CountryBasedPaymentAccountPayload {
     #[prost(string, tag="1")]
     pub country_code: std::string::String,
@@ -1442,6 +1535,7 @@ pub struct CountryBasedPaymentAccountPayload {
 }
 pub mod country_based_payment_account_payload {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="2")]
         BankAccountPayload(super::BankAccountPayload),
@@ -1458,6 +1552,7 @@ pub mod country_based_payment_account_payload {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BankAccountPayload {
     #[prost(string, tag="1")]
     pub holder_name: std::string::String,
@@ -1482,6 +1577,7 @@ pub struct BankAccountPayload {
 }
 pub mod bank_account_payload {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="9")]
         NationalBankAccountPayload(super::NationalBankAccountPayload),
@@ -1492,12 +1588,15 @@ pub mod bank_account_payload {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NationalBankAccountPayload {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SameBankAccountPayload {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct JapanBankAccountPayload {
     #[prost(string, tag="1")]
     pub bank_name: std::string::String,
@@ -1515,11 +1614,13 @@ pub struct JapanBankAccountPayload {
     pub bank_account_number: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpecificBanksAccountPayload {
     #[prost(string, repeated, tag="1")]
     pub accepted_banks: ::std::vec::Vec<std::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CashDepositAccountPayload {
     #[prost(string, tag="1")]
     pub holder_name: std::string::String,
@@ -1543,6 +1644,7 @@ pub struct CashDepositAccountPayload {
     pub national_account_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MoneyGramAccountPayload {
     #[prost(string, tag="1")]
     pub holder_name: std::string::String,
@@ -1554,11 +1656,13 @@ pub struct MoneyGramAccountPayload {
     pub email: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct HalCashAccountPayload {
     #[prost(string, tag="1")]
     pub mobile_nr: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct WesternUnionAccountPayload {
     #[prost(string, tag="1")]
     pub holder_name: std::string::String,
@@ -1570,6 +1674,7 @@ pub struct WesternUnionAccountPayload {
     pub email: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SepaAccountPayload {
     #[prost(string, tag="1")]
     pub holder_name: std::string::String,
@@ -1583,6 +1688,7 @@ pub struct SepaAccountPayload {
     pub accepted_country_codes: ::std::vec::Vec<std::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SepaInstantAccountPayload {
     #[prost(string, tag="1")]
     pub holder_name: std::string::String,
@@ -1594,16 +1700,19 @@ pub struct SepaInstantAccountPayload {
     pub accepted_country_codes: ::std::vec::Vec<std::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CryptoCurrencyAccountPayload {
     #[prost(string, tag="1")]
     pub address: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct InstantCryptoCurrencyAccountPayload {
     #[prost(string, tag="1")]
     pub address: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct FasterPaymentsAccountPayload {
     #[prost(string, tag="1")]
     pub sort_code: std::string::String,
@@ -1613,6 +1722,7 @@ pub struct FasterPaymentsAccountPayload {
     pub email: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct InteracETransferAccountPayload {
     #[prost(string, tag="1")]
     pub email: std::string::String,
@@ -1625,28 +1735,33 @@ pub struct InteracETransferAccountPayload {
 }
 /// Deprecated, not used anymore
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct OkPayAccountPayload {
     #[prost(string, tag="1")]
     pub account_nr: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct UpholdAccountPayload {
     #[prost(string, tag="1")]
     pub account_id: std::string::String,
 }
 /// Deprecated, not used anymore
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CashAppAccountPayload {
     #[prost(string, tag="1")]
     pub cash_tag: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MoneyBeamAccountPayload {
     #[prost(string, tag="1")]
     pub account_id: std::string::String,
 }
 /// Deprecated, not used anymore
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct VenmoAccountPayload {
     #[prost(string, tag="1")]
     pub venmo_user_name: std::string::String,
@@ -1654,6 +1769,7 @@ pub struct VenmoAccountPayload {
     pub holder_name: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PopmoneyAccountPayload {
     #[prost(string, tag="1")]
     pub account_id: std::string::String,
@@ -1661,16 +1777,19 @@ pub struct PopmoneyAccountPayload {
     pub holder_name: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RevolutAccountPayload {
     #[prost(string, tag="1")]
     pub account_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PerfectMoneyAccountPayload {
     #[prost(string, tag="1")]
     pub account_nr: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SwishAccountPayload {
     #[prost(string, tag="1")]
     pub mobile_nr: std::string::String,
@@ -1678,6 +1797,7 @@ pub struct SwishAccountPayload {
     pub holder_name: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct UsPostalMoneyOrderAccountPayload {
     #[prost(string, tag="1")]
     pub postal_address: std::string::String,
@@ -1685,6 +1805,7 @@ pub struct UsPostalMoneyOrderAccountPayload {
     pub holder_name: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct F2fAccountPayload {
     #[prost(string, tag="1")]
     pub contact: std::string::String,
@@ -1694,11 +1815,13 @@ pub struct F2fAccountPayload {
     pub extra_info: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PromptPayAccountPayload {
     #[prost(string, tag="1")]
     pub prompt_pay_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AdvancedCashAccountPayload {
     #[prost(string, tag="1")]
     pub account_nr: std::string::String,
@@ -1709,12 +1832,14 @@ pub struct AdvancedCashAccountPayload {
 
 /// Those are persisted to disc
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PersistableEnvelope {
     #[prost(oneof="persistable_envelope::Message", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30")]
     pub message: ::std::option::Option<persistable_envelope::Message>,
 }
 pub mod persistable_envelope {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="1")]
         SequenceNumberMap(super::SequenceNumberMap),
@@ -1788,11 +1913,13 @@ pub mod persistable_envelope {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SequenceNumberMap {
     #[prost(message, repeated, tag="1")]
     pub sequence_number_entries: ::std::vec::Vec<SequenceNumberEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SequenceNumberEntry {
     #[prost(message, optional, tag="1")]
     pub bytes: ::std::option::Option<ByteArray>,
@@ -1800,11 +1927,13 @@ pub struct SequenceNumberEntry {
     pub map_value: ::std::option::Option<MapValue>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ByteArray {
     #[prost(bytes, tag="1")]
     pub bytes: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MapValue {
     #[prost(int32, tag="1")]
     pub sequence_nr: i32,
@@ -1813,44 +1942,52 @@ pub struct MapValue {
 }
 /// deprecated. Not used anymore.
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PersistedEntryMap {
     #[prost(map="string, message", tag="1")]
     pub persisted_entry_map: ::std::collections::HashMap<std::string::String, ProtectedStorageEntry>,
 }
 /// deprecated. Not used anymore.
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PersistableNetworkPayloadList {
     #[prost(message, repeated, tag="1")]
     pub items: ::std::vec::Vec<PersistableNetworkPayload>,
 }
 /// We use a list not a hash map to save disc space. The hash can be calculated from the payload anyway
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AccountAgeWitnessStore {
     #[prost(message, repeated, tag="1")]
     pub items: ::std::vec::Vec<AccountAgeWitness>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SignedWitnessStore {
     #[prost(message, repeated, tag="1")]
     pub items: ::std::vec::Vec<SignedWitness>,
 }
 /// We use a list not a hash map to save disc space. The hash can be calculated from the payload anyway
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TradeStatistics2Store {
     #[prost(message, repeated, tag="1")]
     pub items: ::std::vec::Vec<TradeStatistics2>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PeerList {
     #[prost(message, repeated, tag="1")]
     pub peer: ::std::vec::Vec<Peer>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AddressEntryList {
     #[prost(message, repeated, tag="1")]
     pub address_entry: ::std::vec::Vec<AddressEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct AddressEntry {
     #[prost(string, tag="7")]
     pub offer_id: std::string::String,
@@ -1866,6 +2003,7 @@ pub struct AddressEntry {
 pub mod address_entry {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Context {
         PbError = 0,
         Arbitrator = 1,
@@ -1877,11 +2015,13 @@ pub mod address_entry {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NavigationPath {
     #[prost(string, repeated, tag="1")]
     pub path: ::std::vec::Vec<std::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PaymentAccountList {
     #[prost(message, repeated, tag="1")]
     pub payment_account: ::std::vec::Vec<PaymentAccount>,
@@ -1891,17 +2031,20 @@ pub struct PaymentAccountList {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TradableList {
     #[prost(message, repeated, tag="1")]
     pub tradable: ::std::vec::Vec<Tradable>,
 }
 /// deprecated  Was used in pre v0.6.0 version. Not used anymore but leave it as it is used in PersistableEnvelope
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TradeStatisticsList {
     #[prost(message, repeated, tag="1")]
     pub trade_statistics: ::std::vec::Vec<TradeStatistics>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Offer {
     #[prost(message, optional, tag="1")]
     pub offer_payload: ::std::option::Option<OfferPayload>,
@@ -1909,6 +2052,7 @@ pub struct Offer {
 pub mod offer {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum State {
         PbError = 0,
         Unknown = 1,
@@ -1920,6 +2064,7 @@ pub mod offer {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct OpenOffer {
     #[prost(message, optional, tag="1")]
     pub offer: ::std::option::Option<Offer>,
@@ -1935,6 +2080,7 @@ pub struct OpenOffer {
 pub mod open_offer {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum State {
         PbError = 0,
         Available = 1,
@@ -1945,12 +2091,14 @@ pub mod open_offer {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tradable {
     #[prost(oneof="tradable::Message", tags="1, 2, 3, 4, 5")]
     pub message: ::std::option::Option<tradable::Message>,
 }
 pub mod tradable {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="1")]
         OpenOffer(super::OpenOffer),
@@ -1965,6 +2113,7 @@ pub mod tradable {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Trade {
     #[prost(message, optional, tag="1")]
     pub offer: ::std::option::Option<Offer>,
@@ -2040,6 +2189,7 @@ pub struct Trade {
 pub mod trade {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum State {
         PbErrorState = 0,
         Preparation = 1,
@@ -2075,6 +2225,7 @@ pub mod trade {
     }
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Phase {
         PbErrorPhase = 0,
         Init = 1,
@@ -2088,6 +2239,7 @@ pub mod trade {
     }
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum DisputeState {
         PbErrorDisputeState = 0,
         NoDispute = 1,
@@ -2106,6 +2258,7 @@ pub mod trade {
     }
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum TradePeriodState {
         PbErrorTradePeriodState = 0,
         FirstHalf = 1,
@@ -2114,26 +2267,31 @@ pub mod trade {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BuyerAsMakerTrade {
     #[prost(message, optional, tag="1")]
     pub trade: ::std::option::Option<Trade>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BuyerAsTakerTrade {
     #[prost(message, optional, tag="1")]
     pub trade: ::std::option::Option<Trade>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SellerAsMakerTrade {
     #[prost(message, optional, tag="1")]
     pub trade: ::std::option::Option<Trade>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SellerAsTakerTrade {
     #[prost(message, optional, tag="1")]
     pub trade: ::std::option::Option<Trade>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProcessModel {
     #[prost(message, optional, tag="1")]
     pub trading_peer: ::std::option::Option<TradingPeer>,
@@ -2173,6 +2331,7 @@ pub struct ProcessModel {
     pub seller_payout_amount_from_mediation: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TradingPeer {
     #[prost(string, tag="1")]
     pub account_id: std::string::String,
@@ -2210,16 +2369,19 @@ pub struct TradingPeer {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ArbitrationDisputeList {
     #[prost(message, repeated, tag="1")]
     pub dispute: ::std::vec::Vec<Dispute>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MediationDisputeList {
     #[prost(message, repeated, tag="1")]
     pub dispute: ::std::vec::Vec<Dispute>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RefundDisputeList {
     #[prost(message, repeated, tag="1")]
     pub dispute: ::std::vec::Vec<Dispute>,
@@ -2229,6 +2391,7 @@ pub struct RefundDisputeList {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PreferencesPayload {
     #[prost(string, tag="1")]
     pub user_language: std::string::String,
@@ -2347,6 +2510,7 @@ pub struct PreferencesPayload {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct UserPayload {
     #[prost(string, tag="1")]
     pub account_id: std::string::String,
@@ -2386,6 +2550,7 @@ pub struct UserPayload {
 // blockchain
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BaseBlock {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -2400,6 +2565,7 @@ pub struct BaseBlock {
 }
 pub mod base_block {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="5")]
         RawBlock(super::RawBlock),
@@ -2408,18 +2574,21 @@ pub mod base_block {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RawBlock {
     /// Because of the way how PB implements inheritence we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub raw_txs: ::std::vec::Vec<BaseTx>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Block {
     /// Because of the way how PB implements inheritence we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub txs: ::std::vec::Vec<BaseTx>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BaseTx {
     #[prost(string, tag="1")]
     pub tx_version: std::string::String,
@@ -2438,6 +2607,7 @@ pub struct BaseTx {
 }
 pub mod base_tx {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="7")]
         RawTx(super::RawTx),
@@ -2446,12 +2616,14 @@ pub mod base_tx {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RawTx {
     /// Because of the way how PB implements inheritence we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub raw_tx_outputs: ::std::vec::Vec<BaseTxOutput>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tx {
     /// Because of the way how PB implements inheritence we need to use the super class as type
     #[prost(message, repeated, tag="1")]
@@ -2462,6 +2634,7 @@ pub struct Tx {
     pub burnt_bsq: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TxInput {
     #[prost(string, tag="1")]
     pub connected_tx_output_tx_id: std::string::String,
@@ -2471,6 +2644,7 @@ pub struct TxInput {
     pub pub_key: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BaseTxOutput {
     #[prost(int32, tag="1")]
     pub index: i32,
@@ -2491,6 +2665,7 @@ pub struct BaseTxOutput {
 }
 pub mod base_tx_output {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="8")]
         RawTxOutput(super::RawTxOutput),
@@ -2499,6 +2674,7 @@ pub mod base_tx_output {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct UnconfirmedTxOutput {
     #[prost(int32, tag="1")]
     pub index: i32,
@@ -2508,9 +2684,11 @@ pub struct UnconfirmedTxOutput {
     pub tx_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RawTxOutput {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TxOutput {
     #[prost(enumeration="TxOutputType", tag="1")]
     pub tx_output_type: i32,
@@ -2520,6 +2698,7 @@ pub struct TxOutput {
     pub unlock_block_height: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct SpentInfo {
     #[prost(int64, tag="1")]
     pub block_height: i64,
@@ -2529,6 +2708,7 @@ pub struct SpentInfo {
     pub input_index: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PubKeyScript {
     #[prost(int32, tag="1")]
     pub req_sigs: i32,
@@ -2544,6 +2724,7 @@ pub struct PubKeyScript {
 // dao data
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DaoPhase {
     #[prost(int32, tag="1")]
     pub phase_ordinal: i32,
@@ -2551,6 +2732,7 @@ pub struct DaoPhase {
     pub duration: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cycle {
     #[prost(int32, tag="1")]
     pub height_of_first_lock: i32,
@@ -2558,6 +2740,7 @@ pub struct Cycle {
     pub dao_phase: ::std::vec::Vec<DaoPhase>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DaoState {
     #[prost(int32, tag="1")]
     pub chain_height: i32,
@@ -2583,6 +2766,7 @@ pub struct DaoState {
     pub decrypted_ballots_with_merits_list: ::std::vec::Vec<DecryptedBallotsWithMerits>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Issuance {
     #[prost(string, tag="1")]
     pub tx_id: std::string::String,
@@ -2596,6 +2780,7 @@ pub struct Issuance {
     pub issuance_type: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Proposal {
     #[prost(string, tag="1")]
     pub name: std::string::String,
@@ -2615,6 +2800,7 @@ pub struct Proposal {
 }
 pub mod proposal {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="6")]
         CompensationProposal(super::CompensationProposal),
@@ -2633,6 +2819,7 @@ pub mod proposal {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CompensationProposal {
     #[prost(int64, tag="1")]
     pub requested_bsq: i64,
@@ -2640,6 +2827,7 @@ pub struct CompensationProposal {
     pub bsq_address: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ReimbursementProposal {
     #[prost(int64, tag="1")]
     pub requested_bsq: i64,
@@ -2647,6 +2835,7 @@ pub struct ReimbursementProposal {
     pub bsq_address: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChangeParamProposal {
     /// name of enum
     #[prost(string, tag="1")]
@@ -2655,6 +2844,7 @@ pub struct ChangeParamProposal {
     pub param_value: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RoleProposal {
     #[prost(message, optional, tag="1")]
     pub role: ::std::option::Option<Role>,
@@ -2664,19 +2854,23 @@ pub struct RoleProposal {
     pub unlock_time: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConfiscateBondProposal {
     #[prost(string, tag="1")]
     pub lockup_tx_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GenericProposal {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RemoveAssetProposal {
     #[prost(string, tag="1")]
     pub ticker_symbol: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Role {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -2689,6 +2883,7 @@ pub struct Role {
     pub bonded_role_type: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyReputation {
     #[prost(string, tag="1")]
     pub uid: std::string::String,
@@ -2696,11 +2891,13 @@ pub struct MyReputation {
     pub salt: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyReputationList {
     #[prost(message, repeated, tag="1")]
     pub my_reputation: ::std::vec::Vec<MyReputation>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyProofOfBurn {
     #[prost(string, tag="1")]
     pub tx_id: std::string::String,
@@ -2708,16 +2905,19 @@ pub struct MyProofOfBurn {
     pub pre_image: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyProofOfBurnList {
     #[prost(message, repeated, tag="1")]
     pub my_proof_of_burn: ::std::vec::Vec<MyProofOfBurn>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct UnconfirmedBsqChangeOutputList {
     #[prost(message, repeated, tag="1")]
     pub unconfirmed_tx_output: ::std::vec::Vec<UnconfirmedTxOutput>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TempProposalPayload {
     #[prost(message, optional, tag="1")]
     pub proposal: ::std::option::Option<Proposal>,
@@ -2727,6 +2927,7 @@ pub struct TempProposalPayload {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProposalPayload {
     #[prost(message, optional, tag="1")]
     pub proposal: ::std::option::Option<Proposal>,
@@ -2734,16 +2935,19 @@ pub struct ProposalPayload {
     pub hash: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProposalStore {
     #[prost(message, repeated, tag="1")]
     pub items: ::std::vec::Vec<ProposalPayload>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TempProposalStore {
     #[prost(message, repeated, tag="1")]
     pub items: ::std::vec::Vec<ProtectedStorageEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ballot {
     #[prost(message, optional, tag="1")]
     pub proposal: ::std::option::Option<Proposal>,
@@ -2751,16 +2955,19 @@ pub struct Ballot {
     pub vote: ::std::option::Option<Vote>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyProposalList {
     #[prost(message, repeated, tag="1")]
     pub proposal: ::std::vec::Vec<Proposal>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BallotList {
     #[prost(message, repeated, tag="1")]
     pub ballot: ::std::vec::Vec<Ballot>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ParamChange {
     #[prost(string, tag="1")]
     pub param_name: std::string::String,
@@ -2770,11 +2977,13 @@ pub struct ParamChange {
     pub activation_height: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConfiscateBond {
     #[prost(string, tag="1")]
     pub lockup_tx_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyVote {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -2790,11 +2999,13 @@ pub struct MyVote {
     pub reveal_tx_id: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyVoteList {
     #[prost(message, repeated, tag="1")]
     pub my_vote: ::std::vec::Vec<MyVote>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct VoteWithProposalTxId {
     #[prost(string, tag="1")]
     pub proposal_tx_id: std::string::String,
@@ -2802,11 +3013,13 @@ pub struct VoteWithProposalTxId {
     pub vote: ::std::option::Option<Vote>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct VoteWithProposalTxIdList {
     #[prost(message, repeated, tag="1")]
     pub item: ::std::vec::Vec<VoteWithProposalTxId>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlindVote {
     #[prost(bytes, tag="1")]
     pub encrypted_votes: std::vec::Vec<u8>,
@@ -2822,16 +3035,19 @@ pub struct BlindVote {
     pub extra_data: ::std::vec::Vec<crate::bisq::payload::custom_messages::JavaStringMapEntry>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyBlindVoteList {
     #[prost(message, repeated, tag="1")]
     pub blind_vote: ::std::vec::Vec<BlindVote>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlindVoteStore {
     #[prost(message, repeated, tag="1")]
     pub items: ::std::vec::Vec<BlindVotePayload>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlindVotePayload {
     #[prost(message, optional, tag="1")]
     pub blind_vote: ::std::option::Option<BlindVote>,
@@ -2839,11 +3055,13 @@ pub struct BlindVotePayload {
     pub hash: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vote {
     #[prost(bool, tag="1")]
     pub accepted: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Merit {
     #[prost(message, optional, tag="1")]
     pub issuance: ::std::option::Option<Issuance>,
@@ -2851,11 +3069,13 @@ pub struct Merit {
     pub signature: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MeritList {
     #[prost(message, repeated, tag="1")]
     pub merit: ::std::vec::Vec<Merit>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProposalVoteResult {
     #[prost(message, optional, tag="1")]
     pub proposal: ::std::option::Option<Proposal>,
@@ -2871,6 +3091,7 @@ pub struct ProposalVoteResult {
     pub num_ignored_votes: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct EvaluatedProposal {
     #[prost(bool, tag="1")]
     pub is_accepted: bool,
@@ -2878,6 +3099,7 @@ pub struct EvaluatedProposal {
     pub proposal_vote_result: ::std::option::Option<ProposalVoteResult>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DecryptedBallotsWithMerits {
     #[prost(bytes, tag="1")]
     pub hash_of_blind_vote_list: std::vec::Vec<u8>,
@@ -2893,6 +3115,7 @@ pub struct DecryptedBallotsWithMerits {
     pub merit_list: ::std::option::Option<MeritList>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DaoStateStore {
     #[prost(message, optional, tag="1")]
     pub dao_state: ::std::option::Option<DaoState>,
@@ -2900,6 +3123,7 @@ pub struct DaoStateStore {
     pub dao_state_hash: ::std::vec::Vec<DaoStateHash>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct DaoStateHash {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -2909,6 +3133,7 @@ pub struct DaoStateHash {
     pub prev_hash: std::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProposalStateHash {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -2920,6 +3145,7 @@ pub struct ProposalStateHash {
     pub num_proposals: i32,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlindVoteStateHash {
     #[prost(int32, tag="1")]
     pub height: i32,
@@ -2935,6 +3161,7 @@ pub struct BlindVoteStateHash {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlockChainExplorer {
     #[prost(string, tag="1")]
     pub name: std::string::String,
@@ -2944,6 +3171,7 @@ pub struct BlockChainExplorer {
     pub address_url: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PaymentAccount {
     #[prost(string, tag="1")]
     pub id: std::string::String,
@@ -2961,6 +3189,7 @@ pub struct PaymentAccount {
     pub payment_account_payload: ::std::option::Option<PaymentAccountPayload>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PaymentMethod {
     #[prost(string, tag="1")]
     pub id: std::string::String,
@@ -2972,11 +3201,13 @@ pub struct PaymentMethod {
 // Currency
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Currency {
     #[prost(string, tag="1")]
     pub currency_code: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct TradeCurrency {
     #[prost(string, tag="1")]
     pub code: std::string::String,
@@ -2987,6 +3218,7 @@ pub struct TradeCurrency {
 }
 pub mod trade_currency {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
     pub enum Message {
         #[prost(message, tag="3")]
         CryptoCurrency(super::CryptoCurrency),
@@ -2995,16 +3227,19 @@ pub mod trade_currency {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct CryptoCurrency {
     #[prost(bool, tag="1")]
     pub is_asset: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct FiatCurrency {
     #[prost(message, optional, tag="1")]
     pub currency: ::std::option::Option<Currency>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Country {
     #[prost(string, tag="1")]
     pub code: std::string::String,
@@ -3014,6 +3249,7 @@ pub struct Country {
     pub region: ::std::option::Option<Region>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Region {
     #[prost(string, tag="1")]
     pub code: std::string::String,
@@ -3025,6 +3261,7 @@ pub struct Region {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct PriceAlertFilter {
     #[prost(string, tag="1")]
     pub currency_code: std::string::String,
@@ -3034,6 +3271,7 @@ pub struct PriceAlertFilter {
     pub low: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MarketAlertFilter {
     #[prost(message, optional, tag="1")]
     pub payment_account: ::std::option::Option<PaymentAccount>,
@@ -3049,6 +3287,7 @@ pub struct MarketAlertFilter {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MockMailboxPayload {
     #[prost(string, tag="1")]
     pub message: std::string::String,
@@ -3058,6 +3297,7 @@ pub struct MockMailboxPayload {
     pub uid: std::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct MockPayload {
     #[prost(string, tag="1")]
     pub message_version: std::string::String,
@@ -3068,6 +3308,7 @@ pub struct MockPayload {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub enum SupportType {
     Arbitration = 0,
     Mediation = 1,
@@ -3076,6 +3317,7 @@ pub enum SupportType {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub enum AvailabilityResult {
     PbError = 0,
     UnknownFailure = 1,
@@ -3091,6 +3333,7 @@ pub enum AvailabilityResult {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub enum MediationResultState {
     PbErrorMediationResult = 0,
     UndefinedMediationResult = 1,
@@ -3112,12 +3355,14 @@ pub enum MediationResultState {
 ///todo
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub enum RefundResultState {
     PbErrorRefundResult = 0,
     UndefinedRefundResult = 1,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub enum TxType {
     PbErrorTxType = 0,
     UndefinedTxType = 1,
@@ -3139,6 +3384,7 @@ pub enum TxType {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub enum TxOutputType {
     PbErrorTxOutputType = 0,
     UndefinedOutput = 1,
@@ -3163,6 +3409,7 @@ pub enum TxOutputType {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
+#[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub enum ScriptType {
     PbErrorScriptTypes = 0,
     PubKey = 1,
