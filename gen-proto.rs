@@ -10,6 +10,10 @@ fn generate_protocols() {
     let mut config = prost_build::Config::new();
     config
         .type_attribute("NodeAddress", "#[derive(Eq, Hash)]")
+        .type_attribute(
+            ".",
+            "#[cfg_attr(feature = \"dummy-seed\", derive(serde::Serialize, serde::Deserialize))]",
+        )
         .extern_path(".risq.custom", "crate::bisq::payload::custom_messages")
         .compile_protos(&protocol_files(), &protocol_includes())
         .expect("Error compiling protobuf definitions");
