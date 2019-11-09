@@ -10,6 +10,9 @@ build-with-checker:
 build-with-stats:
 	cargo build --features "statistics"
 
+build-dummy-seed:
+	cargo build --features "dummy-seed"
+
 build-all:
 	cargo build --features "all"
 
@@ -23,7 +26,7 @@ check:
 	cargo watch -x clippy
 
 test:
-	RUST_BACKTRACE=full cargo watch -s 'cargo test --features "all" -- --nocapture'
+	RUST_BACKTRACE=full cargo watch -s 'cargo test --features "all dummy-seed" -- --nocapture'
 
 test-in-ci:
 	cargo clippy --all-features

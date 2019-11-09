@@ -27,12 +27,12 @@ pub struct Server<D: SendableDispatcher> {
     listen_port: u16,
     tor_conf: Option<TorConfig>,
     peers: Addr<Peers<D>>,
-    bootstrap: Addr<Bootstrap<D>>,
+    bootstrap: Option<Addr<Bootstrap<D>>>,
 }
 pub fn start<D: SendableDispatcher>(
     listen_port: u16,
     peers: Addr<Peers<D>>,
-    bootstrap: Addr<Bootstrap<D>>,
+    bootstrap: Option<Addr<Bootstrap<D>>>,
     tor_conf: Option<TorConfig>,
 ) -> Addr<Server<D>> {
     Server {
@@ -73,7 +73,9 @@ impl<D: SendableDispatcher> Actor for Server<D> {
         };
 
         info!("Server started @ {:?}", addr);
-        arbiter_spawn!(self.bootstrap.send(event::ServerStarted(addr.clone())));
+        self.bootstrap
+            .as_ref()
+            .map(|bootstrap| arbiter_spawn!(bootstrap.send(event::ServerStarted(addr.clone()))));
         arbiter_spawn!(self.peers.send(event::ServerStarted(addr)));
     }
 }
