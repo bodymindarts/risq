@@ -6,7 +6,7 @@ use crate::{
     prelude::*,
 };
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer, Result};
-use std::{collections::HashMap, io, time::SystemTime};
+use std::{collections::HashMap, io, time::UNIX_EPOCH};
 
 #[allow(unused_variables)]
 pub fn listen(
@@ -59,7 +59,7 @@ fn listen_with_context(
 #[derive(serde::Serialize)]
 struct ConnInfo {
     addr: Option<String>,
-    alive_at: SystemTime,
+    alive_at: u64,
 }
 #[derive(serde::Serialize)]
 struct StatusResponse {
@@ -69,15 +69,20 @@ struct StatusResponse {
 fn status(status: web::Data<Status>) -> HttpResponse {
     let connections: HashMap<String, ConnInfo> = status
         .connections()
+        .iter()
         .map(|(id, status)| {
             (
                 String::from(*id),
                 ConnInfo {
                     addr: status.addr.as_ref().map(NodeAddress::to_string),
-                    alive_at: status.alive_at,
+                    alive_at: status
+                        .alive_at
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Time reversed")
+                        .as_secs(),
                 },
             )
         })
         .collect();
-    HttpResponse::Ok().json(connections)
+    HttpResponse::Ok().json(StatusResponse { connections })
 }
