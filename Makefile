@@ -28,13 +28,13 @@ check:
 test:
 	RUST_BACKTRACE=full cargo watch -s 'cargo test --features "all dummy-seed" -- --nocapture'
 
-integration:
-	cargo build --features "all dummy-seed"
-	export RISQ_BIN_DIR=./target/debug && bats -r test/integration
-
 test-in-ci:
 	cargo clippy --all-features
 	cargo test --all-features --verbose --locked
+
+integration:
+	cargo build --features "all dummy-seed"
+	export RISQ_BIN_DIR=./target/debug && bats -r test/integration
 
 build-minimal-release:
 	cargo build --locked --release --no-default-features --features "fail-on-warnings"

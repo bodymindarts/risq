@@ -9,3 +9,4 @@ pushd repo
 export CARGO_TARGET_DIR="../cargo-target-dir"
 
 make test-in-ci
+make integration
