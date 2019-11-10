@@ -20,7 +20,7 @@ run: build
 	RUST_LOG=debug target/debug/risq daemon
 
 regtest: build
-	RUST_LOG=debug target/debug/risq daemon -n BtcRegtest --tor-active=false
+	RUST_LOG=debug target/debug/risq daemon -n BtcRegtest --no-tor
 
 check:
 	cargo watch -x clippy
