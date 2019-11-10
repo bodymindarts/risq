@@ -44,6 +44,31 @@ where
         });
     }
 }
+#[cfg(feature = "dummy-seed")]
+pub struct Direct<M: Into<network_envelope::Message>>(pub M, pub ConnectionId);
+#[cfg(feature = "dummy-seed")]
+impl<M> Message for Direct<M>
+where
+    M: Into<network_envelope::Message>,
+{
+    type Result = ();
+}
+#[cfg(feature = "dummy-seed")]
+impl<M: 'static> Handler<Direct<M>> for Broadcaster
+where
+    M: Into<network_envelope::Message> + Send + Clone,
+{
+    type Result = ();
+    fn handle(&mut self, Direct(message, receiver): Direct<M>, _ctx: &mut Self::Context) {
+        if let Some(conn) = self.connections.get(&receiver) {
+            if let Some(conn) = conn.upgrade() {
+                arbiter_spawn!(conn.send(Payload(message)))
+            } else {
+                self.connections.remove(&receiver);
+            }
+        }
+    }
+}
 impl Handler<ConnectionAdded> for Broadcaster {
     type Result = ();
     fn handle(
