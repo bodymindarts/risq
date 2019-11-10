@@ -15,4 +15,6 @@ pub use server::TorConfig;
 
 pub mod message {
     pub use super::broadcast::Broadcast;
+    #[cfg(feature = "dummy-seed")]
+    pub use super::broadcast::Direct;
 }
