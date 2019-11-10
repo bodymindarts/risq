@@ -26,6 +26,11 @@ impl ConnectionId {
         ConnectionId(Uuid::new_v4())
     }
 }
+impl From<ConnectionId> for String {
+    fn from(id: ConnectionId) -> Self {
+        id.0.to_string()
+    }
+}
 pub struct Connection {
     id: ConnectionId,
     writer: mpsc::Sender<network_envelope::Message>,

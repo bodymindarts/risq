@@ -10,7 +10,7 @@ use crate::prelude::{ripemd160, sha256, Hash};
 use openssl::{dsa::Dsa, pkey::*, sign::Verifier};
 use rand::{thread_rng, Rng};
 use std::{
-    io,
+    fmt, io,
     net::{SocketAddr, ToSocketAddrs},
     str::FromStr,
     vec,
@@ -38,6 +38,11 @@ impl FromStr for NodeAddress {
             (_, Some(_)) => Err("Couldn't parse port".to_string()),
             _ => Err("Couldn't parse node address".to_string()),
         }
+    }
+}
+impl fmt::Display for NodeAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.host_name, self.port)
     }
 }
 

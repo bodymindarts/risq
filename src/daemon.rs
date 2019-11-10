@@ -5,7 +5,9 @@ use crate::{
     api,
     bisq::{constants::BaseCurrencyNetwork, NodeAddress},
     domain::{offer::*, price_feed::PriceFeed, statistics::StatsCache},
-    p2p::{dispatch::ActorDispatcher, server, Bootstrap, Broadcaster, Peers, TorConfig},
+    p2p::{
+        dispatch::ActorDispatcher, server, status::Status, Bootstrap, Broadcaster, Peers, TorConfig,
+    },
     prelude::*,
 };
 use data_router::*;
@@ -54,10 +56,12 @@ pub fn run(
     let offer_book = OfferBook::start(price_feed);
     let stats_cache = StatsCache::new();
 
+    let status = Status::new();
     // Api Thread
     let _ = api::listen(
         api_port,
         offer_book.clone(),
+        status.clone(),
         stats_cache.as_ref().map(Clone::clone),
     );
 
@@ -69,7 +73,13 @@ pub fn run(
 
         Arbiter::new().exec_fn(move || {
             // P2P Thread
-            let peers = Peers::start(network, broadcaster, dispatcher.clone(), tor_proxy_port);
+            let peers = Peers::start(
+                network,
+                broadcaster,
+                status,
+                dispatcher.clone(),
+                tor_proxy_port,
+            );
             let bootstrap = Bootstrap::start(
                 network,
                 peers.clone(),

@@ -3,7 +3,7 @@ use crate::{
         constants::{BaseCurrencyNetwork, LOCAL_CAPABILITIES},
         payload::*,
     },
-    p2p::{dispatch::*, message::Direct, server, Broadcaster, ConnectionId, Peers},
+    p2p::{dispatch::*, message::Direct, server, status::Status, Broadcaster, ConnectionId, Peers},
     prelude::*,
 };
 use std::path::Path;
@@ -44,14 +44,17 @@ impl Dispatcher for SeedDataResponder {
     }
 }
 
-pub fn run(server_port: u16, fixtures: Option<&Path>) {
+pub fn run(server_port: u16, _fixtures: Option<&Path>) {
     let sys = System::new("risq");
-    let network = BaseCurrencyNetwork::BtcRegtest;
 
+    let network = BaseCurrencyNetwork::BtcRegtest;
     let broadcaster = Broadcaster::start();
+    let status = Status::new();
+
     let peers = Peers::start(
         network,
         broadcaster.clone(),
+        status,
         SeedDataResponder(broadcaster),
         None,
     );
