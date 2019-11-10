@@ -110,7 +110,8 @@ fn daemon(matches: &ArgMatches) {
     let network: BaseCurrencyNetwork = matches.value_of("NETWORK").unwrap().parse().unwrap();
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
     let server_port = matches.value_of("P2P_PORT").unwrap().parse().unwrap();
-    let tor_active: bool = matches.value_of("NO_TOR").is_none();
+    let tor_active: bool = !matches.is_present("NO_TOR");
+
     init_log(matches);
 
     let force_seed = matches
