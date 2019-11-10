@@ -1,1 +1,10 @@
-Empty - please add release notes here
+## Features
+- Add `/status` endpoint to get meta data about the state of the p2p module (connections / bootstrap state etc)
+
+## Improvements
+
+- Chnange flag `--use-tor=<bool>` to `--no-tor`. Passing the bool value is redundant.
+
+## Bug Fixes
+
+- Fix default `RISQ_HOME` dir (was missing `.risq` part)
