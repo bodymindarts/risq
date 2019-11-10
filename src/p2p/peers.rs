@@ -71,7 +71,7 @@ impl<D: SendableDispatcher> Peers<D> {
     ) -> Addr<Self> {
         Self {
             keep_alive: KeepAlive::start(),
-            broadcaster: broadcaster.clone(),
+            broadcaster,
             network,
             connections: HashMap::new(),
             identified_connections: HashMap::new(),
