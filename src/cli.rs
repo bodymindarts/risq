@@ -26,7 +26,7 @@ fn app() -> App<'static, 'static> {
          (@arg NETWORK: -n --network default_value("BtcMainnet") {network} "(BtcRegtest|BtcTestnet|BtcMainnet)")
          (@arg P2P_PORT: -p --("p2p-port") default_value("5000") {port} "Port of p2p node")
          (@arg FORCE_SEED: --("force-seed") +takes_value {node_address} "Force usage of seed node")
-         (@arg TOR_ACTIVE: --("tor-active") default_value("true") {boolean} "Run daemon behind tor")
+         (@arg NO_TOR: --("no-tor") "Disable tor / run on localhost")
          (@arg TOR_CONTROL_PORT: --("tor-controll-port") default_value("9051") {port} "Tor Control port")
          (@arg TOR_HIDDEN_SERVICE_PORT: --("tor-hidden-service-port") default_value("9999") {port} "Public port of the hidden service")
          (@arg TOR_SOCKS_PORT: --("tor-socks-port") default_value("9050") {port} "Tor SOCKSPort")
@@ -79,12 +79,6 @@ fn market(market: String) -> Result<(), String> {
     }
     Ok(())
 }
-fn boolean(b: String) -> Result<(), String> {
-    match bool::from_str(&b) {
-        Err(_) => Err(format!("'{}' is not a valid boolean", b)),
-        Ok(_) => Ok(()),
-    }
-}
 fn level(level: String) -> Result<(), String> {
     match Level::from_str(&level) {
         Err(_) => Err(format!("'{}' is not a valid logging level", level)),
@@ -116,7 +110,7 @@ fn daemon(matches: &ArgMatches) {
     let network: BaseCurrencyNetwork = matches.value_of("NETWORK").unwrap().parse().unwrap();
     let api_port = matches.value_of("API_PORT").unwrap().parse().unwrap();
     let server_port = matches.value_of("P2P_PORT").unwrap().parse().unwrap();
-    let tor_active: bool = matches.value_of("TOR_ACTIVE").unwrap().parse().unwrap();
+    let tor_active: bool = matches.value_of("NO_TOR").is_none();
     init_log(matches);
 
     let force_seed = matches
