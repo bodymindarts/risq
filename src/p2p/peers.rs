@@ -5,6 +5,7 @@ use super::{
     connection::*,
     dispatch::{self, ActorDispatcher, Receive, SendableDispatcher},
     server::event::*,
+    status::Status,
 };
 use crate::{
     bisq::{
@@ -26,7 +27,7 @@ const CONSOLIDATE_CONNECTIONS: Duration = Duration::from_secs(60);
 const MAX_CONNECTIONS: usize = 12;
 const MIN_CONNECTIONS: usize = MAX_CONNECTIONS / 7 * 10;
 
-pub struct PeerInfo {
+struct PeerInfo {
     reported_alive_at: SystemTime,
     gossiped_capabilities: Option<Vec<Capability>>,
     reported_capabilities: Option<Vec<Capability>>,
@@ -60,12 +61,14 @@ pub struct Peers<D: SendableDispatcher> {
     local_addr: Option<NodeAddress>,
     dispatcher: D,
     proxy_port: Option<u16>,
+    status: Status,
 }
 
 impl<D: SendableDispatcher> Peers<D> {
     pub fn start(
         network: BaseCurrencyNetwork,
         broadcaster: Addr<Broadcaster>,
+        status: Status,
         dispatcher: D,
         proxy_port: Option<u16>,
     ) -> Addr<Self> {
@@ -79,6 +82,7 @@ impl<D: SendableDispatcher> Peers<D> {
             local_addr: None,
             dispatcher,
             proxy_port,
+            status,
         }
         .start()
     }
@@ -102,7 +106,8 @@ impl<D: SendableDispatcher> Peers<D> {
         let for_keep_alive = conn.downgrade();
         let for_broadcaster = conn.downgrade();
         self.connections.insert(id, conn);
-        if let Some(addr) = addr {
+        self.status.connection_added(id, addr.clone());
+        if let Some(addr) = addr.clone() {
             self.update_peer_info(&addr, SystemTime::now(), None, None);
             self.identified_connections.insert(id, addr);
         }
@@ -182,6 +187,7 @@ impl<D: SendableDispatcher> Peers<D> {
         }));
     }
     fn drop_connection(&mut self, id: &ConnectionId, reason: CloseConnectionReason) {
+        self.status.connection_removed(id);
         self.identified_connections.remove(id);
         if let Some(addr) = self.connections.remove(id) {
             if addr.connected() {
@@ -327,6 +333,7 @@ impl<D: SendableDispatcher> Peers<D> {
                         .get(&id)
                         .map(NodeAddress::clone)
                     {
+                        peers.status.connection_alive(&id, last_active);
                         peers.update_peer_info(addr, last_active, None, None)
                     }
                 });
@@ -379,6 +386,7 @@ impl<D: SendableDispatcher> Handler<Receive<GetPeersRequest>> for Peers<D> {
         self.add_to_peer_infos(reported_peers);
         if let Some(addr) = sender_node_address {
             self.update_peer_info(&addr, SystemTime::now(), None, Some(supported_capabilities));
+            self.status.connection_identified(&conn_id, &addr);
             self.identified_connections.insert(conn_id, addr);
         }
         if let Some(conn) = self.connections.get(&conn_id).map(Addr::clone) {

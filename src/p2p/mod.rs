@@ -6,6 +6,7 @@ mod tor;
 
 pub mod dispatch;
 pub mod server;
+pub mod status;
 
 pub use bootstrap::Bootstrap;
 pub use broadcast::Broadcaster;
