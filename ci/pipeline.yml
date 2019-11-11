@@ -12,7 +12,8 @@ meta:
 groups:
 - name: release
   jobs:
-    - test
+    - test-unit
+    - test-e2e
     - rc
     - release
     - build-minimal
@@ -138,7 +139,7 @@ jobs:
       params:
         build: arm-unknown-linux-gnueabihf-image-def/ci/images/arm-unknown-linux-gnueabihf
 
-- name: test
+- name: test-unit
   public: true
   serial: true
   plan:
@@ -146,7 +147,7 @@ jobs:
     - { get: repo, trigger: true }
     - { get: pipeline-tasks }
   - in_parallel:
-    - task: run-all-test
+    - task: test-unit
       config:
         platform: linux
         image_resource:
@@ -159,7 +160,30 @@ jobs:
         - path: cargo-home
         - path: cargo-target-dir
         run:
-          path: pipeline-tasks/ci/tasks/run-tests.sh
+          path: pipeline-tasks/ci/tasks/test-unit.sh
+
+- name: test-e2e
+  public: true
+  serial: true
+  plan:
+  - in_parallel:
+    - { get: repo, trigger: true }
+    - { get: pipeline-tasks }
+  - in_parallel:
+    - task: test-e2e
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: (( grab meta.pipeline_image ))}
+        inputs:
+        - name: pipeline-tasks
+        - name: repo
+        caches:
+        - path: cargo-home
+        - path: cargo-target-dir
+        run:
+          path: pipeline-tasks/ci/tasks/test-e2e.sh
 
 - name: build-minimal
   public: true
@@ -219,7 +243,8 @@ jobs:
     - get: repo
       trigger: true
       passed:
-      - test
+      - test-unit
+      - test-e2e
       - build-minimal
       - build-arm-unknown-linux-gnueabihf
     - { get: version, params: { pre: rc } }

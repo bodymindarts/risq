@@ -8,5 +8,4 @@ export RISQ_BIN_DIR=${CARGO_TARGET_DIR}/debug
 
 pushd repo
 
-make test-in-ci
 make integration
