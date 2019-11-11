@@ -167,9 +167,11 @@ impl<D: SendableDispatcher> Peers<D> {
             .cloned()
             .collect();
         remove_ids.into_iter().for_each(|id| {
-            self.connections.remove(&id);
             if self.identified_connections.remove(&id).is_none() {
                 self.drop_connection(&id, CloseConnectionReason::UnknownPeerAddress);
+            } else {
+                self.connections.remove(&id);
+                self.status.connection_removed(&id);
             }
         });
 
@@ -433,7 +435,6 @@ impl<D: SendableDispatcher> Handler<IncomingConnection> for Peers<D> {
         let dispatcher = self.get_dispatcher(ctx.address());
         let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
         self.add_connection(id, conn, None);
-        ctx.spawn(self.request_peers_from(id));
     }
 }
 

@@ -24,6 +24,8 @@ run-dummy-seed:
 	target/debug/risq dummy-seed
 run-alice:
 	./target/debug/risq d -n BtcRegtest --no-tor
+run-bob:
+	./target/debug/risq d -p 6000 --api-port 8488 -n BtcRegtest --no-tor
 
 check:
 	cargo watch -x clippy

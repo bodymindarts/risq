@@ -13,6 +13,15 @@ test_tmp_dir() {
   echo ${BATS_TMPDIR}/${BATS_TEST_NAME}
 }
 
+start_dummy_seed() {
+  echo ${1} > $(test_tmp_dir)/dummy_seed_port
+  background "${risq}" dummy-seed -p ${1} > $(test_tmp_dir)/dummy_seed_pid
+}
+
+seed_addr() {
+  echo "127.0.0.1:$(cat $(test_tmp_dir)/dummy_seed_port)"
+}
+
 start_node() {
   echo ${2} > $(test_tmp_dir)/${1}_port
   echo ${3} > $(test_tmp_dir)/${1}_api_port
@@ -25,13 +34,8 @@ node_status() {
   curl -s "127.0.0.1:${api_port}/status" | jq -r "${2}"
 }
 
-start_dummy_seed() {
-  echo ${1} > $(test_tmp_dir)/dummy_seed_port
-  background "${risq}" dummy-seed -p ${1} > $(test_tmp_dir)/dummy_seed_pid
-}
-
-seed_addr() {
-  echo "127.0.0.1:$(cat $(test_tmp_dir)/dummy_seed_port)"
+node_addr() {
+  echo "127.0.0.1:$(cat $(test_tmp_dir)/${1}_port)"
 }
 
 stop_node() {
