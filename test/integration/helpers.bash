@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
-# Point to our local hab binaries!
+# Point to our local risq binary!
 if [ -z "${RISQ_BIN_DIR}" ]; then
-    echo "Must set RISQ_BIN_DIR variable to a location that contains risq binarie!"
+    echo "Must set RISQ_BIN_DIR variable to a location that contains risq binary!"
     exit 1
 fi
 
