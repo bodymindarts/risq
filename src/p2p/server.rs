@@ -73,9 +73,9 @@ impl<D: SendableDispatcher> Actor for Server<D> {
         };
 
         info!("Server started @ {:?}", addr);
-        self.bootstrap
-            .as_ref()
-            .map(|bootstrap| arbiter_spawn!(bootstrap.send(event::ServerStarted(addr.clone()))));
+        if let Some(bootstrap) = self.bootstrap.as_ref() {
+            arbiter_spawn!(bootstrap.send(event::ServerStarted(addr.clone())))
+        }
         arbiter_spawn!(self.peers.send(event::ServerStarted(addr)));
     }
 }
