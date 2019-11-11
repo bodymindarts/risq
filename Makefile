@@ -50,3 +50,5 @@ run-tor:
 
 no-of-deps:
 	cargo tree | grep -v '(*)' | grep -v '\[' | wc -l
+
+.PHONY: test
