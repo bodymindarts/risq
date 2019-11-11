@@ -52,7 +52,7 @@ impl<D: SendableDispatcher> Actor for Server<D> {
         ctx.add_stream(tcp.incoming());
         let addr = match &self.tor_conf {
             Some(tor_conf) => {
-                let mut tc = TorControl::connect(("localhost", tor_conf.tc_port))
+                let mut tc = TorControl::connect(("127.0.0.1", tor_conf.tc_port))
                     .expect("Couldn't authenticate to TorControl");
                 let onion_addr = tc
                     .add_v2_onion(AddOnionConfig {
@@ -67,7 +67,7 @@ impl<D: SendableDispatcher> Actor for Server<D> {
                 }
             }
             None => NodeAddress {
-                host_name: "localhost".to_string(),
+                host_name: "127.0.0.1".to_string(),
                 port: self.listen_port as i32,
             },
         };

@@ -107,9 +107,9 @@ impl<D: SendableDispatcher> Peers<D> {
         let for_broadcaster = conn.downgrade();
         self.connections.insert(id, conn);
         self.status.connection_added(id, addr.clone());
-        if let Some(addr) = addr.clone() {
+        if let Some(addr) = addr.as_ref() {
             self.update_peer_info(&addr, SystemTime::now(), None, None);
-            self.identified_connections.insert(id, addr);
+            self.identified_connections.insert(id, addr.clone());
         }
         arbiter_spawn!(self
             .keep_alive
@@ -250,43 +250,42 @@ impl<D: SendableDispatcher> Peers<D> {
         &self,
         id: ConnectionId,
     ) -> impl ActorFuture<Item = (), Error = (), Actor = Self> {
-        match self.connections.get(&id) {
-            Some(conn) => {
-                let request = GetPeersRequest {
-                    sender_node_address: self.local_addr.clone(),
-                    nonce: gen_nonce(),
-                    supported_capabilities: LOCAL_CAPABILITIES.clone(),
-                    reported_peers: self.peers_to_report(&id),
-                };
-                Either::A(
-                    fut::wrap_future(conn.send(Request(request)).flatten())
-                        .map(
-                            move |GetPeersResponse {
-                                      reported_peers,
-                                      supported_capabilities,
-                                      ..
-                                  },
-                                  peers: &mut Peers<D>,
-                                  _ctx| {
-                                if let Some(ref addr) = peers
-                                    .identified_connections
-                                    .get(&id)
-                                    .map(NodeAddress::clone)
-                                {
-                                    peers.update_peer_info(
-                                        &addr,
-                                        SystemTime::now(),
-                                        None,
-                                        Some(supported_capabilities),
-                                    )
-                                };
-                                peers.add_to_peer_infos(reported_peers)
-                            },
-                        )
-                        .then(|_, _, _| fut::ok(())),
-                )
-            }
-            None => Either::B(fut::ok(())),
+        if let Some(conn) = self.connections.get(&id) {
+            let request = GetPeersRequest {
+                sender_node_address: self.local_addr.clone(),
+                nonce: gen_nonce(),
+                supported_capabilities: LOCAL_CAPABILITIES.clone(),
+                reported_peers: self.peers_to_report(&id),
+            };
+            Either::A(
+                fut::wrap_future(conn.send(Request(request)).flatten())
+                    .map(
+                        move |GetPeersResponse {
+                                  reported_peers,
+                                  supported_capabilities,
+                                  ..
+                              },
+                              peers: &mut Peers<D>,
+                              _ctx| {
+                            if let Some(ref addr) = peers
+                                .identified_connections
+                                .get(&id)
+                                .map(NodeAddress::clone)
+                            {
+                                peers.update_peer_info(
+                                    &addr,
+                                    SystemTime::now(),
+                                    None,
+                                    Some(supported_capabilities),
+                                )
+                            };
+                            peers.add_to_peer_infos(reported_peers)
+                        },
+                    )
+                    .then(|_, _, _| fut::ok(())),
+            )
+        } else {
+            Either::B(fut::ok(()))
         }
     }
 
@@ -434,6 +433,7 @@ impl<D: SendableDispatcher> Handler<IncomingConnection> for Peers<D> {
         let dispatcher = self.get_dispatcher(ctx.address());
         let (id, conn) = Connection::from_tcp_stream(tcp, self.network.into(), dispatcher);
         self.add_connection(id, conn, None);
+        ctx.spawn(self.request_peers_from(id));
     }
 }
 

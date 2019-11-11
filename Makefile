@@ -19,8 +19,11 @@ build-all:
 run: build
 	RUST_LOG=debug target/debug/risq daemon
 
-regtest: build
-	RUST_LOG=debug target/debug/risq daemon -n BtcRegtest --no-tor
+run-dummy-seed:
+	cargo build --features "all dummy-seed"
+	target/debug/risq dummy-seed
+run-alice:
+	./target/debug/risq d -n BtcRegtest --no-tor
 
 check:
 	cargo watch -x clippy
