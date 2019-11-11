@@ -215,7 +215,7 @@ jobs:
   serial: true
   plan:
   - in_parallel:
-    - { get: repo, trigger: true }
+    - { get: repo, trigger: true, passed: [build-minimal, test-unit, test-e2e]}
     - { get: pipeline-tasks }
   - in_parallel:
     - task: assert-arm-unknown-linux-gnueabihf-build
@@ -243,9 +243,6 @@ jobs:
     - get: repo
       trigger: true
       passed:
-      - test-unit
-      - test-e2e
-      - build-minimal
       - build-arm-unknown-linux-gnueabihf
     - { get: version, params: { pre: rc } }
   - put: version
