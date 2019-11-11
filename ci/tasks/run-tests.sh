@@ -2,11 +2,11 @@
 
 set -eu
 
-export CARGO_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../../" >/dev/null && pwd )/cargo-home"
+export CARGO_HOME="$(pwd)/cargo-home"
+export CARGO_TARGET_DIR="$(pwd)/cargo-target-dir"
+export RISQ_BIN_DIR=${CARGO_TARGET_DIR}/debug
 
 pushd repo
-
-export CARGO_TARGET_DIR="../cargo-target-dir"
 
 make test-in-ci
 make integration

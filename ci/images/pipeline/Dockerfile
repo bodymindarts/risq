@@ -7,4 +7,5 @@ RUN git clone https://github.com/bats-core/bats-core.git \
             && ./install.sh /usr/local
 
 RUN apt-get update \
-            && apt-get install -y jq
+            && apt-get install -y \
+            jq vim

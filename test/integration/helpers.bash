@@ -42,12 +42,8 @@ stop_dummy_seed() {
   kill $(cat $(test_tmp_dir)/dummy_seed_pid) > /dev/null
 }
 
-node_is_alive() {
-  [[ $(curl -s "localhost:${1}/ping") == "pong" ]]
-}
-
 # Run the given command in the background. Useful for starting a
-# Supervisor and then moving on with commands that exercise it for the
+# node and then moving on with commands that exercise it for the
 # test.
 #
 # Ensures that BATS' handling of file handles is taken into account;
@@ -55,9 +51,6 @@ node_is_alive() {
 # https://github.com/bats-core/bats-core#printing-to-the-terminal
 # https://github.com/sstephenson/bats/issues/80#issuecomment-174101686
 # for details.
-#
-# (Also, it's really easy to leave the `&` off when you're writing
-# and editing tests. This makes things _super_ explicit.)
 background() {
   "$@" 3>- &
   echo $!

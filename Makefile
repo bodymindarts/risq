@@ -37,7 +37,7 @@ test-in-ci:
 
 integration:
 	cargo build --features "all dummy-seed"
-	export RISQ_BIN_DIR=./target/debug && bats -t -r test/integration
+	export RISQ_BIN_DIR=${RISQ_BIN_DIR:-./target/debug} && bats -t -r test/integration
 
 build-minimal-release:
 	cargo build --locked --release --no-default-features --features "fail-on-warnings"
