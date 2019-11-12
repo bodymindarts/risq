@@ -433,6 +433,11 @@ lazy_static! {
             currency_type: CurrencyType::Fiat,
         });
         vec.push(Currency {
+            code: "FAIR".to_string(),
+            name: "Faircoin".to_string(),
+            currency_type: CurrencyType::Crypto,
+        });
+        vec.push(Currency {
             code: "FJC".to_string(),
             name: "Fujicoin".to_string(),
             currency_type: CurrencyType::Crypto,
@@ -953,6 +958,11 @@ lazy_static! {
             currency_type: CurrencyType::Crypto,
         });
         vec.push(Currency {
+            code: "RDD".to_string(),
+            name: "ReddCoin".to_string(),
+            currency_type: CurrencyType::Crypto,
+        });
+        vec.push(Currency {
             code: "RMX".to_string(),
             name: "Remix".to_string(),
             currency_type: CurrencyType::Crypto,
@@ -1026,6 +1036,11 @@ lazy_static! {
             code: "SHP".to_string(),
             name: "St. Helena Pound".to_string(),
             currency_type: CurrencyType::Fiat,
+        });
+        vec.push(Currency {
+            code: "SIL".to_string(),
+            name: "SixEleven".to_string(),
+            currency_type: CurrencyType::Crypto,
         });
         vec.push(Currency {
             code: "SLL".to_string(),
@@ -1250,6 +1265,11 @@ lazy_static! {
         vec.push(Currency {
             code: "XRC".to_string(),
             name: "Bitcoin Rhodium".to_string(),
+            currency_type: CurrencyType::Crypto,
+        });
+        vec.push(Currency {
+            code: "XSL".to_string(),
+            name: "Solo".to_string(),
             currency_type: CurrencyType::Crypto,
         });
         vec.push(Currency {
