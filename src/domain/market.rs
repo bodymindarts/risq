@@ -231,6 +231,7 @@ lazy_static! {
         vec.push(new_market!("DARX", "BTC"));
         vec.push(new_market!("DASH", "BTC"));
         vec.push(new_market!("DCR", "BTC"));
+        vec.push(new_market!("DMD", "BTC"));
         vec.push(new_market!("DOGE", "BTC"));
         vec.push(new_market!("DOI", "BTC"));
         vec.push(new_market!("DRGL", "BTC"));
@@ -239,6 +240,7 @@ lazy_static! {
         vec.push(new_market!("ETC", "BTC"));
         vec.push(new_market!("ETH", "BTC"));
         vec.push(new_market!("ETHS", "BTC"));
+        vec.push(new_market!("FAIR", "BTC"));
         vec.push(new_market!("FJC", "BTC"));
         vec.push(new_market!("FRTY", "BTC"));
         vec.push(new_market!("GALI", "BTC"));
@@ -266,6 +268,7 @@ lazy_static! {
         vec.push(new_market!("NMC", "BTC"));
         vec.push(new_market!("NOR", "BTC"));
         vec.push(new_market!("ONION", "BTC"));
+        vec.push(new_market!("PART", "BTC"));
         vec.push(new_market!("PINK", "BTC"));
         vec.push(new_market!("PIVX", "BTC"));
         vec.push(new_market!("PLE", "BTC"));
@@ -275,8 +278,10 @@ lazy_static! {
         vec.push(new_market!("QMCoin", "BTC"));
         vec.push(new_market!("QWC", "BTC"));
         vec.push(new_market!("RADS", "BTC"));
+        vec.push(new_market!("RDD", "BTC"));
         vec.push(new_market!("RMX", "BTC"));
         vec.push(new_market!("RYO", "BTC"));
+        vec.push(new_market!("SIL", "BTC"));
         vec.push(new_market!("SCP", "BTC"));
         vec.push(new_market!("SF", "BTC"));
         vec.push(new_market!("SPACE", "BTC"));
@@ -290,6 +295,7 @@ lazy_static! {
         vec.push(new_market!("VXV", "BTC"));
         vec.push(new_market!("WEB", "BTC"));
         vec.push(new_market!("WRKZ", "BTC"));
+        vec.push(new_market!("XSL", "BTC"));
         vec.push(new_market!("XCP", "BTC"));
         vec.push(new_market!("XDR0", "BTC"));
         vec.push(new_market!("XMR", "BTC"));
