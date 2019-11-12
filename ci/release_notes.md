@@ -1,6 +1,6 @@
 ## Features
 - Add `/status` endpoint to get meta data about the state of the p2p module (connections / bootstrap state etc)
-- Add `--force-seed=<hostname>:<port>` option to force usage of a given seed
+- Add `--force-seed=<hostname>:<port>` option to `daemon` command to force usage of a given seed
 
 ## Improvements
 
