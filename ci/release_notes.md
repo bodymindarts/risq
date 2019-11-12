@@ -1,1 +1,3 @@
-Empty - please add release notes here
+## Improvements
+
+- Restructure the 'features' `default = ["checker", "statistics", "vendored-openssl", "fail-on-warnings"]`
