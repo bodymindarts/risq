@@ -1,4 +1,5 @@
-use crate::{bisq::NodeAddress, p2p::ConnectionId};
+use super::{bootstrap::BootstrapState, connection::ConnectionId};
+use crate::bisq::NodeAddress;
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock, RwLockReadGuard},
@@ -13,14 +14,22 @@ pub struct ConnectionStatus {
 
 #[derive(Clone)]
 pub struct Status {
+    bootstrap_state: Arc<RwLock<BootstrapState>>,
     connections: Arc<RwLock<HashMap<ConnectionId, ConnectionStatus>>>,
 }
 
 impl Status {
-    pub fn new() -> Self {
+    pub fn new(bootstrap_state: Arc<RwLock<BootstrapState>>) -> Self {
         Self {
+            bootstrap_state,
             connections: Arc::new(RwLock::new(HashMap::new())),
         }
+    }
+    pub fn bootstrap_state(&self) -> BootstrapState {
+        *self
+            .bootstrap_state
+            .read()
+            .expect("Corrupted lock in status")
     }
 
     pub fn connections(&self) -> RwLockReadGuard<HashMap<ConnectionId, ConnectionStatus>> {

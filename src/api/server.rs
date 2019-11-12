@@ -2,7 +2,7 @@ use super::graphql::*;
 use crate::{
     bisq::NodeAddress,
     domain::{offer::OfferBook, statistics::*},
-    p2p::status::*,
+    p2p::Status,
     prelude::*,
 };
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer, Result};
@@ -12,7 +12,7 @@ use std::{collections::HashMap, io, time::UNIX_EPOCH};
 pub fn listen(
     port: u16,
     offer_book: Addr<OfferBook>,
-    status: Status,
+    p2p_status: Status,
     stats_cache: Option<StatsCache>,
 ) -> Result<(), io::Error> {
     let gql_context = GraphQLContextWrapper {
@@ -20,7 +20,7 @@ pub fn listen(
         stats_cache: stats_cache.unwrap(),
         offer_book,
     };
-    listen_with_context(port, status, gql_context)
+    listen_with_context(port, p2p_status, gql_context)
 }
 
 fn listen_with_context(
@@ -34,11 +34,8 @@ fn listen_with_context(
         App::new()
             .wrap(Logger::default())
             .route("/ping", web::get().to(|| "pong"))
-            .service(
-                web::resource("/status")
-                    .data(p2p_status.clone())
-                    .route(web::get().to(status)),
-            )
+            .data(p2p_status.clone())
+            .service(web::resource("/status").route(web::get().to(status)))
             .service(
                 web::resource("/graphql")
                     .data(schema.clone())
@@ -63,6 +60,7 @@ struct ConnInfo {
 }
 #[derive(serde::Serialize)]
 struct StatusResponse {
+    state: String,
     connections: HashMap<String, ConnInfo>,
 }
 
@@ -84,5 +82,8 @@ fn status(status: web::Data<Status>) -> HttpResponse {
             )
         })
         .collect();
-    HttpResponse::Ok().json(StatusResponse { connections })
+    HttpResponse::Ok().json(StatusResponse {
+        state: status.bootstrap_state().to_string(),
+        connections,
+    })
 }

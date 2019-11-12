@@ -13,9 +13,35 @@ use crate::{
     prelude::{sync::oneshot, *},
 };
 use rand::{seq::SliceRandom, thread_rng};
+use std::{
+    fmt,
+    sync::{Arc, RwLock},
+};
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum BootstrapState {
+    PreBootstrap,
+    InitialBootstrapInProgress,
+    Bootstrapped,
+}
+impl BootstrapState {
+    pub fn init() -> Arc<RwLock<BootstrapState>> {
+        Arc::new(RwLock::new(BootstrapState::PreBootstrap))
+    }
+}
+impl fmt::Display for BootstrapState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::PreBootstrap => write!(f, "PreBootstrap"),
+            Self::InitialBootstrapInProgress => write!(f, "InitialBootstrapInProgress"),
+            Self::Bootstrapped => write!(f, "Running"),
+        }
+    }
+}
 
 pub struct Bootstrap<D: SendableDispatcher> {
     network: BaseCurrencyNetwork,
+    state: Arc<RwLock<BootstrapState>>,
     proxy_port: Option<u16>,
     addr_notify: Option<oneshot::Sender<NodeAddress>>,
     addr_rec: Option<oneshot::Receiver<NodeAddress>>,
@@ -26,6 +52,9 @@ pub struct Bootstrap<D: SendableDispatcher> {
 impl<D: SendableDispatcher> Actor for Bootstrap<D> {
     type Context = Context<Bootstrap<D>>;
     fn started(&mut self, ctx: &mut Self::Context) {
+        *self.state.write().expect("Corrupted lock in bootstrap") =
+            BootstrapState::InitialBootstrapInProgress;
+
         let addr = self.seed_nodes.pop().expect("No seed nodes defined");
         ctx.spawn(
             fut::wrap_future(bootstrap_from_seed(
@@ -37,6 +66,11 @@ impl<D: SendableDispatcher> Actor for Bootstrap<D> {
             ))
             .map_err(|_, _, _| ())
             .and_then(move |seed_result, bootstrap: &mut Bootstrap<D>, _ctx| {
+                *bootstrap
+                    .state
+                    .write()
+                    .expect("Corrupted lock in bootstrap") = BootstrapState::Bootstrapped;
+
                 fut::wrap_future(
                     bootstrap
                         .peers
@@ -66,6 +100,7 @@ impl<D: SendableDispatcher> Handler<ServerStarted> for Bootstrap<D> {
 impl<D: SendableDispatcher> Bootstrap<D> {
     pub fn start(
         network: BaseCurrencyNetwork,
+        state: Arc<RwLock<BootstrapState>>,
         peers: Addr<Peers<D>>,
         dispatcher: D,
         proxy_port: Option<u16>,
@@ -85,6 +120,7 @@ impl<D: SendableDispatcher> Bootstrap<D> {
             seed_nodes,
             peers,
             dispatcher,
+            state,
         }
         .start()
     }

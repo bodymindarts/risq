@@ -4,7 +4,8 @@
 
 ## Improvements
 
-- Chnange flag `--use-tor=<bool>` to `--no-tor`. Passing the bool value is redundant.
+- GraphQL Api returns 503 when daemon has not bootstrapped
+- Change flag `--use-tor=<bool>` to `--no-tor`. Passing the bool value is redundant.
 
 ## Bug Fixes
 

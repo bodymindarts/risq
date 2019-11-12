@@ -6,7 +6,8 @@ use crate::{
     bisq::{constants::BaseCurrencyNetwork, NodeAddress},
     domain::{offer::*, price_feed::PriceFeed, statistics::StatsCache},
     p2p::{
-        dispatch::ActorDispatcher, server, status::Status, Bootstrap, Broadcaster, Peers, TorConfig,
+        dispatch::ActorDispatcher, server, Bootstrap, BootstrapState, Broadcaster, Peers, Status,
+        TorConfig,
     },
     prelude::*,
 };
@@ -54,40 +55,39 @@ pub fn run(
     // Domain Thread
     let price_feed = PriceFeed::start(tor_proxy_port);
     let offer_book = OfferBook::start(price_feed);
-    let stats_cache = StatsCache::new();
-
-    let status = Status::new();
-    // Api Thread
-    let _ = api::listen(
-        api_port,
-        offer_book.clone(),
-        status.clone(),
-        stats_cache.as_ref().map(Clone::clone),
-    );
 
     Arbiter::new().exec_fn(move || {
         // Daemon Thread
+        let stats_cache = StatsCache::new();
         let broadcaster = Broadcaster::start();
-        let data_router = DataRouter::start(offer_book, broadcaster.clone(), stats_cache);
-        let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
+        let data_router =
+            DataRouter::start(offer_book.clone(), broadcaster.clone(), stats_cache.clone());
 
         Arbiter::new().exec_fn(move || {
             // P2P Thread
+            let dispatcher = ActorDispatcher::<DataRouter, DataRouterDispatch>::new(data_router);
+            let bootstrap_state = BootstrapState::init();
+
+            let p2p_status = Status::new(bootstrap_state.clone());
             let peers = Peers::start(
                 network,
                 broadcaster,
-                status,
+                p2p_status.clone(),
                 dispatcher.clone(),
                 tor_proxy_port,
             );
             let bootstrap = Bootstrap::start(
                 network,
+                bootstrap_state,
                 peers.clone(),
                 dispatcher,
                 tor_proxy_port,
                 force_seed,
             );
             server::start(server_port, peers, Some(bootstrap), tor_config);
+
+            // Api Thread
+            let _ = api::listen(api_port, offer_book, p2p_status, stats_cache);
         });
     });
 

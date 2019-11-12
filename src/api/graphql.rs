@@ -8,6 +8,7 @@ use crate::{
         offer::{message::GetOpenOffers, OfferBook, OfferDirection, OpenOffer},
         statistics::*,
     },
+    p2p::{BootstrapState, Status},
     prelude::*,
 };
 use actix_web::{web, Error, HttpResponse};
@@ -29,22 +30,33 @@ use std::{
 pub fn graphql(
     schema: web::Data<Arc<Schema>>,
     context: web::Data<GraphQLContextWrapper>,
+    status: web::Data<Status>,
     request: web::Json<GraphQLRequest>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    context
-        .get()
-        .and_then(|context| {
-            web::block(move || {
-                let res = request.execute(&schema, &context);
-                Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
+    match status.bootstrap_state() {
+        BootstrapState::Bootstrapped => (),
+        state => {
+            return future::Either::A(future::ok(
+                HttpResponse::ServiceUnavailable().body(state.to_string()),
+            ))
+        }
+    }
+    future::Either::B(
+        context
+            .get()
+            .and_then(|context| {
+                web::block(move || {
+                    let res = request.execute(&schema, &context);
+                    Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
+                })
+                .map_err(Error::from)
             })
-            .map_err(Error::from)
-        })
-        .map(|result| {
-            HttpResponse::Ok()
-                .content_type("application/json")
-                .body(result)
-        })
+            .map(|result| {
+                HttpResponse::Ok()
+                    .content_type("application/json")
+                    .body(result)
+            }),
+    )
 }
 pub fn graphiql(port: web::Data<u16>) -> HttpResponse {
     let html = graphiql_source(&format!("http://localhost:{}/graphql", port.to_string()));

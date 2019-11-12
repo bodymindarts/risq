@@ -3,7 +3,10 @@ use crate::{
         constants::{BaseCurrencyNetwork, LOCAL_CAPABILITIES},
         payload::*,
     },
-    p2p::{dispatch::*, message::Direct, server, status::Status, Broadcaster, ConnectionId, Peers},
+    p2p::{
+        dispatch::*, message::Direct, server, BootstrapState, Broadcaster, ConnectionId, Peers,
+        Status,
+    },
     prelude::*,
 };
 use std::path::Path;
@@ -49,12 +52,13 @@ pub fn run(server_port: u16, _fixtures: Option<&Path>) {
 
     let network = BaseCurrencyNetwork::BtcRegtest;
     let broadcaster = Broadcaster::start();
-    let status = Status::new();
+    let bootstrap_state = BootstrapState::init();
+    let p2p_status = Status::new(bootstrap_state.clone());
 
     let peers = Peers::start(
         network,
         broadcaster.clone(),
-        status,
+        p2p_status,
         SeedDataResponder(broadcaster),
         None,
     );
