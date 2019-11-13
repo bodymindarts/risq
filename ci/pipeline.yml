@@ -140,6 +140,7 @@ jobs:
         build: arm-unknown-linux-gnueabihf-image-def/ci/images/arm-unknown-linux-gnueabihf
 
 - name: test-unit
+  serial_groups: [unit]
   public: true
   serial: true
   plan:
@@ -163,6 +164,7 @@ jobs:
           path: pipeline-tasks/ci/tasks/test-unit.sh
 
 - name: test-e2e
+  serial_groups: [e2e]
   public: true
   serial: true
   plan:
@@ -186,6 +188,7 @@ jobs:
           path: pipeline-tasks/ci/tasks/test-e2e.sh
 
 - name: build-minimal
+  serial_groups: [minimal]
   public: true
   serial: true
   plan:
@@ -251,6 +254,7 @@ jobs:
 - name: release
   public: true
   serial: true
+  serial_groups: [ e2e, unit, minimal ]
   plan:
   - in_parallel:
     - { get: version, passed: [rc], params: {bump: final} }
