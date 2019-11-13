@@ -11,13 +11,13 @@ build-with-stats:
 	cargo build --no-default-features --features "statistics"
 
 build-all:
-	cargo build --features-all
+	cargo build --no-default-features --features "checker statistics"
 
 run: build
 	RUST_LOG=debug target/debug/risq daemon
 
 run-dummy-seed:
-	cargo build --features "all dummy-seed"
+	cargo build --features "checker statistics dummy-seed"
 	target/debug/risq dummy-seed
 run-alice:
 	./target/debug/risq d -n BtcRegtest --no-tor
@@ -28,7 +28,7 @@ check:
 	cargo watch -x clippy
 
 test:
-	RUST_BACKTRACE=full cargo watch -s 'cargo test --no-default-features --features "all dummy-seed" -- --nocapture'
+	RUST_BACKTRACE=full cargo watch -s 'cargo test --no-default-features --features "checker statistics dummy-seed" -- --nocapture'
 
 test-in-ci:
 	cargo clippy --all-features
