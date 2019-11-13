@@ -1,3 +1,13 @@
+# [risq release v0.4.1](https://github.com/bodymindarts/risq/releases/tag/v0.4.1)
+
+## Improvements
+
+- Restructure the 'features' `default = ["checker", "statistics", "vendored-openssl", "fail-on-warnings"]`
+
+## Bug fixes
+
+- Update list of supported currencies and markets
+
 # [risq release v0.4.0](https://github.com/bodymindarts/risq/releases/tag/v0.4.0)
 
 ## Features
