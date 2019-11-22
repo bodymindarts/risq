@@ -643,7 +643,7 @@ pub struct GetBlocksRequest {
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct GetBlocksResponse {
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub raw_blocks: ::std::vec::Vec<BaseBlock>,
     #[prost(int32, tag="2")]
@@ -652,7 +652,7 @@ pub struct GetBlocksResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct NewBlockBroadcastMessage {
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(message, optional, tag="1")]
     pub raw_block: ::std::option::Option<BaseBlock>,
 }
@@ -2576,14 +2576,14 @@ pub mod base_block {
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RawBlock {
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub raw_txs: ::std::vec::Vec<BaseTx>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Block {
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub txs: ::std::vec::Vec<BaseTx>,
 }
@@ -2618,14 +2618,14 @@ pub mod base_tx {
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct RawTx {
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub raw_tx_outputs: ::std::vec::Vec<BaseTxOutput>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[cfg_attr(feature = "dummy-seed", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tx {
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(message, repeated, tag="1")]
     pub tx_outputs: ::std::vec::Vec<BaseTxOutput>,
     #[prost(enumeration="TxType", tag="2")]
@@ -2744,12 +2744,12 @@ pub struct Cycle {
 pub struct DaoState {
     #[prost(int32, tag="1")]
     pub chain_height: i32,
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(message, repeated, tag="2")]
     pub blocks: ::std::vec::Vec<BaseBlock>,
     #[prost(message, repeated, tag="3")]
     pub cycles: ::std::vec::Vec<Cycle>,
-    /// Because of the way how PB implements inheritence we need to use the super class as type
+    /// Because of the way how PB implements inheritance we need to use the super class as type
     #[prost(map="string, message", tag="4")]
     pub unspent_tx_output_map: ::std::collections::HashMap<std::string::String, BaseTxOutput>,
     #[prost(map="string, message", tag="5")]
