@@ -1,4 +1,4 @@
-# Continuous Intergation
+# Continuous Integration
 
 the ci folder contains everything needed to setup an automated test / build / release pipeline using [concourse](https://concourse-ci.org/).
 - Use the fly cli to authenticate to your running concourse.
