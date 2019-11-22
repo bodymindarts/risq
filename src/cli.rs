@@ -27,12 +27,12 @@ fn app() -> App<'static, 'static> {
          (@arg P2P_PORT: -p --("p2p-port") default_value("5000") {port} "Port of p2p node")
          (@arg FORCE_SEED: --("force-seed") +takes_value {node_address} "Force usage of seed node")
          (@arg NO_TOR: --("no-tor") "Disable tor / run on localhost")
-         (@arg TOR_CONTROL_PORT: --("tor-controll-port") default_value("9051") {port} "Tor Control port")
+         (@arg TOR_CONTROL_PORT: --("tor-control-port") default_value("9051") {port} "Tor Control port")
          (@arg TOR_HIDDEN_SERVICE_PORT: --("tor-hidden-service-port") default_value("9999") {port} "Public port of the hidden service")
          (@arg TOR_SOCKS_PORT: --("tor-socks-port") default_value("9050") {port} "Tor SOCKSPort")
         )
         (@subcommand offers =>
-         (about: "Subcomand to interact with offers")
+         (about: "Subcommand to interact with offers")
          (@arg API_PORT: --("api-port") default_value("7477") {port} "API port")
          (@arg MARKET: --("market") default_value("all") {market} "Filter by market pair")
         )
@@ -102,7 +102,7 @@ fn daemon(matches: &ArgMatches) {
     let risq_home = env::var_os(RISQ_HOME_VAR)
         .map(PathBuf::from)
         .unwrap_or_else(|| {
-            let mut risq_dir = dirs::home_dir().expect("Couldn't determin home dir");
+            let mut risq_dir = dirs::home_dir().expect("Couldn't determine home dir");
             risq_dir.push(".risq");
             risq_dir
         });

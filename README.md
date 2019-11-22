@@ -3,7 +3,7 @@
 [Bisq](https://github.com/bisq-network/bisq) is a decentralized application that allows trading of Bitcoin and other digital assets via a peer-to-peer trading protocol.
 Currently a [proposal is being discussed](https://github.com/bisq-network/proposals/issues/32) regarding a backwards incompatible upgrade to the trading protocol that would rely on trading partners using the BSQ coloured coin as collateral when trading.
 This and other improvements are being proposed to launch as [Bisq v2](https://github.com/bisq-network/proposals/issues/118).
-As this would likely require re-writing large parts of the application, the question has been put forward wether it might be worth starting from scratch rather than take on the legecy of the existing code base.
+As this would likely require re-writing large parts of the application, the question has been put forward whether it might be worth starting from scratch rather than take on the legacy of the existing code base.
 
 This repo represents a spike to investigate the feasibility and effort required to rewrite the parts of the app needed for interop with V1
 
@@ -12,7 +12,7 @@ This repo represents a spike to investigate the feasibility and effort required 
 to shed some light on the following questions
 - is an alternative implementation that is compatible with the live p2p network possible (ie. can java <-> rust processes communicate correctly via the protobuf based protocol)?
 - are there any significant technical advantages that can be gained from taking this approach (eg. less overall complexity, less risky dependencies, better dev workflow etc.)?
-- how high would the remaining effort be to achieve production rediness with an alternative implementation?
+- how high would the remaining effort be to achieve production readiness with an alternative implementation?
 - does it make sense as a strategic approach to write V2 from scratch vs adapt the existing code?
 
 ## Setup
@@ -77,7 +77,7 @@ $ curl localhost:7477/ping
 pong
 ```
 
-Or use the cli to get the open offers (once its bootstraped)
+Or use the cli to get the open offers (once it's bootstraped)
 ```
 $ ./target/debug/risq offers --market USD | wc -l
   56
@@ -102,7 +102,7 @@ There is also a query explorer exposed under [http://localhost:7477/graphiql](ht
 As this is a proof of concept there are a number of limitations.
 - No data is persisted so bootstrap is required for each run.
 - Only 1 connection to a seed node is currently established. If the initial data sync fails then daemon will not bootstrap properly or be able to join the p2p network.
-- Not much effort has been made to make the output look pretty or be perticularly usefull other than seeing that things are alive.
+- Not much effort has been made to make the output look pretty or be particularly usefull other than seeing that things are alive.
 
 ## Node Checker
 
