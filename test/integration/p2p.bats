@@ -24,7 +24,7 @@ teardown() {
   start_node "bob" 2201 2211
 
 
-  retry 5 1 [ "$(node_status alice '.connections | length')" == "2" ]
+  retry 10 1 [ "$(node_status alice '.connections | length')" == "2" ]
 
   jq_expr=".connections | to_entries | [ .[].value.addr ] | sort == [ \"$(seed_addr)\", \"$(node_addr bob)\" ] "
   [ "$(node_status alice "${jq_expr}" )" = "true" ]
