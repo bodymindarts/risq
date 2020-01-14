@@ -200,7 +200,7 @@ where
         let correlation_id =
             Option::<CorrelationId>::from(&msg).expect("Request without correlation_id");
         let (send, receive) = oneshot::channel::<network_envelope::Message>();
-        self.response_channels.insert(correlation_id.clone(), send);
+        self.response_channels.insert(correlation_id, send);
         Box::new(
             self.writer
                 .clone()

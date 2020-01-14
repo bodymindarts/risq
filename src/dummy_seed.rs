@@ -53,7 +53,7 @@ pub fn run(server_port: u16, _fixtures: Option<&Path>) {
     let network = BaseCurrencyNetwork::BtcRegtest;
     let broadcaster = Broadcaster::start();
     let bootstrap_state = BootstrapState::init();
-    let p2p_status = Status::new(bootstrap_state.clone());
+    let p2p_status = Status::new(bootstrap_state);
 
     let peers = Peers::start(
         network,

@@ -24,10 +24,10 @@ impl NumberWithPrecision {
         let mut ret = String::new();
         let mut rest_amount = self.base_amount;
 
-        if target_precision > self.precision {
-            rest_amount *= 10_u64.pow(target_precision - self.precision);
-        } else if self.precision > target_precision {
-            rest_amount /= 10_u64.pow(self.precision - target_precision);
+        match target_precision.cmp(&self.precision) {
+            Ordering::Greater => rest_amount *= 10_u64.pow(target_precision - self.precision),
+            Ordering::Less => rest_amount /= 10_u64.pow(self.precision - target_precision),
+            Ordering::Equal => (),
         }
 
         while ret.len() < target_precision as usize {
@@ -48,10 +48,10 @@ impl NumberWithPrecision {
 
     pub fn with_precision(&self, target_precision: u32) -> Self {
         let mut rest_amount = self.base_amount;
-        if target_precision > self.precision {
-            rest_amount *= 10_u64.pow(target_precision - self.precision);
-        } else if self.precision > target_precision {
-            rest_amount /= 10_u64.pow(self.precision - target_precision);
+        match target_precision.cmp(&self.precision) {
+            Ordering::Greater => rest_amount *= 10_u64.pow(target_precision - self.precision),
+            Ordering::Less => rest_amount /= 10_u64.pow(self.precision - target_precision),
+            Ordering::Equal => (),
         }
         Self::new(rest_amount, target_precision)
     }
@@ -100,10 +100,10 @@ impl Mul for NumberWithPrecision {
             }
         }
         let mut res = left_value * right_value;
-        if res_precision > target_precision {
-            res /= 10_u64.pow(res_precision - right_precision);
-        } else if res_precision < target_precision {
-            res *= 10_u64.pow(right_precision - res_precision);
+        match res_precision.cmp(&target_precision) {
+            Ordering::Greater => res /= 10_u64.pow(res_precision - right_precision),
+            Ordering::Less => res *= 10_u64.pow(right_precision - res_precision),
+            Ordering::Equal => (),
         }
         NumberWithPrecision::new(res, target_precision)
     }
