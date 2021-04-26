@@ -18,7 +18,7 @@ vendored-openssl = ["openssl/vendored"]
 default = ["checker", "statistics", "vendored-openssl", "fail-on-warnings"]
 
 [dependencies]
-actix = "0.8.3"
+actix = "0.11.1"
 actix-web = "1.0.9"
 bitcoin = "0.21.0"
 bitcoin_hashes = "0.7.1"
