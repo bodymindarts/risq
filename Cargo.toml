@@ -38,7 +38,7 @@ openssl = "0.10.25"
 prost = "0.5.0"
 prost-types = "0.5.0"
 rand = "0.7.2"
-serde = { version = "1.0.116", features = ["derive"] }
+serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.57"
 socks = "0.3.2"
 tokio = "0.1.22"
